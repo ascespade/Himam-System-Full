@@ -349,8 +349,31 @@ export default function SettingsPage() {
 
               {/* WhatsApp Settings */}
               {categories.whatsapp.length > 0 && (
-                <div className="card">
+                  <div className="card">
                   <h2 className="heading-tertiary mb-4">إعدادات WhatsApp</h2>
+                  
+                  {/* Webhook URL Display */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h3 className="text-sm font-semibold text-blue-900 mb-2">🔴 رابط الويب هوك (Webhook URL)</h3>
+                    <p className="text-xs text-blue-700 mb-3">انسخ هذا الرابط وضعه في إعدادات Webhook في لوحة تحكم Meta.</p>
+                    <div className="flex items-center gap-2">
+                       <code className="flex-1 bg-white border border-blue-300 rounded px-3 py-2 text-sm font-mono text-gray-800 break-all">
+                         {typeof window !== 'undefined' ? `${window.location.origin}/api/whatsapp` : '/api/whatsapp'}
+                       </code>
+                       <button
+                         type="button"
+                         onClick={() => copyToClipboard('webhook_url', typeof window !== 'undefined' ? `${window.location.origin}/api/whatsapp` : '')}
+                         className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+                           copiedField === 'webhook_url'
+                             ? 'bg-green-600 text-white'
+                             : 'bg-blue-600 text-white hover:bg-blue-700'
+                         }`}
+                       >
+                         {copiedField === 'webhook_url' ? '✓ تم النسخ' : '📋 نسخ الرابط'}
+                       </button>
+                    </div>
+                  </div>
+
                   <div className="space-y-4">
                     {categories.whatsapp.map((setting) => renderFieldWithHelpers(setting))}
                   </div>
