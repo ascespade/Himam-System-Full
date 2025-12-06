@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
 }
 
 // Helper function to send WhatsApp message (internal use only)
-export async function sendWhatsAppMessage(to: string, message: string) {
+async function sendWhatsAppMessage(to: string, message: string) {
   const settings = await getWhatsAppSettings()
   
   if (!settings.accessToken || !settings.phoneNumberId) {
