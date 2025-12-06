@@ -19,13 +19,17 @@ export interface SystemSettings {
   [key: string]: string
 }
 
+import { whatsappSettingsRepository } from '@/infrastructure/supabase/repositories/whatsapp-settings.repository'
+
 /**
  * Get all settings from Supabase
+ * Merges general settings with specialized whatsapp_settings
  * @returns Record of key-value pairs
  */
 export async function getSettings(): Promise<SystemSettings> {
   try {
-    const { data, error } = await supabase
+    // 1. Fetch General Settings
+    const { data: generalData, error } = await supabase
       .from('settings')
       .select('key, value')
 
@@ -35,9 +39,19 @@ export async function getSettings(): Promise<SystemSettings> {
     }
 
     const settings: Record<string, string> = {}
-    data?.forEach((row) => {
+    generalData?.forEach((row) => {
       settings[row.key] = row.value
     })
+
+    // 2. Fetch Specialized WhatsApp Settings
+    const whatsappConfig = await whatsappSettingsRepository.getActiveSettings()
+    
+    if (whatsappConfig) {
+      // Overlay specialized settings
+      if (whatsappConfig.access_token) settings['WHATSAPP_TOKEN'] = whatsappConfig.access_token
+      if (whatsappConfig.phone_number_id) settings['WHATSAPP_PHONE_NUMBER_ID'] = whatsappConfig.phone_number_id
+      if (whatsappConfig.verify_token) settings['WHATSAPP_VERIFY_TOKEN'] = whatsappConfig.verify_token
+    }
 
     return settings as SystemSettings
   } catch (error) {
@@ -54,6 +68,16 @@ export async function getSettings(): Promise<SystemSettings> {
  */
 export async function getSetting(key: string, defaultValue: string = ''): Promise<string> {
   try {
+    // Check specialized tables for specific keys
+    if (['WHATSAPP_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID', 'WHATSAPP_VERIFY_TOKEN'].includes(key)) {
+      const waConfig = await whatsappSettingsRepository.getActiveSettings()
+      if (waConfig) {
+        if (key === 'WHATSAPP_TOKEN') return waConfig.access_token || defaultValue
+        if (key === 'WHATSAPP_PHONE_NUMBER_ID') return waConfig.phone_number_id || defaultValue
+        if (key === 'WHATSAPP_VERIFY_TOKEN') return waConfig.verify_token || defaultValue
+      }
+    }
+
     const { data, error } = await supabase
       .from('settings')
       .select('value')
