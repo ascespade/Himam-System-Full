@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "name": "himam-system",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "GEMINI_API_KEY": "@gemini_api_key",
+    "OPENAI_API_KEY": "@openai_api_key",
+    "META_ACCESS_TOKEN": "@meta_access_token",
+    "META_PHONE_NUMBER_ID": "@meta_phone_number_id",
+    "WHATSAPP_PHONE_NUMBER_ID": "@whatsapp_phone_number_id",
+    "WHATSAPP_ACCESS_TOKEN": "@whatsapp_access_token",
+    "WHATSAPP_VERIFY_TOKEN": "@whatsapp_verify_token",
+    "GITHUB_TOKEN": "@github_token",
+    "DATABASE_URL": "@database_url",
+    "NODE_ENV": "production"
+  }
+}
+
