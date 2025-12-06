@@ -26,7 +26,7 @@ export async function askAI(prompt: string, context?: string): Promise<AIRespons
   if (settings.GEMINI_KEY) {
     try {
       const genAI = new GoogleGenerativeAI(settings.GEMINI_KEY)
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
       const fullPrompt = context
         ? `Context: ${context}\n\nUser message: ${prompt}`
