@@ -1,34 +1,55 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import BookingForm from './BookingForm'
+import Button from '@/shared/components/ui/Button'
 
 export default function Hero() {
   const [showBookingForm, setShowBookingForm] = useState(false)
 
   return (
-    <section className="relative bg-gradient-to-br from-blue-600 to-blue-800 text-white py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            منصة الحميم الطبية الذكية
+    <section className="relative text-white py-20 overflow-hidden min-h-[600px] flex items-center">
+      {/* Background Image with Overlay */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/banner.jpg"
+          alt="مركز الهمم"
+          fill
+          className="object-cover"
+          priority
+          quality={90}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/85 to-primary-dark/90" />
+      </div>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="text-center max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-scale-in font-arabic tracking-tight leading-tight">
+            مركز الهمم
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-blue-100">
-            إدارة متكاملة للمرضى والمواعيد والتواصل الآمن مع الأخصائيين
+          <p className="text-xl md:text-3xl mb-4 text-white font-semibold font-arabic">
+            رعاية طبية متخصصة في جدة
+          </p>
+          <p className="text-lg md:text-xl mb-8 text-white/95 font-arabic leading-relaxed">
+            علاج النطق • تعديل السلوك • العلاج الوظيفي • التكامل الحسي • التدخل المبكر
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
+            <Button
               onClick={() => setShowBookingForm(!showBookingForm)}
-              className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition shadow-lg"
+              variant="secondary"
+              size="lg"
+              className="bg-white text-primary hover:bg-white/90"
             >
               حجز موعد الآن
-            </button>
-            <a
+            </Button>
+            <Button
               href="/patients"
-              className="px-8 py-3 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-600 transition shadow-lg"
+              variant="outline"
+              size="lg"
+              className="border-white text-white hover:bg-white/10"
             >
               لوحة المريض
-            </a>
+            </Button>
           </div>
         </div>
 
@@ -41,4 +62,3 @@ export default function Hero() {
     </section>
   )
 }
-

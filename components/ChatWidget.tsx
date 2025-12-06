@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Button from '@/shared/components/ui/Button'
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
@@ -35,12 +36,12 @@ export default function ChatWidget() {
   return (
     <>
       {isOpen && (
-        <div className="fixed bottom-24 right-4 w-96 h-[500px] bg-white rounded-lg shadow-2xl flex flex-col z-50">
-          <div className="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+        <div className="fixed bottom-24 right-4 w-96 h-[500px] bg-white rounded-xl shadow-2xl flex flex-col z-50 border border-gray-200">
+          <div className="bg-primary text-white p-4 rounded-t-xl flex justify-between items-center">
             <h3 className="font-semibold">المساعد الذكي</h3>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-white hover:text-gray-200"
+              className="text-white hover:text-white/80 transition"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -59,7 +60,7 @@ export default function ChatWidget() {
                 <div
                   className={`max-w-[80%] p-3 rounded-lg ${
                     msg.role === 'user'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-primary text-white'
                       : 'bg-gray-100 text-gray-900'
                   }`}
                 >
@@ -86,22 +87,22 @@ export default function ChatWidget() {
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder="اكتب رسالتك..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             />
-            <button
+            <Button
               onClick={handleSend}
               disabled={isLoading || !message.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              size="sm"
             >
               إرسال
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition flex items-center justify-center z-40"
+        className="fixed bottom-4 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg hover:bg-primary-hover transition flex items-center justify-center z-40"
       >
         {isOpen ? (
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,4 +117,3 @@ export default function ChatWidget() {
     </>
   )
 }
-

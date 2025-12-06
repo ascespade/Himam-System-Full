@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
     const endDateTime = new Date(startDateTime.getTime() + duration * 60000)
 
     const event = {
-      summary: 'موعد طبي - Al-Himam Medical Center',
-      description: notes || 'موعد طبي في مركز الحميم الطبي',
+      summary: 'موعد طبي - مركز الهمم',
+      description: notes || 'موعد طبي في مركز الهمم - جدة',
       start: {
         dateTime: startDateTime.toISOString(),
         timeZone: 'Asia/Riyadh',

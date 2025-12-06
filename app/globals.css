@@ -1,34 +1,233 @@
+/* Arabic Fonts - Optimized for RTL */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
+/* English Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    /* Core Background Colors - Polished for Light Theme */
+    --color-background: #FFFFFF; /* Pure white for clean look */
+    --color-foreground: #1a1a1a; /* Near black for excellent readability */
+    --color-border: rgba(0, 0, 0, 0.08); /* Subtle border */
+    --color-input: #f8f9fa; /* Light gray for inputs */
+    --color-ring: #009d63; /* Logo green - Primary brand color */
+
+    /* Card and Surface Colors - Polished */
+    --color-card: #FFFFFF; /* White cards */
+    --color-card-foreground: #1a1a1a; /* Dark text on cards */
+    --color-popover: #FFFFFF; /* White popovers */
+    --color-popover-foreground: #1a1a1a; /* Dark text */
+
+    /* Muted Colors - Refined */
+    --color-muted: #f8f9fa; /* Very light gray for backgrounds */
+    --color-muted-foreground: #6c757d; /* Medium gray for secondary text */
+
+    /* Primary Colors - Matching Logo Green (#009d63) - Polished */
+    --color-primary: #009d63; /* Logo green - Primary brand color */
+    --color-primary-foreground: #FFFFFF; /* white - High contrast on green */
+    --color-primary-hover: #00b872; /* Brighter green for hover (better visibility) */
+    --color-primary-dark: #007a4d; /* Darker green for active states */
+    --color-primary-light: #e6f5f0; /* Light green for backgrounds */
+    --color-primary-lighter: #f0f9f6; /* Very light green for subtle backgrounds */
+    --color-primary-gradient: linear-gradient(135deg, #009d63 0%, #00b872 100%);
+
+    /* Secondary Colors - Polished */
+    --color-secondary: #f8f9fa; /* Light gray for secondary elements */
+    --color-secondary-foreground: #495057; /* Dark gray text */
+
+    /* Destructive Colors */
+    --color-destructive: #FF6F61; /* red-400 - Coral-red for critical alerts */
+    --color-destructive-foreground: #FFFFFF; /* white - High contrast on red */
+
+    /* Accent Colors - Polished */
+    --color-accent: #f0f9f6; /* Very light green tint */
+    --color-accent-foreground: #009d63; /* Primary green for accent text */
+
+    /* Success Colors - Using logo green accent */
+    --color-success: #009d63; /* Logo green for success states */
+    --color-success-foreground: #FFFFFF; /* white - High contrast on green */
+    
+    /* Accent Colors from Logo */
+    --color-accent-green: #009d63; /* Green from logo */
+    --color-accent-blue: #29abe2; /* Blue from logo */
+
+    /* Warning Colors - Polished */
+    --color-warning: #ffc107; /* Professional amber */
+    --color-warning-foreground: #856404; /* Dark amber text */
+
+    /* Error Colors */
+    --color-error: #FF6F61; /* red-400 - Coral-red for critical alerts */
+    --color-error-foreground: #FFFFFF; /* white - High contrast on red */
+
+    /* Border Radius */
+    --radius: 8px;
+  }
+
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+    line-height: normal;
+    font-family: inherit;
+    margin: unset;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    @apply bg-background text-foreground;
+    font-family: 'Cairo', 'Tajawal', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-variant-ligatures: common-ligatures;
+  }
+
+  /* Arabic Typography Enhancements */
+  [dir="rtl"] {
+    font-family: 'Cairo', 'Tajawal', 'Inter', sans-serif;
+    letter-spacing: 0;
+  }
+
+  /* Improved Arabic Text Rendering */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  p, span, div, a {
+    font-family: 'Cairo', 'Tajawal', 'Inter', sans-serif;
+    letter-spacing: 0;
+  }
+
+  /* Custom scrollbar - Polished */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 5px;
+    border: 2px solid #f8f9fa;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #adb5bd;
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+@layer components {
+  /* Animation utilities for micro-interactions */
+  .animate-scale-in {
+    animation: scaleIn 150ms ease-out;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  .animate-spring-in {
+    animation: springIn 300ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  /* Focus ring for accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
+  }
+
+  /* Hover states for interactive elements */
+  .hover-lift {
+    @apply transition-transform duration-200 ease-out hover:scale-[0.98];
+  }
+  .hover-glow  {
+    @apply transition-all duration-200 ease-out hover:shadow-lg;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.98);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+@keyframes springIn {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Typography utilities */
+  .text-gradient {
+    background: var(--color-primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Shadow utilities */
+  .shadow-soft {
+    box-shadow: 0 2px 8px rgba(0, 157, 99, 0.08);
+  }
+
+  .shadow-medium {
+    box-shadow: 0 4px 16px rgba(0, 157, 99, 0.12);
+  }
+
+  .shadow-strong {
+    box-shadow: 0 8px 24px rgba(0, 157, 99, 0.16);
   }
 }
 

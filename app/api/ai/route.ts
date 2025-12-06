@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       const genAI = new GoogleGenerativeAI(geminiApiKey)
       const geminiModel = genAI.getGenerativeModel({ model: 'gemini-pro' })
       
-      const prompt = `You are a medical assistant for Al-Himam Medical Center in Jeddah, Saudi Arabia. 
+      const prompt = `You are a medical assistant for مركز الهمم (Alhimam Center) in Jeddah, Saudi Arabia. 
       Respond in Arabic and English as needed. Be professional, helpful, and empathetic.
       User message: ${message}`
       
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         messages: [
           {
             role: 'system',
-            content: 'You are a medical assistant for Al-Himam Medical Center in Jeddah, Saudi Arabia. Respond in Arabic and English as needed. Be professional, helpful, and empathetic.'
+            content: 'You are a medical assistant for مركز الهمم (Alhimam Center) in Jeddah, Saudi Arabia. Respond in Arabic and English as needed. Be professional, helpful, and empathetic.'
           },
           {
             role: 'user',

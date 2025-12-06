@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
+import Header from '../../../components/Header'
+import Footer from '../../../components/Footer'
 import { supabase } from '@/lib/supabase'
 
 interface Patient {
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
                   onClick={() => setActiveTab('patients')}
                   className={`px-6 py-3 text-sm font-medium border-b-2 ${
                     activeTab === 'patients'
-                      ? 'border-blue-500 text-blue-600'
+                      ? 'border-primary text-primary'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
                   onClick={() => setActiveTab('specialists')}
                   className={`px-6 py-3 text-sm font-medium border-b-2 ${
                     activeTab === 'specialists'
-                      ? 'border-blue-500 text-blue-600'
+                      ? 'border-primary text-primary'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
                   onClick={() => setActiveTab('cms')}
                   className={`px-6 py-3 text-sm font-medium border-b-2 ${
                     activeTab === 'cms'
-                      ? 'border-blue-500 text-blue-600'
+                      ? 'border-primary text-primary'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
             <div className="p-6">
               {loading ? (
                 <div className="text-center py-12">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   <p className="mt-4 text-gray-500">جاري التحميل...</p>
                 </div>
               ) : (
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.phone}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.nationality}</td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-primary-light text-primary">
                                   {patient.status}
                                 </span>
                               </td>
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
                       {specialists.map((specialist) => (
                         <div key={specialist.id} className="border border-gray-200 rounded-lg p-4">
                           <h3 className="text-lg font-semibold mb-2">{specialist.name}</h3>
-                          <p className="text-blue-600 mb-2">{specialist.specialty}</p>
+                          <p className="text-primary mb-2">{specialist.specialty}</p>
                           <p className="text-sm text-gray-600 mb-1">الجنسية: {specialist.nationality}</p>
                           <p className="text-sm text-gray-600">البريد: {specialist.email}</p>
                         </div>

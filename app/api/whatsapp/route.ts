@@ -68,8 +68,8 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Helper function to send WhatsApp message
-export async function sendWhatsAppMessage(to: string, message: string) {
+// Helper function to send WhatsApp message (internal use only)
+async function sendWhatsAppMessage(to: string, message: string) {
   if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
     throw new Error('WhatsApp API not configured')
   }

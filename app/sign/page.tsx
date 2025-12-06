@@ -2,8 +2,8 @@
 
 import { useRef, useEffect, useState } from 'react'
 import type SignaturePad from 'signature_pad'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
+import Header from '../../components/Header'
+import Footer from '../../components/Footer'
 
 export default function SignaturePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -114,7 +114,7 @@ export default function SignaturePage() {
               <button
                 onClick={handleSave}
                 disabled={isSubmitting}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'جاري الحفظ...' : 'حفظ التوقيع'}
               </button>
@@ -132,9 +132,9 @@ export default function SignaturePage() {
               </div>
             )}
 
-            <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold mb-2 text-blue-900">معلومات مهمة:</h3>
-              <ul className="list-disc list-inside space-y-1 text-sm text-blue-800">
+            <div className="mt-8 p-4 bg-primary-light rounded-lg">
+              <h3 className="font-semibold mb-2 text-primary-dark">معلومات مهمة:</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-primary-dark">
                 <li>التوقيع الإلكتروني له نفس القوة القانونية للتوقيع اليدوي</li>
                 <li>سيتم حفظ التوقيع بشكل آمن ومشفر</li>
                 <li>يمكنك مراجعة التوقيع قبل الحفظ</li>
