@@ -28,8 +28,8 @@ import { whatsappSettingsRepository } from '@/infrastructure/supabase/repositori
  */
 export async function getSettings(): Promise<SystemSettings> {
   try {
-    // 1. Fetch General Settings
-    const { data: generalData, error } = await supabase
+// 1. Fetch General Settings
+    const { data: generalData, error } = await supabaseAdmin // Use Admin client to bypass RLS
       .from('settings')
       .select('key, value')
 
@@ -78,7 +78,7 @@ export async function getSetting(key: string, defaultValue: string = ''): Promis
       }
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin // Use Admin client
       .from('settings')
       .select('value')
       .eq('key', key)
