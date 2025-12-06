@@ -36,18 +36,15 @@ export async function GET(req: NextRequest) {
     const token = searchParams.get('hub.verify_token')
     const challenge = searchParams.get('hub.challenge')
 
-    // Get settings - use environment variables first for faster response during verification
-    let verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || ''
-    
-    // Try database if env var not available
-    if (!verifyToken) {
-      try {
-        const settings = await getWhatsAppSettings()
-        verifyToken = settings.verifyToken || ''
-      } catch (dbError) {
-        console.error('Database error during verification:', dbError)
-        // Continue with empty token, will fail gracefully
-      }
+    // Get settings - try database first (it's faster and more reliable)
+    let verifyToken = ''
+    try {
+      const settings = await getWhatsAppSettings()
+      verifyToken = settings.verifyToken || process.env.WHATSAPP_VERIFY_TOKEN || ''
+    } catch (dbError) {
+      console.error('Database error during verification:', dbError)
+      // Fallback to environment variable
+      verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || ''
     }
 
     // Debug logging
@@ -76,9 +73,12 @@ export async function GET(req: NextRequest) {
       })
     }
 
+    // Return plain text error (not JSON) for Meta webhook verification
     return new NextResponse('Forbidden', { 
       status: 403,
-      headers: { 'Content-Type': 'text/plain' }
+      headers: { 
+        'Content-Type': 'text/plain; charset=utf-8'
+      }
     })
   } catch (error: any) {
     console.error('Webhook verification error:', error)
