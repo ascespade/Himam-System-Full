@@ -62,7 +62,6 @@ export async function PUT(
       access_token,
       phone_number_id,
       webhook_url,
-      n8n_webhook_url,
       is_active,
     } = body
 
@@ -72,7 +71,6 @@ export async function PUT(
     if (access_token !== undefined) updates.access_token = access_token
     if (phone_number_id !== undefined) updates.phone_number_id = phone_number_id
     if (webhook_url !== undefined) updates.webhook_url = webhook_url
-    if (n8n_webhook_url !== undefined) updates.n8n_webhook_url = n8n_webhook_url
     if (is_active !== undefined) updates.is_active = is_active
 
     if (Object.keys(updates).length === 0) {

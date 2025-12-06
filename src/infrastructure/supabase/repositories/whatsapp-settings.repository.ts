@@ -6,7 +6,6 @@ export interface WhatsAppSettings {
   access_token: string
   phone_number_id: string
   webhook_url: string | null
-  n8n_webhook_url: string | null
   is_active: boolean
   created_at: string
   updated_at: string

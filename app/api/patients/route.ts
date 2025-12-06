@@ -47,18 +47,6 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error
 
-    // Optionally trigger n8n webhook for booking workflow
-    if (process.env.N8N_WEBHOOK_URL) {
-      fetch(process.env.N8N_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event: 'patient_created',
-          patient: data,
-        }),
-      }).catch(console.error)
-    }
-
     return NextResponse.json({ data, ok: true })
   } catch (error: any) {
     console.error('Patients API Error:', error)

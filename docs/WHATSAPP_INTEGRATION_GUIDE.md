@@ -1,209 +1,113 @@
-# 📘 دليل تكامل WhatsApp مع النظام
+# 📘 WhatsApp Integration Guide
 
-## ✅ ما تم إنجازه
+## Overview
 
-### 1. Workflow جديد في n8n
-- **Workflow ID**: `ZjCwW2WthPoFWXvQ`
-- **الاسم**: "AlHimam WhatsApp Integration (Database Connected)"
-- **Webhook Path**: `whatsapp-integration`
-- **Production URL**: `https://n8n-9q4d.onrender.com/webhook/whatsapp-integration`
+The Himam Enterprise AI System uses Meta WhatsApp Cloud API for patient communication, integrated with Supabase Edge Functions and AI services.
 
-**المكونات:**
-1. **Webhook Receiver**: يستقبل POST requests من النظام
-2. **Load WhatsApp Settings**: يحمّل الإعدادات من قاعدة البيانات (Supabase)
-3. **Extract Message**: يستخرج الرسالة من payload
-4. **Save Conversation**: يحفظ المحادثة في قاعدة البيانات
-5. **Send WhatsApp Reply**: يرسل رد عبر WhatsApp API
-6. **Respond to Webhook**: يرد على webhook
+## Architecture
 
-### 2. API Endpoints لإدارة الإعدادات
-
-#### GET `/api/whatsapp/settings`
-- جلب جميع الإعدادات (للمسؤولين)
-
-#### GET `/api/whatsapp/settings/active`
-- جلب الإعدادات النشطة
-
-#### POST `/api/whatsapp/settings`
-- إنشاء إعدادات جديدة
-
-#### PUT `/api/whatsapp/settings/[id]`
-- تحديث إعدادات موجودة
-
-#### DELETE `/api/whatsapp/settings/[id]`
-- حذف/تعطيل إعدادات
-
-### 3. شاشة الإعدادات
-
-**المسار**: `/dashboard/settings`
-
-**المميزات:**
-- ✅ عرض الإعدادات النشطة
-- ✅ تعديل الإعدادات
-- ✅ إنشاء إعدادات جديدة
-- ✅ تفعيل/تعطيل الإعدادات
-- ✅ حفظ الإعدادات في قاعدة البيانات
-
-**الحقول:**
-- Verify Token
-- Access Token
-- Phone Number ID
-- Webhook URL
-- n8n Webhook URL
-- Active Status
-
-### 4. التكامل مع WhatsApp API
-
-**الميزات:**
-- ✅ استقبال الرسائل من Meta
-- ✅ إرسال الرسائل عبر Meta API
-- ✅ حفظ المحادثات في قاعدة البيانات
-- ✅ استخدام الإعدادات من قاعدة البيانات (بدلاً من environment variables)
-
-## 📋 خطوات الإعداد
-
-### الخطوة 1: إعداد قاعدة البيانات
-
-1. تأكد من أن جدول `whatsapp_settings` موجود في Supabase
-2. أضف إعدادات أولية:
-
-```sql
-INSERT INTO whatsapp_settings (
-  verify_token,
-  access_token,
-  phone_number_id,
-  webhook_url,
-  n8n_webhook_url,
-  is_active
-) VALUES (
-  'your-verify-token',
-  'your-access-token',
-  'your-phone-number-id',
-  'https://your-domain.com/api/whatsapp',
-  'https://n8n-9q4d.onrender.com/webhook/whatsapp-integration',
-  true
-);
+```
+WhatsApp Message → Supabase Edge Function → AI Service → Database → Reply
 ```
 
-### الخطوة 2: إعداد Meta Developer Console
+## Setup Steps
 
-1. اذهب إلى [Meta Developer Console](https://developers.facebook.com/)
-2. اختر WhatsApp App
-3. في **Configuration** → **Webhooks**:
-   - **Callback URL**: `https://your-domain.com/api/whatsapp`
-   - **Verify Token**: نفس القيمة في قاعدة البيانات
-   - **Webhook Fields**: فعّل `messages` و `message_status`
+### 1. Meta Developer Console Setup
 
-### الخطوة 3: تفعيل n8n Workflow
+1. Go to [Meta for Developers](https://developers.facebook.com/)
+2. Create/Select WhatsApp Business App
+3. Get credentials:
+   - **Access Token** (temporary or permanent)
+   - **Phone Number ID**
+   - **App ID** and **App Secret**
 
-1. اذهب إلى: `https://n8n-9q4d.onrender.com/workflow/ZjCwW2WthPoFWXvQ`
-2. اضغط على **Toggle Switch** لتفعيل الووركفلو
-3. تأكد من أن الووركفلو **Active** ✅
+### 2. Configure Webhook
 
-### الخطوة 4: تحديث الإعدادات في النظام
+1. In Meta Developer Console → Configuration → Webhooks
+2. Set **Callback URL**: `https://[your-project-ref].supabase.co/functions/v1/whatsapp`
+3. Set **Verify Token**: (use a secure random string)
+4. Subscribe to **messages** events
+5. Click **Verify and Save**
 
-1. اذهب إلى: `/dashboard/settings`
-2. أدخل الإعدادات:
-   - **Verify Token**: من Meta Developer Console
-   - **Access Token**: من Meta Developer Console
-   - **Phone Number ID**: من Meta Developer Console
-   - **Webhook URL**: URL الخاص بـ webhook في النظام
-   - **n8n Webhook URL**: `https://n8n-9q4d.onrender.com/webhook/whatsapp-integration`
-   - **Active**: ✅
-3. اضغط **حفظ الإعدادات**
+### 3. Configure Settings in System
 
-### الخطوة 5: تحديث n8n Webhook URL في قاعدة البيانات
+1. Navigate to `/settings` page
+2. Fill in WhatsApp settings:
+   - `WHATSAPP_TOKEN` - Meta Access Token
+   - `WHATSAPP_PHONE_NUMBER_ID` - Phone Number ID
+   - `WHATSAPP_VERIFY_TOKEN` - Same as webhook verify token
+3. Save settings
 
-بعد تفعيل workflow، انسخ Production Webhook URL من n8n وأضفه في الإعدادات.
-
-## 🔄 تدفق العمل
-
-1. **المستخدم يرسل رسالة على WhatsApp**
-   ↓
-2. **Meta يرسل webhook إلى النظام** (`/api/whatsapp`)
-   ↓
-3. **النظام يرسل webhook إلى n8n** (`/webhook/whatsapp-integration`)
-   ↓
-4. **n8n Workflow:**
-   - يحمّل الإعدادات من قاعدة البيانات
-   - يستخرج الرسالة
-   - يحفظ المحادثة في قاعدة البيانات
-   - يرسل رد عبر WhatsApp API
-   ↓
-5. **المستخدم يستلم الرد على WhatsApp**
-
-## 🧪 الاختبار
-
-### اختبار 1: API Endpoints
+### 4. Deploy Edge Function
 
 ```bash
-# جلب الإعدادات النشطة
-curl https://your-domain.com/api/whatsapp/settings/active
-
-# جلب جميع الإعدادات
-curl https://your-domain.com/api/whatsapp/settings
+supabase functions deploy whatsapp
 ```
 
-### اختبار 2: n8n Workflow
+## How It Works
+
+1. **Webhook Verification (GET)**: Meta sends verification request
+2. **Message Reception (POST)**: Meta sends message payload
+3. **AI Processing**: Edge function calls AI service (Gemini/OpenAI)
+4. **Database Storage**: Conversation saved to `conversation_history`
+5. **Reply**: AI response sent back via WhatsApp API
+
+## API Endpoints
+
+### Edge Function
+- **URL**: `https://[project-ref].supabase.co/functions/v1/whatsapp`
+- **Methods**: GET (verification), POST (messages)
+
+### Settings Management
+- **GET** `/api/settings` - Get all settings
+- **POST** `/api/settings` - Update settings
+
+## Testing
+
+### Test Webhook Verification
 
 ```bash
-# اختبار webhook
-curl -X POST https://n8n-9q4d.onrender.com/webhook/whatsapp-integration \
-  -H "Content-Type: application/json" \
-  -d '{
-    "entry": [{
-      "changes": [{
-        "value": {
-          "messages": [{
-            "from": "966501234567",
-            "text": {"body": "مرحبا"},
-            "id": "test123"
-          }]
-        }
-      }]
-    }]
-  }'
+curl "https://[project-ref].supabase.co/functions/v1/whatsapp?hub.mode=subscribe&hub.verify_token=YOUR_TOKEN&hub.challenge=test123"
 ```
 
-### اختبار 3: إرسال رسالة على WhatsApp
+### Test Message Flow
 
-1. أرسل رسالة إلى رقم WhatsApp المرتبط
-2. تحقق من أن الرسالة تم حفظها في `conversation_history`
-3. تحقق من أن الرد تم إرساله
+Send a WhatsApp message to your configured number and verify:
+1. Message appears in `conversation_history` table
+2. AI response is generated
+3. Reply is sent back to user
 
-## 📝 ملاحظات مهمة
+## Troubleshooting
 
-1. **الإعدادات من قاعدة البيانات**: النظام يستخدم الإعدادات من قاعدة البيانات أولاً، ثم يلجأ إلى environment variables كـ fallback
-2. **إعداد واحد نشط فقط**: يمكن أن يكون هناك إعداد واحد نشط فقط في كل وقت
-3. **Security**: Access Token مخزن في قاعدة البيانات - تأكد من حماية قاعدة البيانات
-4. **n8n Workflow**: يجب أن يكون Active ليعمل webhook
+### Webhook Not Verified
+- Check `WHATSAPP_VERIFY_TOKEN` matches Meta console
+- Verify Edge Function is deployed
+- Check Supabase function logs
 
-## 🔧 Troubleshooting
+### Messages Not Received
+- Verify webhook is subscribed to `messages` events
+- Check Edge Function logs for errors
+- Verify phone number is connected to Meta app
 
-### المشكلة: Webhook لا يعمل
-- تحقق من أن workflow Active في n8n
-- تحقق من أن webhook URL صحيح في الإعدادات
-- تحقق من logs في n8n
+### AI Not Responding
+- Check `GEMINI_KEY` or `OPENAI_KEY` in settings
+- Verify API keys are valid
+- Check function logs for AI errors
 
-### المشكلة: الرسائل لا تُرسل
-- تحقق من Access Token في الإعدادات
-- تحقق من Phone Number ID
-- تحقق من logs في n8n
+## Security
 
-### المشكلة: الإعدادات لا تُحفظ
-- تحقق من RLS policies في Supabase
-- تحقق من أن المستخدم لديه صلاحيات الكتابة
+- ✅ Verify token prevents unauthorized webhook access
+- ✅ Service role key used only in Edge Functions (server-side)
+- ✅ RLS policies protect conversation history
+- ✅ API keys stored in Supabase settings (encrypted at rest)
 
-## 📚 الملفات المهمة
+## Files
 
-- **Workflow**: `n8n/workflow-ZjCwW2WthPoFWXvQ.json`
-- **API Routes**: 
-  - `app/api/whatsapp/route.ts`
-  - `app/api/whatsapp/settings/route.ts`
-  - `app/api/whatsapp/settings/[id]/route.ts`
-  - `app/api/whatsapp/settings/active/route.ts`
-- **Settings Page**: `app/dashboard/settings/page.tsx`
-- **Repository**: `src/infrastructure/supabase/repositories/whatsapp-settings.repository.ts`
-- **Database Migration**: `supabase/migrations/002_create_whatsapp_settings.sql`
+- **Edge Function**: `supabase/functions/whatsapp/index.ts`
+- **Settings API**: `app/api/settings/route.ts`
+- **Settings Page**: `app/settings/page.tsx`
+- **AI Service**: `src/lib/ai.ts`
 
+---
 
+**Last Updated**: 2025-01-15

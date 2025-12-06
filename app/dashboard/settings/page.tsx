@@ -10,7 +10,6 @@ interface WhatsAppSettings {
   access_token: string
   phone_number_id: string
   webhook_url: string | null
-  n8n_webhook_url: string | null
   is_active: boolean
   created_at: string
   updated_at: string
@@ -28,7 +27,6 @@ export default function SettingsPage() {
     access_token: '',
     phone_number_id: '',
     webhook_url: '',
-    n8n_webhook_url: '',
     is_active: true,
   })
 
@@ -58,7 +56,6 @@ export default function SettingsPage() {
           access_token: activeData.data.access_token || '',
           phone_number_id: activeData.data.phone_number_id || '',
           webhook_url: activeData.data.webhook_url || '',
-          n8n_webhook_url: activeData.data.n8n_webhook_url || '',
           is_active: activeData.data.is_active || false,
         })
       }
@@ -225,24 +222,6 @@ export default function SettingsPage() {
                 />
                 <p className="mt-1 text-sm text-gray-500">
                   URL الخاص بـ webhook في النظام
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="n8n_webhook_url" className="block text-sm font-medium text-gray-700 mb-2">
-                  n8n Webhook URL
-                </label>
-                <input
-                  type="url"
-                  id="n8n_webhook_url"
-                  name="n8n_webhook_url"
-                  value={formData.n8n_webhook_url}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="https://n8n-9q4d.onrender.com/webhook/whatsapp-integration"
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  URL الخاص بـ n8n workflow webhook
                 </p>
               </div>
 

@@ -1,10 +1,15 @@
+/**
+ * Signature API Route
+ * Handles digital signature storage and management
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { signature, patientId, documentId, documentType } = body
+    const { signature, patientName, sessionId, documentType } = body
 
     if (!signature) {
       return NextResponse.json(
@@ -18,8 +23,8 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(base64Data, 'base64')
 
     // Upload to Supabase Storage
-    const fileName = `signatures/${Date.now()}-${patientId || 'anonymous'}.png`
-    
+    const fileName = `signatures/${Date.now()}-${patientName || 'anonymous'}-${sessionId || 'nosession'}.png`
+
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from('documents')
       .upload(fileName, buffer, {
@@ -32,39 +37,74 @@ export async function POST(req: NextRequest) {
     }
 
     // Get public URL
-    const { data: urlData } = supabaseAdmin.storage
-      .from('documents')
-      .getPublicUrl(fileName)
+    const { data: urlData } = supabaseAdmin.storage.from('documents').getPublicUrl(fileName)
 
-    // Store signature metadata in database (you might want to create a signatures table)
-    // For now, we'll just return success
+    // Store signature metadata in database
+    const { data: signatureRecord, error: dbError } = await supabaseAdmin
+      .from('signatures')
+      .insert({
+        patient_name: patientName || 'Anonymous',
+        session_id: sessionId,
+        signature_url: urlData.publicUrl,
+        document_type: documentType || 'consent',
+      })
+      .select()
+      .single()
 
-    // Trigger n8n workflow for signature processing
-    if (process.env.N8N_WEBHOOK_URL) {
-      await fetch(process.env.N8N_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event: 'signature_received',
-          patientId,
-          documentId,
-          documentType,
-          signatureUrl: urlData.publicUrl,
-          timestamp: new Date().toISOString(),
-        }),
-      }).catch(console.error)
+    if (dbError) {
+      console.error('Error saving signature metadata:', dbError)
+      // Still return success if storage worked
     }
 
     return NextResponse.json({
-      source: 'Signature',
+      success: true,
       signatureUrl: urlData.publicUrl,
       fileName,
-      ok: true,
+      signatureRecord,
     })
   } catch (error: any) {
     console.error('Signature API Error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to save signature' },
+      {
+        success: false,
+        error: error.message || 'Failed to save signature',
+      },
+      { status: 500 }
+    )
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const searchParams = req.nextUrl.searchParams
+    const sessionId = searchParams.get('sessionId')
+    const patientName = searchParams.get('patientName')
+
+    let query = supabaseAdmin.from('signatures').select('*').order('created_at', { ascending: false })
+
+    if (sessionId) {
+      query = query.eq('session_id', sessionId)
+    }
+
+    if (patientName) {
+      query = query.ilike('patient_name', `%${patientName}%`)
+    }
+
+    const { data: signatures, error } = await query
+
+    if (error) throw error
+
+    return NextResponse.json({
+      success: true,
+      signatures: signatures || [],
+    })
+  } catch (error: any) {
+    console.error('Signature GET error:', error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message || 'Failed to fetch signatures',
+      },
       { status: 500 }
     )
   }

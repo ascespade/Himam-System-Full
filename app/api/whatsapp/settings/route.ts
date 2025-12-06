@@ -40,7 +40,6 @@ export async function POST(req: NextRequest) {
       access_token,
       phone_number_id,
       webhook_url,
-      n8n_webhook_url,
       is_active = false,
     } = body
 
@@ -63,7 +62,6 @@ export async function POST(req: NextRequest) {
       access_token,
       phone_number_id,
       webhook_url: webhook_url || null,
-      n8n_webhook_url: n8n_webhook_url || null,
       is_active,
     })
 
