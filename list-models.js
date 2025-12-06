@@ -2,7 +2,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 async function listModels() {
-  const key = 'AIzaSyCc_WMALGhROTeUyq8gW8FbCjL6LZ_ubic';
+  const key = 'AIzaSyAMCIAZAqs4RB3gJlDAskkzCLGszylvuoc';
   console.log(`Listing Models for Key: ${key}`);
 
   // Fetching models via REST directly to debug easier

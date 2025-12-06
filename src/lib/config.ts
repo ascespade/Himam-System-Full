@@ -55,7 +55,7 @@ export async function getSettings(): Promise<SystemSettings> {
 
     // EMERGENCY FALLBACK: If DB missing Gemini Key, use provided key
     if (!settings['GEMINI_KEY']) {
-       settings['GEMINI_KEY'] = 'AIzaSyCc_WMALGhROTeUyq8gW8FbCjL6LZ_ubic'
+       settings['GEMINI_KEY'] = 'AIzaSyAMCIAZAqs4RB3gJlDAskkzCLGszylvuoc'
     }
 
     return settings as SystemSettings
