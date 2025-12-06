@@ -42,10 +42,12 @@ export const HTTP_STATUS = {
 
 export const NAV_LINKS = [
   { href: '/', label: 'الرئيسية' },
-  { href: '/patients', label: 'المرضى' },
-  { href: '/dashboard/admin', label: 'لوحة التحكم' },
-  { href: '/settings', label: 'الإعدادات' },
-  { href: '/sign', label: 'التوقيع الإلكتروني' },
+  { href: '#about', label: 'من نحن' },
+  { href: '#services', label: 'خدماتنا' },
+  { href: '#team', label: 'الفريق الطبي' },
+  { href: '#community', label: 'المجتمع' },
+  { href: '#accreditation', label: 'الاعتمادات' },
+  { href: '#contact', label: 'اتصل بنا' },
 ] as const
 
 // ============================================================================
