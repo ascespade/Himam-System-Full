@@ -1,119 +1,141 @@
 'use client'
 
-import { useState } from 'react'
-import Button from '@/shared/components/ui/Button'
+import { useState, useRef, useEffect } from 'react'
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
-  const [message, setMessage] = useState('')
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [messages, setMessages] = useState<{ role: 'user' | 'bot', text: string }[]>([
+    { role: 'bot', text: 'مرحباً بك في مركز الهمم! كيف يمكنني مساعدتك اليوم؟' }
+  ])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const handleSend = async () => {
-    if (!message.trim()) return
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
 
-    const userMessage = message
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
-    setMessage('')
-    setIsLoading(true)
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, isOpen])
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim()) return
+
+    const userMsg = input
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }])
+    setInput('')
+    setLoading(true)
 
     try {
-      const response = await fetch('/api/ai', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage }),
+        body: JSON.stringify({ message: userMsg })
       })
-
-      const data = await response.json()
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response || 'عذراً، لم أتمكن من معالجة رسالتك.' }])
-    } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'حدث خطأ. يرجى المحاولة مرة أخرى.' }])
+      const data = await res.json()
+      
+      if (data.success) {
+        // Clean response same as WhatsApp
+        const cleanText = data.response.replace(/\[BOOKING_READY\][\s\S]*?}/g, '').trim()
+        setMessages(prev => [...prev, { role: 'bot', text: cleanText }])
+      } else {
+        setMessages(prev => [...prev, { role: 'bot', text: 'عذراً، حدث خطأ ما. يرجى المحاولة لاحقاً.' }])
+      }
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'bot', text: 'خطأ في الاتصال.' }])
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   return (
-    <>
+    <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start gap-4" dir="rtl">
+      {/* Search/Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-4 w-96 h-[500px] bg-white rounded-xl shadow-2xl flex flex-col z-50 border border-gray-200">
-          <div className="bg-primary text-white p-4 rounded-t-xl flex justify-between items-center">
-            <h3 className="font-semibold">المساعد الذكي</h3>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-white hover:text-white/80 transition"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.length === 0 && (
-              <p className="text-gray-500 text-center">مرحباً! كيف يمكنني مساعدتك اليوم؟</p>
-            )}
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
-                    msg.role === 'user'
-                      ? 'bg-primary text-white'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
-                  {msg.content}
-                </div>
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-80 md:w-96 h-[500px] flex flex-col overflow-hidden animate-scale-in">
+           {/* Header */}
+           <div className="bg-primary p-4 flex justify-between items-center text-white">
+              <div className="flex items-center gap-3">
+                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    🤖
+                 </div>
+                 <div>
+                    <h3 className="font-bold text-sm">المساعد الذكي</h3>
+                    <p className="text-xs text-white/80">متاح للمساعدة الفورية</p>
+                 </div>
               </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 p-3 rounded-lg">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                </div>
+              <button onClick={() => setIsOpen(false)} className="hover:bg-white/10 p-1 rounded transition-colors">
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                 </svg>
+              </button>
+           </div>
+
+           {/* Messages */}
+           <div className="flex-1 bg-gray-50 p-4 overflow-y-auto space-y-4">
+              {messages.map((msg, i) => (
+                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm leading-relaxed ${
+                       msg.role === 'user' 
+                       ? 'bg-primary text-white rounded-bl-none' 
+                       : 'bg-white text-gray-800 border border-gray-100 shadow-sm rounded-br-none'
+                    }`}>
+                       {msg.text}
+                    </div>
+                 </div>
+              ))}
+              {loading && (
+                 <div className="flex justify-start">
+                    <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-br-none shadow-sm flex gap-1">
+                       <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                       <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-100"></span>
+                       <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-200"></span>
+                    </div>
+                 </div>
+              )}
+              <div ref={messagesEndRef} />
+           </div>
+
+           {/* Input */}
+           <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-100">
+              <div className="flex gap-2">
+                 <input 
+                   value={input}
+                   onChange={e => setInput(e.target.value)}
+                   className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                   placeholder="اكتب رسالتك..."
+                 />
+                 <button 
+                   type="submit" 
+                   disabled={loading || !input.trim()}
+                   className="bg-primary text-white p-2 rounded-full hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                 >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 rotate-180" viewBox="0 0 20 20" fill="currentColor">
+                       <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                 </button>
               </div>
-            )}
-          </div>
-          <div className="p-4 border-t flex gap-2">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="اكتب رسالتك..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-            <Button
-              onClick={handleSend}
-              disabled={isLoading || !message.trim()}
-              size="sm"
-            >
-              إرسال
-            </Button>
-          </div>
+           </form>
         </div>
       )}
 
-      <button
+      {/* Launcher Button */}
+      <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg hover:bg-primary-hover transition flex items-center justify-center z-40"
+        className="h-14 w-14 bg-primary hover:bg-primary-dark text-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center group"
       >
         {isOpen ? (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+           </svg>
         ) : (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
+           <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+           </svg>
         )}
       </button>
-    </>
+    </div>
   )
 }
