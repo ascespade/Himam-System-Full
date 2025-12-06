@@ -13,6 +13,8 @@ export interface AIResponse {
   error?: string
 }
 
+import { sendTextMessage } from './whatsapp-messaging'
+
 /**
  * Ask AI a question with automatic fallback
  * @param prompt - The question/prompt to send to AI
@@ -21,6 +23,19 @@ export interface AIResponse {
  */
 export async function askAI(prompt: string, context?: string): Promise<AIResponse> {
   const settings = await getSettings()
+  const ADMIN_PHONE = '966581421483'
+
+  // Validation Check
+  if (!settings.GEMINI_KEY && !settings.OPENAI_KEY) {
+     const msg = 'CRITICAL: No AI API Keys found in Database Settings table.'
+     console.error(msg)
+     await sendTextMessage(ADMIN_PHONE, `⚠️ System Alert:\n${msg}`) // Alert Admin
+     return {
+        text: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً.',
+        model: 'openai',
+        error: 'No AI service configured',
+      }
+  }
 
   // Try Gemini first (primary)
   if (settings.GEMINI_KEY) {
@@ -41,6 +56,7 @@ export async function askAI(prompt: string, context?: string): Promise<AIRespons
       }
     } catch (error: any) {
       console.error('Gemini API error:', error)
+      await sendTextMessage(ADMIN_PHONE, `⚠️ Gemini Error:\n${error.message || error}`) // Alert Admin
       // Fall through to OpenAI fallback
     }
   }
@@ -81,6 +97,7 @@ export async function askAI(prompt: string, context?: string): Promise<AIRespons
       }
     } catch (error: any) {
       console.error('OpenAI API error:', error)
+      await sendTextMessage(ADMIN_PHONE, `⚠️ OpenAI Error (Fallback Failed):\n${error.message}`) // Alert Admin
       return {
         text: 'عذراً، لا يمكنني الرد في الوقت الحالي. يرجى المحاولة لاحقاً.',
         model: 'openai',
@@ -89,8 +106,8 @@ export async function askAI(prompt: string, context?: string): Promise<AIRespons
     }
   }
 
-  // No AI service configured
-  return {
+  // No AI service configured (or Gemini failed and no OpenAI)
+   return {
     text: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً.',
     model: 'openai',
     error: 'No AI service configured',
