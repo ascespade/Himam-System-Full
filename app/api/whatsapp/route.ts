@@ -110,21 +110,28 @@ export async function POST(req: NextRequest) {
           } else if (interactiveResponse.type === 'list_reply' && interactiveResponse.list_reply) {
             text = interactiveResponse.list_reply.title || ''
           }
-        } else if (message.type === 'image' || message.type === 'document') {
+        } else if (message.type === 'image' || message.type === 'document' || message.type === 'audio' || message.type === 'location') {
           // Handle media messages
-          // Since AI currently processes text, we acknowledge receipt and notify user
-          const mediaType = message.type === 'image' ? 'الصورة' : 'الملف'
-          await sendTextMessage(from || '', `شكراً لك! تم استلام ${mediaType}. سيقوم أحد موظفينا بمراجعته قريباً.`)
+          const mediaTypeMap: Record<string, string> = {
+             image: 'صورة',
+             document: 'ملف',
+             audio: 'تسجيل صوتي',
+             location: 'موقع جغرافي'
+          }
+          const mediaType = mediaTypeMap[message.type] || 'ملف'
           
-          // Log media message
-          await supabaseAdmin.from('conversation_history').insert({
+          // Set text so AI knows about it
+          text = `[User sent a ${message.type.toUpperCase()}]`
+          
+          await sendTextMessage(from || '', `تم استلام ${mediaType}. جاري المعالجة...`)
+          
+          // Log explicitly
+           await supabaseAdmin.from('conversation_history').insert({
             user_phone: from,
             user_message: `[${message.type.toUpperCase()}] ID: ${message[message.type]?.id || 'unknown'}`,
-            ai_response: `تم استلام ${mediaType} بنجاح.`,
+            ai_response: 'System: Media received', // Temporary placeholder, real AI response comes later
             session_id: messageId || undefined,
           })
-          
-          return NextResponse.json(successResponse({ messageId, action: 'media_received' }))
         }
 
         if (!text || !from) {
