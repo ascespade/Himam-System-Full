@@ -3,16 +3,20 @@ import { whatsappSettingsRepository } from '@/src/infrastructure/supabase/reposi
 
 // Get settings from database (with fallback to environment variables)
 async function getWhatsAppSettings() {
-  // Try database first
-  const dbSettings = await whatsappSettingsRepository.getActiveSettings()
-  
-  if (dbSettings) {
-    return {
-      verifyToken: dbSettings.verify_token,
-      accessToken: dbSettings.access_token,
-      phoneNumberId: dbSettings.phone_number_id,
-      n8nWebhookUrl: dbSettings.n8n_webhook_url,
+  try {
+    // Try database first
+    const dbSettings = await whatsappSettingsRepository.getActiveSettings()
+    
+    if (dbSettings && dbSettings.verify_token) {
+      return {
+        verifyToken: dbSettings.verify_token,
+        accessToken: dbSettings.access_token,
+        phoneNumberId: dbSettings.phone_number_id,
+        n8nWebhookUrl: dbSettings.n8n_webhook_url,
+      }
     }
+  } catch (error) {
+    console.error('Error fetching WhatsApp settings from database:', error)
   }
 
   // Fallback to environment variables (for backward compatibility)
@@ -40,10 +44,13 @@ export async function GET(req: NextRequest) {
       token: token ? '***' : 'missing',
       expectedToken: settings.verifyToken ? '***' : 'missing',
       challenge,
-      source: settings.verifyToken ? 'database' : 'env'
+      tokenMatch: token === settings.verifyToken,
+      tokenLength: token?.length,
+      expectedLength: settings.verifyToken?.length
     })
 
-    if (mode === 'subscribe' && token === settings.verifyToken) {
+    // Check if mode and token match
+    if (mode === 'subscribe' && token && settings.verifyToken && token === settings.verifyToken) {
       if (!challenge) {
         return NextResponse.json({ error: 'Challenge missing' }, { status: 400 })
       }
