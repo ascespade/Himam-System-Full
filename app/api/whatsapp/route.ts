@@ -1,47 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/src/lib/supabase'
+import { whatsappSettingsRepository } from '@/src/infrastructure/supabase/repositories/whatsapp-settings.repository'
 
-const WHATSAPP_VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
-const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN
-const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID
+// Get settings from database (with fallback to environment variables)
+async function getWhatsAppSettings() {
+  // Try database first
+  const dbSettings = await whatsappSettingsRepository.getActiveSettings()
+  
+  if (dbSettings) {
+    return {
+      verifyToken: dbSettings.verify_token,
+      accessToken: dbSettings.access_token,
+      phoneNumberId: dbSettings.phone_number_id,
+      n8nWebhookUrl: dbSettings.n8n_webhook_url,
+    }
+  }
+
+  // Fallback to environment variables (for backward compatibility)
+  return {
+    verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
+    accessToken: process.env.WHATSAPP_ACCESS_TOKEN || '',
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+    n8nWebhookUrl: process.env.N8N_WEBHOOK_URL || null,
+  }
+}
 
 // Webhook verification (GET)
 export async function GET(req: NextRequest) {
-  const searchParams = req.nextUrl.searchParams
-  const mode = searchParams.get('hub.mode')
-  const token = searchParams.get('hub.verify_token')
-  const challenge = searchParams.get('hub.challenge')
+  try {
+    const searchParams = req.nextUrl.searchParams
+    const mode = searchParams.get('hub.mode')
+    const token = searchParams.get('hub.verify_token')
+    const challenge = searchParams.get('hub.challenge')
 
-  // Debug logging (remove in production if needed)
-  console.log('Webhook verification request:', {
-    mode,
-    token: token ? '***' : 'missing',
-    expectedToken: WHATSAPP_VERIFY_TOKEN ? '***' : 'missing',
-    challenge
-  })
+    const settings = await getWhatsAppSettings()
 
-  if (mode === 'subscribe' && token === WHATSAPP_VERIFY_TOKEN) {
-    if (!challenge) {
-      return NextResponse.json({ error: 'Challenge missing' }, { status: 400 })
-    }
-    return new NextResponse(challenge, { 
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain'
-      }
+    // Debug logging
+    console.log('Webhook verification request:', {
+      mode,
+      token: token ? '***' : 'missing',
+      expectedToken: settings.verifyToken ? '***' : 'missing',
+      challenge,
+      source: settings.verifyToken ? 'database' : 'env'
     })
-  }
 
-  return NextResponse.json({ 
-    error: 'Forbidden',
-    message: 'Invalid verify token or mode'
-  }, { status: 403 })
+    if (mode === 'subscribe' && token === settings.verifyToken) {
+      if (!challenge) {
+        return NextResponse.json({ error: 'Challenge missing' }, { status: 400 })
+      }
+      return new NextResponse(challenge, { 
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain'
+        }
+      })
+    }
+
+    return NextResponse.json({ 
+      error: 'Forbidden',
+      message: 'Invalid verify token or mode'
+    }, { status: 403 })
+  } catch (error: any) {
+    console.error('Webhook verification error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
 }
 
 // Webhook handler (POST)
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
+    const settings = await getWhatsAppSettings()
 
     // Handle WhatsApp webhook events
     if (body.object === 'whatsapp_business_account') {
@@ -56,8 +87,9 @@ export async function POST(req: NextRequest) {
 
         // Store message in database or process it
         // This could trigger n8n workflow for automated responses
-        if (process.env.N8N_WEBHOOK_URL) {
-          await fetch(process.env.N8N_WEBHOOK_URL, {
+        const n8nUrl = settings.n8nWebhookUrl || process.env.N8N_WEBHOOK_URL
+        if (n8nUrl) {
+          await fetch(n8nUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -88,17 +120,19 @@ export async function POST(req: NextRequest) {
 }
 
 // Helper function to send WhatsApp message (internal use only)
-async function sendWhatsAppMessage(to: string, message: string) {
-  if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+export async function sendWhatsAppMessage(to: string, message: string) {
+  const settings = await getWhatsAppSettings()
+  
+  if (!settings.accessToken || !settings.phoneNumberId) {
     throw new Error('WhatsApp API not configured')
   }
 
   const response = await fetch(
-    `https://graph.facebook.com/v18.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+    `https://graph.facebook.com/v18.0/${settings.phoneNumberId}/messages`,
     {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+        'Authorization': `Bearer ${settings.accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
