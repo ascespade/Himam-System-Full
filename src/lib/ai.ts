@@ -129,7 +129,8 @@ export async function askAI(prompt: string, context?: string): Promise<AIRespons
 export async function generateWhatsAppResponse(
   userPhone: string,
   userMessage: string,
-  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
+  patientName?: string
 ): Promise<AIResponse> {
   const systemPrompt = `أنت مساعد ذكي لمركز الهمم الطبي في جدة، المملكة العربية السعودية.
 
@@ -180,6 +181,10 @@ export async function generateWhatsAppResponse(
 - في حالة الطوارئ، انصح بالاتصال فوراً أو زيارة أقرب مستشفى`
 
   let prompt = systemPrompt
+
+  if (patientName) {
+     prompt += `\n\n[SYSTEM INFO]: The user is a registered patient named "${patientName}". Welcome them back by name. You do NOT need to ask for their name/phone again.`
+  }
 
   // Add conversation history if available
   if (conversationHistory && conversationHistory.length > 0) {

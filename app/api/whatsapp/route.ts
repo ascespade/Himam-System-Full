@@ -187,23 +187,31 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Get conversation history for context
+        // Fetch conversation history
         const { data: history } = await supabaseAdmin
           .from('conversation_history')
           .select('user_message, ai_response')
           .eq('user_phone', from)
           .order('created_at', { ascending: false })
-          .limit(10)
+          .limit(5) // Get last 5 exchanges
 
-        const conversationHistory = history
-          ?.reverse()
-          .flatMap((h) => [
-            { role: 'user' as const, content: h.user_message },
-            { role: 'assistant' as const, content: h.ai_response },
-          ]) || []
+        // Fetch Patient Profile (Memory)
+        const { data: patientProfile } = await supabaseAdmin
+           .from('patients')
+           .select('name')
+           .eq('phone', from)
+           .single()
 
-        // Generate AI response
-        const aiResponse = await generateWhatsAppResponse(from, text, conversationHistory)
+        // Format history for AI
+        const formattedHistory = history
+          ? history.reverse().flatMap((h: any) => [
+              { role: 'user' as const, content: h.user_message },
+              { role: 'assistant' as const, content: h.ai_response },
+            ])
+          : []
+
+        // Generate AI response with Patient Context
+        const aiResponse = await generateWhatsAppResponse(from, text, formattedHistory, patientProfile?.name)
 
         // Save conversation to database
         await supabaseAdmin.from('conversation_history').insert({
