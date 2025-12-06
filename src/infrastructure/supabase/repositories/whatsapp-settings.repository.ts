@@ -112,3 +112,4 @@ export class WhatsAppSettingsRepository {
 
 export const whatsappSettingsRepository = new WhatsAppSettingsRepository()
 
+

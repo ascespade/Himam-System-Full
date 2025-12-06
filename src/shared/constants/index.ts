@@ -25,6 +25,7 @@ export const NAV_LINKS = [
   { href: '/', label: 'الرئيسية' },
   { href: '/patients', label: 'المرضى' },
   { href: '/dashboard/admin', label: 'لوحة التحكم' },
+  { href: '/dashboard/settings', label: 'الإعدادات' },
   { href: '/sign', label: 'التوقيع الإلكتروني' }
 ] as const
 

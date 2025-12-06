@@ -1,0 +1,410 @@
+{
+  "name": "AlHimam WhatsApp AI (Learning + Quality)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alhimam-ai-bot",
+        "responseMode": "onReceived",
+        "responseData": "noData",
+        "onError": "continueRegularOutput"
+      },
+      "name": "Webhook Receiver",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        200,
+        300
+      ],
+      "id": "c65b11a6-ec46-4fa0-8c54-9013adb7220a"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "config",
+        "tableId": "config"
+      },
+      "name": "Load Config",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Supabase_Config",
+          "name": "Supabase Config"
+        }
+      },
+      "id": "20527db8-d7c3-44a0-8a15-7fa903b4be23"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = {};\nfor (const r of ($json.data||[])) cfg[r.key]=r.value;\nreturn [{config:cfg}];"
+      },
+      "name": "Parse Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        300
+      ],
+      "id": "1ffa198f-38d0-468e-b17b-308ce8ec72a6"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body=$json.body||$json;const msg=body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]||{};\nreturn [{text:msg.text?.body||'',from:(msg.from||'').replace(/[^0-9]/g,''),sessionId:(msg.from||'default')}];"
+      },
+      "name": "Extract Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        300
+      ],
+      "id": "e8c25e43-6611-49bb-8b86-9a18acf8fff3"
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "getAll",
+        "schema": "public",
+        "table": "conversation_history",
+        "tableId": "conversation_history",
+        "filters": {
+          "match": {
+            "user_phone": "={{$json.from}}"
+          }
+        },
+        "options": {
+          "limit": 5,
+          "order": "desc"
+        }
+      },
+      "name": "Load Memory",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Supabase_Config",
+          "name": "Supabase Config"
+        }
+      },
+      "id": "57869bda-2e2f-4e61-9dbe-18a513fa1370"
+    },
+    {
+      "parameters": {
+        "jsCode": "const h=$json.data||[];let ctx='';for(const m of h.reverse()){ctx+=`User: ${m.user_message}\\nAssistant: ${m.ai_response}\\n`;}\nconst msg=$json.text||'No message';return[{from:$json.from,sessionId:$json.sessionId,user_message:msg,prompt:`${ctx}\\nUser: ${msg}\\nAssistant:`}];"
+      },
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        300
+      ],
+      "id": "6313840e-f092-434b-a250-91b38b74fd07"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "text": "={{$json.prompt}}"
+      },
+      "name": "Gemini Response",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        300
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Gemini_Key",
+          "name": "Gemini Key"
+        }
+      },
+      "id": "17cb1961-eff7-4ee1-b259-c85cd2cf6e42"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ai=$json.text||$json.output||'تعذر توليد رد.';return[{ai_response:ai,user_message:$json.user_message,from:$json.from,sessionId:$json.sessionId}];"
+      },
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        300
+      ],
+      "id": "95dc528d-d43a-4ef9-854a-6ced3dd57095"
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "create",
+        "schema": "public",
+        "table": "conversation_history",
+        "tableId": "conversation_history",
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "session_id",
+              "fieldValue": "={{$json.sessionId}}"
+            },
+            {
+              "fieldId": "user_phone",
+              "fieldValue": "={{$json.from}}"
+            },
+            {
+              "fieldId": "user_message",
+              "fieldValue": "={{$json.user_message}}"
+            },
+            {
+              "fieldId": "ai_response",
+              "fieldValue": "={{$json.ai_response}}"
+            }
+          ]
+        }
+      },
+      "name": "Save Conversation",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Supabase_Config",
+          "name": "Supabase Config"
+        }
+      },
+      "id": "edf554fa-bb93-4121-a4e5-ca5288a1155d"
+    },
+    {
+      "parameters": {
+        "url": "={{'https://graph.facebook.com/v20.0/' + $('Parse Config').item.json.config.WHATSAPP_PHONE_NUMBER_ID + '/messages'}}",
+        "method": "POST",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "WhatsApp_API_Token",
+        "responseFormat": "json",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\"messaging_product\":\"whatsapp\",\"to\":\"{{$json.from}}\",\"type\":\"text\",\"text\":{\"body\":\"{{$json.ai_response}}\"}}",
+        "onError": "continueRegularOutput"
+      },
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2000,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "WhatsApp_API_Token",
+          "name": "WhatsApp API Token"
+        }
+      },
+      "id": "46d746ca-badf-44f2-8fa1-d729fdc5675b"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "text": "={{'قيّم جودة الرد التالي بين 1 و 5 بناءً على دقته ووضوحه فقط: '+$json.ai_response}}"
+      },
+      "name": "Quality Evaluator",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2200,
+        300
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Gemini_Key",
+          "name": "Gemini Key"
+        }
+      },
+      "id": "272e317d-d58c-4b97-99aa-308df2453903"
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "create",
+        "schema": "public",
+        "table": "knowledge_base",
+        "tableId": "knowledge_base",
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "question",
+              "fieldValue": "={{$json.user_message}}"
+            },
+            {
+              "fieldId": "answer",
+              "fieldValue": "={{$json.ai_response}}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "conversation"
+            },
+            {
+              "fieldId": "quality_score",
+              "fieldValue": "={{$json.text}}"
+            }
+          ]
+        }
+      },
+      "name": "Self Learning Save",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2400,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Supabase_Config",
+          "name": "Supabase Config"
+        }
+      },
+      "id": "fd50da45-c878-4a52-9d71-6f0fd8c2bbdd"
+    }
+  ],
+  "connections": {
+    "Webhook Receiver": {
+      "main": [
+        [
+          {
+            "node": "Load Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Config": {
+      "main": [
+        [
+          {
+            "node": "Parse Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Config": {
+      "main": [
+        [
+          {
+            "node": "Extract Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message": {
+      "main": [
+        [
+          {
+            "node": "Load Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Memory": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Gemini Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Response": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Save Conversation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Conversation": {
+      "main": [
+        [
+          {
+            "node": "Quality Evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Reply": {
+      "main": [
+        []
+      ]
+    },
+    "Quality Evaluator": {
+      "main": [
+        [
+          {
+            "node": "Self Learning Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Self Learning Save": {
+      "main": [
+        []
+      ]
+    }
+  }
