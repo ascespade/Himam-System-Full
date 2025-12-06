@@ -121,7 +121,28 @@ module.exports = {
         'elevation-2': '0 4px 16px rgba(0, 0, 0, 0.3)',
         'elevation-3': '0 8px 24px rgba(0, 0, 0, 0.3)',
       },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
+        fadeInUp: {
+            '0%': { opacity: '0', transform: 'translateY(20px)' },
+            '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        scaleIn: {
+            '0%': { transform: 'scale(0.9)', opacity: 0 },
+            '100%': { transform: 'scale(1)', opacity: 1 }
+        },
+        pulseGlow: {
+            '0%, 100%': { opacity: 1, filter: 'brightness(1)' },
+            '50%': { opacity: 0.8, filter: 'brightness(1.5)' } 
+        }
+      },
       animation: {
+        float: 'float 6s ease-in-out infinite',
+        'float-delayed': 'float 6s ease-in-out 3s infinite',
+        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
         "scale-in": "scaleIn 150ms ease-out",
         "pulse-glow": "pulseGlow 2s ease-in-out infinite",
         "shimmer": "shimmer 1.5s ease-in-out infinite",
