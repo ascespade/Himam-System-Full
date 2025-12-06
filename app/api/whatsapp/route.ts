@@ -12,11 +12,30 @@ export async function GET(req: NextRequest) {
   const token = searchParams.get('hub.verify_token')
   const challenge = searchParams.get('hub.challenge')
 
+  // Debug logging (remove in production if needed)
+  console.log('Webhook verification request:', {
+    mode,
+    token: token ? '***' : 'missing',
+    expectedToken: WHATSAPP_VERIFY_TOKEN ? '***' : 'missing',
+    challenge
+  })
+
   if (mode === 'subscribe' && token === WHATSAPP_VERIFY_TOKEN) {
-    return new NextResponse(challenge, { status: 200 })
+    if (!challenge) {
+      return NextResponse.json({ error: 'Challenge missing' }, { status: 400 })
+    }
+    return new NextResponse(challenge, { 
+      status: 200,
+      headers: {
+        'Content-Type': 'text/plain'
+      }
+    })
   }
 
-  return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  return NextResponse.json({ 
+    error: 'Forbidden',
+    message: 'Invalid verify token or mode'
+  }, { status: 403 })
 }
 
 // Webhook handler (POST)
