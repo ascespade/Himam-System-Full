@@ -23,10 +23,15 @@ import { sendTextMessage } from './whatsapp-messaging'
  */
 export async function askAI(prompt: string, context?: string): Promise<AIResponse> {
   const settings = await getSettings()
+  
+  // FAILSAFE: Check Environment Variables if DB is empty
+  const GEMINI_KEY = settings.GEMINI_KEY || process.env.GEMINI_KEY
+  const OPENAI_KEY = settings.OPENAI_KEY || process.env.OPENAI_KEY
+
   const ADMIN_PHONE = '966581421483'
 
   // Validation Check
-  if (!settings.GEMINI_KEY && !settings.OPENAI_KEY) {
+  if (!GEMINI_KEY && !OPENAI_KEY) {
      const msg = 'CRITICAL: No AI API Keys found in Database Settings table.'
      console.error(msg)
      await sendTextMessage(ADMIN_PHONE, `⚠️ System Alert:\n${msg}`) // Alert Admin
@@ -38,9 +43,9 @@ export async function askAI(prompt: string, context?: string): Promise<AIRespons
   }
 
   // Try Gemini first (primary)
-  if (settings.GEMINI_KEY) {
+  if (GEMINI_KEY) {
     try {
-      const genAI = new GoogleGenerativeAI(settings.GEMINI_KEY)
+      const genAI = new GoogleGenerativeAI(GEMINI_KEY)
       const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
       const fullPrompt = context
@@ -62,9 +67,9 @@ export async function askAI(prompt: string, context?: string): Promise<AIRespons
   }
 
   // Fallback to OpenAI
-  if (settings.OPENAI_KEY) {
+  if (OPENAI_KEY) {
     try {
-      const openai = new OpenAI({ apiKey: settings.OPENAI_KEY })
+      const openai = new OpenAI({ apiKey: OPENAI_KEY })
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
