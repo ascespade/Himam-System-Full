@@ -20,7 +20,6 @@ import {
   sendButtonMessage,
   sendCenterLocation,
   sendDocumentMessage,
-  sendDocumentMessage,
   sendTemplateMessage,
   sendAudioMessage
 } from '@/lib/whatsapp-messaging'
