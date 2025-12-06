@@ -5,35 +5,42 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { askAI } from '@/lib/ai'
+import { successResponse, errorResponse, parseRequestBody, validateRequestBody } from '@/shared/utils/api'
+import { HTTP_STATUS } from '@/shared/constants'
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, context } = await req.json()
-
-    if (!message) {
+    const body = await parseRequestBody<{ message: string; context?: string }>(req)
+    
+    const validation = validateRequestBody(body, ['message'])
+    if (!validation.isValid) {
       return NextResponse.json(
-        { error: 'Message is required' },
-        { status: 400 }
+        errorResponse(validation.errors.join(', ')),
+        { status: HTTP_STATUS.BAD_REQUEST }
       )
     }
 
-    const response = await askAI(message, context)
+    const response = await askAI(body.message, body.context)
 
-    return NextResponse.json({
-      success: true,
-      source: 'AI',
-      model: response.model,
-      response: response.text,
-      error: response.error,
-    })
-  } catch (error: any) {
+    if (response.error) {
+      return NextResponse.json(
+        errorResponse(response.error),
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      )
+    }
+
+    return NextResponse.json(
+      successResponse({
+        source: 'AI',
+        model: response.model,
+        response: response.text,
+      })
+    )
+  } catch (error) {
     console.error('AI API Error:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to process AI request',
-      },
-      { status: 500 }
+      errorResponse(error),
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
 }

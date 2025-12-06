@@ -6,61 +6,59 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSettings, updateSettings } from '@/lib/config'
 import { supabaseAdmin } from '@/lib'
+import { successResponse, errorResponse, parseRequestBody } from '@/shared/utils/api'
+import { HTTP_STATUS, SUCCESS_MESSAGES } from '@/shared/constants'
+import type { SystemSetting } from '@/shared/types'
 
 export async function GET() {
   try {
     const { data: settings, error } = await supabaseAdmin
       .from('settings')
-      .select('key, value, description')
+      .select('key, value, description, updated_at')
       .order('key')
 
     if (error) throw error
 
-    return NextResponse.json({
-      success: true,
-      settings: settings || [],
-    })
-  } catch (error: any) {
+    return NextResponse.json(
+      successResponse<SystemSetting[]>(settings || [])
+    )
+  } catch (error) {
     console.error('Error fetching settings:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to fetch settings',
-      },
-      { status: 500 }
+      errorResponse(error),
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const settings = body as Record<string, string>
+    const body = await parseRequestBody<Record<string, string>>(req)
 
-    const success = await updateSettings(settings)
-
-    if (!success) {
+    if (!body || Object.keys(body).length === 0) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to update settings',
-        },
-        { status: 500 }
+        errorResponse('Settings object is required'),
+        { status: HTTP_STATUS.BAD_REQUEST }
       )
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Settings updated successfully',
-    })
-  } catch (error: any) {
+    const success = await updateSettings(body)
+
+    if (!success) {
+      return NextResponse.json(
+        errorResponse('Failed to update settings'),
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      )
+    }
+
+    return NextResponse.json(
+      successResponse(null, SUCCESS_MESSAGES.UPDATED)
+    )
+  } catch (error) {
     console.error('Error updating settings:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to update settings',
-      },
-      { status: 500 }
+      errorResponse(error),
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
 }

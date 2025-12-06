@@ -1,10 +1,17 @@
 /**
- * Centralized exports for shared directory
- * Use: import { NAV_LINKS, SERVICES, Specialist, cn, formatDate } from '@/shared'
+ * Centralized Shared Exports
+ * Main entry point for all shared utilities, types, and constants
  */
 
-export * from './constants'
+// Types
 export * from './types'
-export * from './utils'
-export * from './components'
 
+// Constants
+export * from './constants'
+
+// Utilities
+export * from './utils'
+export * from './utils/api'
+
+// Components (if any shared components)
+export * from './components'
