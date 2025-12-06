@@ -1,0 +1,396 @@
+{
+  "name": "WhatsApp Bot - مركز الهمم (Final Fixed)",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [-1264, 864],
+      "id": "c79cf424-3ee1-4d2e-88dc-24ee2961f44d",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "loZTSuo6IMkCcOj3",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "whatsapp-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "2ef2b425-65a2-499d-b7f9-4f8781eab279",
+      "name": "WhatsApp Webhook Verification",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-2048, 0],
+      "webhookId": "whatsapp-business-verification"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verify webhook token for Facebook\nconst query = $input.item.json.query || {};\nconst mode = query['hub.mode'];\nconst token = query['hub.verify_token'];\nconst challenge = query['hub.challenge'];\n\n// Your verify token (should match Facebook app)\nconst VERIFY_TOKEN = 'my-secret-token';\n\nif (mode === 'subscribe' && token === VERIFY_TOKEN) {\n  return {\n    json: {\n      challenge: challenge,\n      verified: true\n    }\n  };\n}\n\n// Always return challenge (even if not verified) for Facebook\nreturn {\n  json: {\n    challenge: challenge || 'ok',\n    verified: false\n  }\n};"
+      },
+      "id": "56533bd8-8f5b-4a27-b391-1c12ee070a03",
+      "name": "Verify Webhook Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1824, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('WhatsApp Webhook Verification').item.json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "be307ad7-24bb-4c60-8c1f-0bc16a517f9c",
+      "name": "Respond Verification",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-1600, 0]
+    },
+    {
+      "parameters": {
+        "updates": ["messages"],
+        "options": {}
+      },
+      "id": "1c975d7b-faab-498d-994e-d87c5588eb56",
+      "name": "WhatsApp Trigger",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "position": [-2048, 432],
+      "webhookId": "857366e8-7b6f-45a7-bbd1-f876002620d7",
+      "typeVersion": 1,
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "JTmbvM53tlueGFzr",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Professional WhatsApp Message Extraction with Validation\nconst body = $json.body || $json || {};\n\n// Extract from WhatsApp webhook format\nconst entry = body?.entry?.[0];\nconst changes = entry?.changes?.[0];\nconst value = changes?.value;\nconst message = value?.messages?.[0];\n\n// Extract message text (handle multiple formats)\nlet text = '';\nif (message?.text?.body) {\n  text = message.text.body.trim();\n} else if (message?.body?.text) {\n  text = message.body.text.trim();\n} else if (typeof body.text === 'string') {\n  text = body.text.trim();\n}\n\n// Extract phone number (handle multiple formats)\nlet from = '';\nif (message?.from) {\n  from = message.from.replace(/[^0-9]/g, ''); // Clean phone number\n} else if (value?.contacts?.[0]?.wa_id) {\n  from = value.contacts[0].wa_id.replace(/[^0-9]/g, '');\n} else if (body.from) {\n  from = String(body.from).replace(/[^0-9]/g, '');\n} else if ($json.contacts?.[0]?.wa_id) {\n  from = $json.contacts[0].wa_id.replace(/[^0-9]/g, '');\n}\n\n// Create session ID from phone number\nconst sessionId = from || 'default-session';\n\n// Validate message\nif (!text || text.length === 0) {\n  return [{ \n    text: '', \n    from, \n    sessionId, \n    chatInput: '',\n    isValid: false,\n    error: 'Empty message'\n  }];\n}\n\n// Return validated data\nreturn [{ \n  text, \n  from, \n  sessionId, \n  chatInput: text,\n  isValid: true,\n  messageType: message?.type || 'text',\n  timestamp: message?.timestamp || Date.now()\n}];"
+      },
+      "id": "19f34f20-5a40-41d2-b599-f0ea4b88d7a4",
+      "name": "Extract Message2",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-1824, 432]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('WhatsApp Trigger').item.json.messages[0].text.body }}",
+        "options": {
+          "systemMessage": "أنت مساعد طبي ذكي ومحترف لمركز الهمم الطبي (Hemam Medical Center) في جدة، المملكة العربية السعودية.\n\n**مهمتك:**\n- تقديم معلومات دقيقة عن المركز وخدماته\n- مساعدة المستخدمين في الحجز والاستفسارات\n- استخدام قاعدة المعرفة للحصول على معلومات محدثة\n- تذكر المحادثات السابقة لتقديم تجربة شخصية\n- الرد بالعربية والإنجليزية حسب حاجة المستخدم\n\n**أسلوبك:**\n- احترافي ومتعاطف\n- واضح ومفيد\n- دقيق في المعلومات\n- محترم ومهذب\n\n**قواعد مهمة:**\n- لا تقم بتشخيصات طبية - ركز على معلومات المركز فقط\n- استخدم قاعدة المعرفة دائماً عند الإجابة عن أسئلة عن المركز\n- تذكر ما تم مناقشته سابقاً مع المستخدم\n- إذا لم تعرف الإجابة، اعترف بذلك ووجه المستخدم للاتصال بالمركز\n- احترم خصوصية المستخدمين\n\n**You are a professional medical assistant for Hemam Medical Center in Jeddah, Saudi Arabia.**\n\n**Your Role:**\n- Provide accurate information about the center and services\n- Help users with bookings and inquiries\n- Use knowledge base for up-to-date information\n- Remember previous conversations for personalized experience\n- Respond in Arabic and English as needed\n\n**Your Style:**\n- Professional and empathetic\n- Clear and helpful\n- Accurate in information\n- Respectful and courteous\n\n**Important Rules:**\n- No medical diagnoses - focus on center information only\n- Always use knowledge base when answering questions about the center\n- Remember what was discussed previously with the user\n- If you don't know the answer, admit it and direct user to contact the center\n- Respect user privacy",
+          "maxIterations": 10,
+          "returnIntermediateSteps": false,
+          "enableStreaming": true,
+          "maxTokensFromMemory": 2000
+        }
+      },
+      "id": "45664f06-8ebf-4f1c-a78b-0f890ce36cbf",
+      "name": "AI Agent with Knowledge Base2",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [-1544, 432]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "id": "98fa6378-f5a4-462e-8a48-248c63c26f59",
+      "name": "Gemini Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [-1600, 656],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "loZTSuo6IMkCcOj3",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract Message2').item.json.from || $('WhatsApp Trigger').item.json.contacts[0].wa_id || $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "tableName": "conversation_history"
+      },
+      "id": "8cf6a89c-7f64-456d-934d-ce60eb15f115",
+      "name": "Chat Memory2",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [-1472, 656],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "postgres": {
+          "id": "irebIWWbwk0y6lL1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Retrieves information about Al-Himam Medical Center services, specialists, booking procedures, and general information. Use this when users ask about the center, services, appointments, or specialists.",
+        "tableName": {
+          "mode": "id",
+          "value": "knowledge_base"
+        },
+        "topK": 3,
+        "options": {}
+      },
+      "id": "867b6d5f-4d17-4a4c-92da-1607be1a65c8",
+      "name": "Knowledge Base2",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [-1344, 656],
+      "credentials": {
+        "supabaseApi": {
+          "id": "K2MJudrVWUXikCIb",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Professional Response Extraction with Validation and Error Handling\nconst agentOutput = $json || {};\n\n// Extract response from multiple possible formats\nlet text = '';\nif (agentOutput?.output) {\n  text = String(agentOutput.output).trim();\n} else if (agentOutput?.text) {\n  text = String(agentOutput.text).trim();\n} else if (agentOutput?.response) {\n  text = String(agentOutput.response).trim();\n} else if (agentOutput?.message) {\n  text = String(agentOutput.message).trim();\n} else if (agentOutput?.content) {\n  text = String(agentOutput.content).trim();\n}\n\n// Fallback message if no response\nif (!text || text.length === 0) {\n  text = 'عذراً، لم أتمكن من معالجة طلبك. يرجى المحاولة مرة أخرى أو الاتصال بالمركز مباشرة.\\n\\nSorry, I couldn't process your request. Please try again or contact the center directly.';\n}\n\n// WhatsApp message length limit (4096 characters)\nconst MAX_LENGTH = 4000;\nif (text.length > MAX_LENGTH) {\n  text = text.substring(0, MAX_LENGTH - 50) + '...\\n\\n(الرسالة طويلة جداً - يرجى الاتصال بالمركز لمزيد من التفاصيل)\\n(Message too long - please contact center for details)';\n}\n\n// Get original message data from Extract Message2 node with multiple fallbacks\n// FIX: Use Extract Message2 (not Extract Message)\nconst extractNode = $('Extract Message2');\nlet from = '';\nlet sessionId = '';\nlet userMessage = '';\n\n// Try to get from Extract Message2 node (primary source)\nif (extractNode?.item?.json) {\n  from = extractNode.item.json.from || '';\n  sessionId = extractNode.item.json.sessionId || '';\n  userMessage = extractNode.item.json.text || '';\n}\n\n// Fallback: Try first() method\nif (!from && extractNode?.first()?.json) {\n  from = extractNode.first().json.from || '';\n  sessionId = extractNode.first().json.sessionId || '';\n  userMessage = extractNode.first().json.text || '';\n}\n\n// Fallback: Try WhatsApp Trigger node directly\nif (!from) {\n  const whatsappTrigger = $('WhatsApp Trigger');\n  if (whatsappTrigger?.item?.json) {\n    const contacts = whatsappTrigger.item.json.contacts || [];\n    if (contacts[0]?.wa_id) {\n      from = String(contacts[0].wa_id).replace(/[^0-9]/g, '');\n    }\n    if (whatsappTrigger.item.json.messages?.[0]?.from) {\n      from = String(whatsappTrigger.item.json.messages[0].from).replace(/[^0-9]/g, '');\n    }\n    if (whatsappTrigger.item.json.messages?.[0]?.text?.body) {\n      userMessage = whatsappTrigger.item.json.messages[0].text.body.trim();\n    }\n  }\n}\n\n// Final fallback: Use sessionId as phone if available\nif (!from && sessionId) {\n  from = sessionId.replace(/[^0-9]/g, '');\n}\n\n// Create sessionId from phone if not available\nif (!sessionId && from) {\n  sessionId = from;\n}\n\n// Final validation: Ensure user_phone is NEVER null\nif (!from || from === '') {\n  from = 'unknown-' + Date.now(); // Fallback to prevent null constraint error\n  sessionId = from;\n}\n\n// Ensure sessionId is set\nif (!sessionId || sessionId === '') {\n  sessionId = from || 'default-session';\n}\n\n// Ensure userMessage is set\nif (!userMessage || userMessage === '') {\n  userMessage = 'No message content';\n}\n\n// Return validated data with ALL required fields for Save Conversation\n// CRITICAL: user_phone MUST always have a value to prevent null constraint error\nreturn [{ \n  text,                    // AI response\n  from,                    // Phone number (cleaned)\n  sessionId,               // Session ID (same as phone if not set)\n  userMessage,            // User's original message\n  user_phone: from,       // ← REQUIRED: Always has a value (never null)\n  message: userMessage,   // ← REQUIRED: For Chat Memory compatibility\n  ai_response: text,      // ← REQUIRED: For Save Conversation\n  responseLength: text.length,\n  isValid: true,\n  hasPhone: from && !from.startsWith('unknown-') // Flag to indicate if real phone was found\n}];"
+      },
+      "id": "4c8934d5-779c-4a46-a243-60ea52af5fb9",
+      "name": "Extract Response2",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-976, 432]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "conversation_history",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $json.sessionId || $json.user_phone || 'default-session' }}",
+            "user_phone": "={{ $json.user_phone || $json.from || 'unknown' }}",
+            "user_message": "={{ $json.userMessage || $json.message || 'No message' }}",
+            "message": "={{ $json.message || $json.userMessage || 'No message' }}",
+            "ai_response": "={{ $json.ai_response || $json.text || 'No response' }}",
+            "metadata": "={{ { \"workflow\": \"whatsapp-ai\", \"timestamp\": $now, \"hasPhone\": $json.hasPhone || false } }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "09b28ff5-7d41-4bc1-95bf-193c68dac09d",
+      "name": "Save Conversation2",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-752, 432],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "supabaseApi": {
+          "id": "K2MJudrVWUXikCIb",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/{{$env.WHATSAPP_PHONE_NUMBER_ID}}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "messaging_product",
+              "value": "whatsapp"
+            },
+            {
+              "name": "to",
+              "value": "={{$json.from}}"
+            },
+            {
+              "name": "type",
+              "value": "text"
+            },
+            {
+              "name": "text",
+              "value": "={\"body\": \"={{$json.text}}\"}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0ef0434e-7f7d-4f86-87e4-533e65be82df",
+      "name": "Send AI Reply2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [-528, 432],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true } }}",
+        "options": {}
+      },
+      "id": "eb364fad-5754-4a5b-a833-ddad81583299",
+      "name": "Respond to Webhook2",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [-304, 432]
+    }
+  ],
+  "connections": {
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Knowledge Base2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Webhook Verification": {
+      "main": [
+        [
+          {
+            "node": "Verify Webhook Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Webhook Token": {
+      "main": [
+        [
+          {
+            "node": "Respond Verification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent with Knowledge Base2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent with Knowledge Base2": {
+      "main": [
+        [
+          {
+            "node": "Extract Response2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent with Knowledge Base2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory2": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent with Knowledge Base2",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Base2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent with Knowledge Base2",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Response2": {
+      "main": [
+        [
+          {
+            "node": "Save Conversation2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Conversation2": {
+      "main": [
+        [
+          {
+            "node": "Send AI Reply2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send AI Reply2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bc472c169884cc6beb9258494e75c968c86ca99eeea2da60b9d9c18b569bbbb9"
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
+
