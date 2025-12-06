@@ -176,44 +176,46 @@ export default function SettingsPage() {
     const isTextarea = key.includes('PRIVATE_KEY')
 
     return (
-      <div key={key} className="mb-6">
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+      <div key={key} className="mb-6 group">
+        <label className="form-label text-base text-secondary-foreground font-semibold mb-2 block">
            {key.replace(/_/g, ' ')}
         </label>
-        <div className="relative group">
+        <div className="relative">
           {isTextarea ? (
              <textarea
                 value={value}
                 onChange={e => setFormData({...formData, [key]: e.target.value})}
-                rows={4}
-                className="block w-full rounded-lg border-0 bg-gray-50 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-black focus:bg-white transition-all font-mono text-sm"
+                rows={5}
+                className="form-input min-h-[120px] font-mono text-sm py-4"
+                dir="ltr"
              />
           ) : (
              <input 
                 type={isPass && !isVisible ? 'password' : 'text'}
                 value={value}
                 onChange={e => setFormData({...formData, [key]: e.target.value})}
-                className="block w-full rounded-lg border-0 bg-gray-50 py-3 px-4 pr-32 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-black focus:bg-white transition-all font-mono text-sm h-12"
+                className="form-input h-14 pr-32 font-mono text-base shadow-sm focus:ring-primary focus:border-primary transition-smooth"
+                dir="ltr"
              />
           )}
 
-          {/* Action Icons */}
-          <div className="absolute right-2 top-2 h-8 flex items-center gap-1 bg-white/0 group-focus-within:bg-white/0 transition-colors rounded">
+          {/* Action Icons - Enhanced */}
+          <div className="absolute left-2 top-3 h-8 flex items-center gap-1 bg-white/50 backdrop-blur rounded px-1 transition-opacity opacity-60 group-hover:opacity-100 group-focus-within:opacity-100">
              {isPass && (
-               <button type="button" onClick={() => toggleVisibility(key)} className="p-1.5 text-gray-400 hover:text-black rounded transition-colors" title="Toggle View">
-                 {isVisible ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
+               <button type="button" onClick={() => toggleVisibility(key)} className="p-2 text-muted-foreground hover:text-primary rounded-md transition-colors" title="إظهار/إخفاء">
+                 {isVisible ? <Icons.EyeOff className="w-5 h-5" /> : <Icons.Eye className="w-5 h-5" />}
                </button>
              )}
-             <button type="button" onClick={() => handleCopy(key, value)} className="p-1.5 text-gray-400 hover:text-black rounded transition-colors" title="Copy">
-                 {copiedField === key ? <Icons.Check className="w-4 h-4 text-green-600" /> : <Icons.Copy className="w-4 h-4" />}
+             <button type="button" onClick={() => handleCopy(key, value)} className="p-2 text-muted-foreground hover:text-success rounded-md transition-colors" title="نسخ">
+                 {copiedField === key ? <Icons.Check className="w-5 h-5 text-success" /> : <Icons.Copy className="w-5 h-5" />}
              </button>
-             <button type="button" onClick={() => handlePaste(key)} className="p-1.5 text-gray-400 hover:text-black rounded transition-colors" title="Paste">
-                 <Icons.Paste className="w-4 h-4" />
+             <button type="button" onClick={() => handlePaste(key)} className="p-2 text-muted-foreground hover:text-primary rounded-md transition-colors" title="لصق">
+                 <Icons.Paste className="w-5 h-5" />
              </button>
           </div>
         </div>
         {setting.description && (
-          <p className="mt-1.5 text-xs text-gray-400">{setting.description}</p>
+          <p className="mt-2 text-sm text-muted-foreground/80">{setting.description}</p>
         )}
       </div>
     )
@@ -221,12 +223,12 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-background">
         <Header />
          <main className="max-w-4xl mx-auto py-12 px-6">
-             <div className="space-y-4 animate-pulse">
-                <div className="h-8 bg-gray-100 w-1/4 rounded"></div>
-                <div className="h-64 bg-gray-50 rounded-xl"></div>
+             <div className="space-y-6 animate-pulse">
+                <div className="h-10 bg-muted w-1/4 rounded"></div>
+                <div className="h-96 bg-card rounded-lg shadow-soft"></div>
              </div>
          </main>
         <Footer />
@@ -235,43 +237,43 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="page-container">
       <Header />
       
-      <main className="max-w-4xl mx-auto py-12 px-6">
-        <div className="flex justify-between items-end mb-8">
+      <main className="page-content max-w-5xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
            <div>
-             <h1 className="text-3xl font-bold tracking-tight text-black mb-2">System Configuration</h1>
-             <p className="text-gray-500">Manage API keys, integrations, and environment variables.</p>
+             <h1 className="heading-primary mb-2 text-primary">إعدادات النظام (Configuration)</h1>
+             <p className="text-muted-foreground text-lg">إدارة مفاتيح API، والربط مع الخدمات الخارجية، وإعدادات الذكاء الاصطناعي.</p>
            </div>
            
            {/* Global Actions */}
            <button 
              onClick={handleSubmit} 
              disabled={saving}
-             className="bg-black text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-zinc-800 disabled:opacity-50 transition-colors shadow-sm"
+             className="btn-primary shadow-medium text-lg px-8 py-3"
            >
-             {saving ? 'Saving...' : 'Save Changes'}
+             {saving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
            </button>
         </div>
 
         {error && (
-           <div className="mb-6 bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full bg-red-600"></div>
-             {error}
+           <div className="mb-8 alert-error flex items-center gap-3 shadow-soft">
+             <div className="w-2 h-2 rounded-full bg-destructive"></div>
+             <span className="font-medium">{error}</span>
            </div>
         )}
 
         {success && (
-           <div className="mb-6 bg-green-50 border border-green-100 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full bg-green-600"></div>
-             {success}
+           <div className="mb-8 alert-success flex items-center gap-3 shadow-soft">
+             <div className="w-2 h-2 rounded-full bg-success"></div>
+             <span className="font-medium">{success}</span>
            </div>
         )}
 
-        {/* Modern Tabs */}
-        <div className="mb-8 border-b border-gray-100">
-          <nav className="flex space-x-8" aria-label="Tabs">
+        {/* Modern Tabs - Orange Brand */}
+        <div className="mb-10 border-b border-border">
+          <nav className="flex space-x-8 rtl:space-x-reverse" aria-label="Tabs">
             {TABS.map((tab) => {
                const isActive = activeTab === tab.id
                const count = getCategoryFields(tab.id).length
@@ -282,15 +284,15 @@ export default function SettingsPage() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-all
+                    whitespace-nowrap pb-4 px-2 border-b-2 font-bold text-base transition-smooth
                     ${isActive 
-                      ? 'border-black text-black' 
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
+                      ? 'border-primary text-primary' 
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                     }
                   `}
                 >
                   {tab.label}
-                  <span className={`ml-2 py-0.5 px-2 rounded-full text-[10px] ${isActive ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>
+                  <span className={`mr-2 py-0.5 px-2.5 rounded-full text-[11px] ${isActive ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                     {count}
                   </span>
                 </button>
@@ -300,39 +302,39 @@ export default function SettingsPage() {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-xl min-h-[400px]">
+        <div className="card shadow-medium min-h-[500px] border border-border/50">
            
            {/* Special Section: Webhook URL for WhatsApp Tab */}
            {activeTab === 'whatsapp' && (
-              <div className="mb-10 bg-gray-50 border border-gray-100 rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-gray-900">
-                    <Icons.Info className="w-4 h-4" />
-                    <h3 className="text-sm font-semibold uppercase tracking-wider">Webhook Endpoint</h3>
+              <div className="mb-10 bg-primary-light border border-primary/20 rounded-lg p-6 shadow-soft">
+                 <div className="flex items-center gap-2 mb-3 text-primary-dark">
+                    <Icons.Info className="w-5 h-5" />
+                    <h3 className="text-base font-bold uppercase tracking-wider">رابط الويب هوك (Webhook Endpoint)</h3>
                  </div>
                  
-                 <div className="text-sm text-gray-500 mb-4">
-                    Copy the URL below and paste it into your Meta Developer Console to receive messages.
+                 <div className="text-sm text-primary-dark/80 mb-4 font-medium">
+                    قم بنسخ الرابط أدناه ولصقه في إعدادات Meta Developer Console لاستلام الرسائل.
                  </div>
 
                  <div className="flex items-center">
-                    <div className="flex-1 font-mono text-sm bg-white border border-gray-200 text-gray-600 px-4 py-3 rounded-l-lg truncate">
+                    <div className="flex-1 font-mono text-base bg-white border border-primary/20 text-foreground px-5 py-4 rounded-r-lg truncate direction-ltr text-left">
                        {origin ? `${origin}/api/whatsapp` : '/api/whatsapp'}
                     </div>
                     <button
                        onClick={() => handleCopy('webhook_url', origin ? `${origin}/api/whatsapp` : '')}
-                       className="bg-white border border-l-0 border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-3 rounded-r-lg font-medium text-sm transition-colors border-l"
+                       className="bg-primary hover:bg-primary-hover text-white px-6 py-4 rounded-l-lg font-bold text-sm transition-smooth shadow-sm"
                     >
-                       {copiedField === 'webhook_url' ? 'Copied' : 'Copy'}
+                       {copiedField === 'webhook_url' ? 'تم النسخ ✓' : 'نسخ الرابط'}
                     </button>
                  </div>
               </div>
            )}
 
            {/* Settings Fields */}
-           <div className="space-y-1">
+           <div className="space-y-8 p-2">
               {getCategoryFields(activeTab).length === 0 ? (
-                 <div className="text-center py-20 text-gray-400 text-sm">
-                    No settings available in this category.
+                 <div className="text-center py-24 text-muted-foreground text-lg">
+                    لا توجد إعدادات متاحة في هذا القسم حالياً.
                  </div>
               ) : (
                  getCategoryFields(activeTab).map(setting => renderField(setting))
