@@ -10,10 +10,7 @@ CREATE TABLE IF NOT EXISTS whatsapp_settings (
   n8n_webhook_url TEXT,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT single_active_setting CHECK (
-    (SELECT COUNT(*) FROM whatsapp_settings WHERE is_active = true) <= 1
-  )
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index for active settings
@@ -32,6 +29,25 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER update_whatsapp_settings_updated_at 
   BEFORE UPDATE ON whatsapp_settings
   FOR EACH ROW EXECUTE FUNCTION update_whatsapp_settings_updated_at();
+
+-- Function to ensure only one active setting
+CREATE OR REPLACE FUNCTION ensure_single_active_whatsapp_setting()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.is_active = true THEN
+    -- Deactivate all other settings
+    UPDATE whatsapp_settings 
+    SET is_active = false 
+    WHERE id != NEW.id AND is_active = true;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to ensure only one active setting
+CREATE TRIGGER ensure_single_active_whatsapp_setting_trigger
+  BEFORE INSERT OR UPDATE ON whatsapp_settings
+  FOR EACH ROW EXECUTE FUNCTION ensure_single_active_whatsapp_setting();
 
 -- Insert default settings (you should update these with your actual values)
 INSERT INTO whatsapp_settings (
