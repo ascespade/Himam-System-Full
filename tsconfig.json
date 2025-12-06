@@ -8,7 +8,7 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -21,10 +21,10 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@/lib": ["./src/lib"],
+      "@/lib": ["./src/lib/index.ts"],
       "@/lib/*": ["./src/lib/*"],
       "@/infrastructure/*": ["./src/infrastructure/*"],
-      "@/shared": ["./src/shared"],
+      "@/shared": ["./src/shared/index.ts"],
       "@/shared/*": ["./src/shared/*"],
       "@/components/*": ["./components/*"],
       "@/app/*": ["./app/*"]

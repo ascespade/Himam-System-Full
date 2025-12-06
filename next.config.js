@@ -13,6 +13,17 @@ const nextConfig = {
   serverRuntimeConfig: {
     port: process.env.PORT || 3000,
   },
+  // Webpack configuration for path aliases (Vercel compatibility)
+  webpack: (config, { isServer }) => {
+    const path = require('path')
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@/lib': path.resolve(__dirname, 'src/lib'),
+      '@/shared': path.resolve(__dirname, 'src/shared'),
+      '@/infrastructure': path.resolve(__dirname, 'src/infrastructure'),
+    }
+    return config
+  },
 }
 
 module.exports = nextConfig
