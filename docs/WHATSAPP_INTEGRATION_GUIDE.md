@@ -206,3 +206,4 @@ curl -X POST https://n8n-9q4d.onrender.com/webhook/whatsapp-integration \
 - **Repository**: `src/infrastructure/supabase/repositories/whatsapp-settings.repository.ts`
 - **Database Migration**: `supabase/migrations/002_create_whatsapp_settings.sql`
 
+

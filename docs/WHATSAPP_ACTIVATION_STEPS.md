@@ -179,3 +179,4 @@ curl "https://himam-system.vercel.app/api/whatsapp?hub.mode=subscribe&hub.verify
 **آخر تحديث**: 2025-12-06  
 **الحالة**: ✅ جاهز للتفعيل
 
+
