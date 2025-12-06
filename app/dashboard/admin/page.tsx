@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/src/lib/supabase'
 
 interface Patient {
   id: string

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Button from '@/shared/components/ui/Button'
+import Button from '@/src/shared/components/ui/Button'
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)

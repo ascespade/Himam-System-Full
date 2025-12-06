@@ -1,4 +1,4 @@
-import { testimonialsRepository } from '@/infrastructure/supabase/repositories/testimonials.repository'
+import { testimonialsRepository } from '@/src/infrastructure/supabase/repositories/testimonials.repository'
 
 export default async function TestimonialsSection() {
   const testimonials = await testimonialsRepository.getFeatured(3)

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/src/lib/supabase'
 
 export type ContentItemType = 'service' | 'testimonial' | 'statistic' | 'value' | 'feature' | 'social_media'
 

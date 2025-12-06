@@ -1,6 +1,6 @@
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/src/lib/supabase'
 
 async function getPatients() {
   try {

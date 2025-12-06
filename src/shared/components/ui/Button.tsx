@@ -1,6 +1,6 @@
 import { ButtonHTMLAttributes, forwardRef } from 'react'
 import Link from 'next/link'
-import { cn } from '@/shared/utils'
+import { cn } from '@/src/shared/utils'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost'

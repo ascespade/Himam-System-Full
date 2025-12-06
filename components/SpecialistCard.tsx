@@ -1,5 +1,5 @@
-import { Specialist } from '@/shared/types'
-import Button from '@/shared/components/ui/Button'
+import { Specialist } from '@/src/shared/types'
+import Button from '@/src/shared/components/ui/Button'
 
 interface SpecialistCardProps {
   specialist: Specialist

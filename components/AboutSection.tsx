@@ -1,5 +1,5 @@
-import { centerInfoRepository } from '@/infrastructure/supabase/repositories/center-info.repository'
-import { centerValuesRepository } from '@/infrastructure/supabase/repositories/center-values.repository'
+import { centerInfoRepository } from '@/src/infrastructure/supabase/repositories/center-info.repository'
+import { centerValuesRepository } from '@/src/infrastructure/supabase/repositories/center-values.repository'
 
 export default async function AboutSection() {
   const centerInfo = await centerInfoRepository.getCenterInfo()

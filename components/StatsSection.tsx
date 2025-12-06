@@ -1,4 +1,4 @@
-import { statisticsRepository } from '@/infrastructure/supabase/repositories/statistics.repository'
+import { statisticsRepository } from '@/src/infrastructure/supabase/repositories/statistics.repository'
 
 export default async function StatsSection() {
   const stats = await statisticsRepository.getAll()

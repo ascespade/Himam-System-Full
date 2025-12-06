@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/src/lib/supabase'
 
 const CRM_API_ENDPOINT = process.env.CRM_API_ENDPOINT
 const CRM_API_KEY = process.env.CRM_API_KEY
