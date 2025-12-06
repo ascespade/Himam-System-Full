@@ -204,14 +204,54 @@ export interface WhatsAppMessage {
 export interface WhatsAppWebhookPayload {
   object?: string
   entry?: Array<{
+    id?: string
     changes?: Array<{
       value?: {
+        messaging_product?: string
+        metadata?: {
+          display_phone_number?: string
+          phone_number_id?: string
+        }
+        contacts?: Array<{
+          profile?: {
+            name?: string
+          }
+          wa_id?: string
+        }>
         messages?: Array<{
           from?: string
-          text?: { body?: string }
           id?: string
+          timestamp?: string
+          type?: 'text' | 'image' | 'document' | 'audio' | 'video' | 'sticker' | 'location' | 'interactive' | 'button'
+          text?: { body?: string }
+          image?: {
+            id?: string
+            mime_type?: string
+            sha?: string
+            caption?: string
+          }
+          document?: {
+            id?: string
+            mime_type?: string
+            sha?: string
+            filename?: string
+            caption?: string
+          }
+          interactive?: {
+            type?: 'button_reply' | 'list_reply'
+            button_reply?: {
+              id?: string
+              title?: string
+            }
+            list_reply?: {
+              id?: string
+              title?: string
+              description?: string
+            }
+          }
         }>
       }
+      field?: string
     }>
   }>
 }

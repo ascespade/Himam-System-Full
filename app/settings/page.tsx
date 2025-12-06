@@ -35,7 +35,16 @@ export default function SettingsPage() {
     try {
       setLoading(true)
       setError(null)
+      
+      // Add timeout fallback to ensure loading clears
+      const timeoutId = setTimeout(() => {
+        setLoading(false)
+        setError('انتهت مهلة تحميل الإعدادات. يرجى المحاولة مرة أخرى.')
+      }, 10000)
+      
       const response = await fetch('/api/settings')
+      
+      clearTimeout(timeoutId)
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)

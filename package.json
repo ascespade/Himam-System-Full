@@ -32,6 +32,7 @@
     "@types/react": "^18.3.27",
     "@types/react-dom": "^18.3.7",
     "@types/signature_pad": "^4.0.0",
+    "@types/uuid": "^10.0.0",
     "typescript": "^5.9.3"
   }
 }

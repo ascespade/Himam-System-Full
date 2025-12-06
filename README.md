@@ -4,19 +4,57 @@ Enterprise-grade unified automation platform for Himam Medical Center.
 
 ## 🚀 Quick Start
 
-```bash
-# Install dependencies
-npm install
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/your-username/himam-system.git
+    cd himam-system
+    ```
 
-# Set up environment variables
-cp .env.example .env.local
+2.  **Install dependencies**
+    ```bash
+    npm install
+    ```
 
-# Run database migrations
-# Execute supabase/schema.sql in Supabase SQL Editor
+3.  **Set up environment variables**
+    ```bash
+    cp .env.example .env.local
+    # Edit .env.local with your actual values
+    ```
 
-# Start development server
-npm run dev
-```
+4.  **Run development server**
+    ```bash
+    npm run dev
+    ```
+
+5.  **Open your browser**
+    Navigate to `http://localhost:3000`
+
+## 📦 Deployment
+
+### Production Deployment to Vercel
+
+For complete deployment instructions, see **[DEPLOYMENT.md](DEPLOYMENT.md)**
+
+**Quick deployment steps**:
+
+1.  **Set up Supabase database**
+    -   Create Supabase project
+    -   Run `supabase/complete_schema.sql` in SQL Editor
+    -   Create `documents` storage bucket
+
+2.  **Deploy to Vercel**
+    -   Connect GitHub repository
+    -   Add environment variables (see `.env.example`)
+    -   Deploy
+
+3.  **Verify deployment**
+    -   Test all pages load correctly
+    -   Check API endpoints work
+    -   Verify data displays
+
+For detailed step-by-step instructions, troubleshooting, and post-deployment verification, see **[DEPLOYMENT.md](DEPLOYMENT.md)**.
+
+## 📁 Project Structure
 
 ## 📚 Documentation
 

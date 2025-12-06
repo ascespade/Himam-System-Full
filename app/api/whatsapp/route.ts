@@ -1,7 +1,7 @@
 /**
- * WhatsApp Webhook API Route
- * Handles WhatsApp Cloud API webhooks and message processing
- * Integrated with AI service for automated responses
+ * WhatsApp Webhook API Route - ENHANCED VERSION
+ * Handles WhatsApp Cloud API webhooks with rich messaging and automated booking
+ * Integrated with AI service for intelligent responses
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -12,41 +12,22 @@ import { successResponse, errorResponse, parseRequestBody } from '@/shared/utils
 import { HTTP_STATUS } from '@/shared/constants'
 import { logError } from '@/shared/utils/logger'
 import type { WhatsAppWebhookPayload } from '@/shared/types'
-
-/**
- * Send WhatsApp message via Meta API
- */
-async function sendWhatsAppMessage(to: string, message: string): Promise<{ success: boolean; messageId?: string }> {
-  const settings = await getSettings()
-
-  if (!settings.WHATSAPP_TOKEN || !settings.WHATSAPP_PHONE_NUMBER_ID) {
-    throw new Error('WhatsApp API not configured')
-  }
-
-  const response = await fetch(
-    `https://graph.facebook.com/v20.0/${settings.WHATSAPP_PHONE_NUMBER_ID}/messages`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${settings.WHATSAPP_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to,
-        type: 'text',
-        text: { body: message },
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error?.message || 'Failed to send WhatsApp message')
-  }
-
-  return response.json()
-}
+import {
+  sendTextMessage,
+  sendWelcomeMessage,
+  sendSpecialistList,
+  sendAppointmentConfirmation,
+  sendButtonMessage,
+  sendCenterLocation,
+  sendDocumentMessage,
+  sendTemplateMessage
+} from '@/lib/whatsapp-messaging'
+import {
+  parseBookingFromAI,
+  hasBookingIntent,
+  formatAppointmentDate,
+  formatAppointmentTime
+} from '@/lib/booking-parser'
 
 /**
  * Webhook verification (GET)
@@ -106,11 +87,97 @@ export async function POST(req: NextRequest) {
       if (value?.messages && value.messages.length > 0) {
         const message = value.messages[0]
         const from = message.from
-        const text = message.text?.body || ''
         const messageId = message.id
+
+        // Handle different message types
+        let text = ''
+        let interactiveResponse = null
+
+        if (message.type === 'text') {
+          text = message.text?.body || ''
+        } else if (message.type === 'interactive' && message.interactive) {
+          // Handle button/list responses
+          interactiveResponse = message.interactive
+          if (interactiveResponse.type === 'button_reply' && interactiveResponse.button_reply) {
+            text = interactiveResponse.button_reply.title || ''
+          } else if (interactiveResponse.type === 'list_reply' && interactiveResponse.list_reply) {
+            text = interactiveResponse.list_reply.title || ''
+          }
+        } else if (message.type === 'image' || message.type === 'document') {
+          // Handle media messages
+          // Since AI currently processes text, we acknowledge receipt and notify user
+          const mediaType = message.type === 'image' ? 'الصورة' : 'الملف'
+          await sendTextMessage(from || '', `شكراً لك! تم استلام ${mediaType}. سيقوم أحد موظفينا بمراجعته قريباً.`)
+          
+          // Log media message
+          await supabaseAdmin.from('conversation_history').insert({
+            user_phone: from,
+            user_message: `[${message.type.toUpperCase()}] ID: ${message[message.type]?.id || 'unknown'}`,
+            ai_response: `تم استلام ${mediaType} بنجاح.`,
+            session_id: messageId || undefined,
+          })
+          
+          return NextResponse.json(successResponse({ messageId, action: 'media_received' }))
+        }
 
         if (!text || !from) {
           return NextResponse.json(successResponse(null, 'No text content or sender'))
+        }
+
+        // Check if this is a first-time user (send welcome)
+        const { data: existingConversations } = await supabaseAdmin
+          .from('conversation_history')
+          .select('id')
+          .eq('user_phone', from)
+          .limit(1)
+
+        const isFirstMessage = !existingConversations || existingConversations.length === 0
+
+        if (isFirstMessage) {
+          await sendWelcomeMessage(from)
+          return NextResponse.json(successResponse({ messageId, firstTimeUser: true }))
+        }
+
+        // Handle quick action buttons
+        if (interactiveResponse?.button_reply) {
+          const buttonId = interactiveResponse.button_reply.id
+
+          if (buttonId === 'book_appointment') {
+            // Fetch specialists from database
+            const { data: specialists } = await supabaseAdmin
+              .from('specialists')
+              .select('*')
+              .limit(10)
+
+            if (specialists && specialists.length > 0) {
+              await sendSpecialistList(from, specialists)
+              return NextResponse.json(successResponse({ messageId, action: 'specialist_list_sent' }))
+            }
+          } else if (buttonId === 'our_services') {
+            const servicesText = `🏥 خدماتنا المتاحة:\n\n` +
+              `1. 🗣️ علاج النطق - جلسات تخاطب متخصصة\n` +
+              `2. 🧠 تعديل السلوك - برامج سلوكية مخصصة\n` +
+              `3. 🤲 العلاج الوظيفي - تطوير المهارات الحياتية\n` +
+              `4. 🎯 التكامل الحسي\n` +
+              `5. 👶 التدخل المبكر\n\n` +
+              `للحجز، اضغط على "حجز موعد" أو أرسل رسالة بالخدمة المطلوبة.`
+
+            await sendTextMessage(from, servicesText)
+            return NextResponse.json(successResponse({ messageId, action: 'services_sent' }))
+          } else if (buttonId === 'contact_us') {
+            const contactText = `📞 معلومات التواصل:\n\n` +
+              `📍 الموقع: جدة، المملكة العربية السعودية\n` +
+              `📞 الهاتف: +966 12 345 6789\n` +
+              `📧 البريد: info@al-himam.com\n` +
+              `⏰ أوقات العمل: الأحد-الخميس، 9 صباحاً - 5 مساءً`
+
+            await sendTextMessage(from, contactText)
+            
+            // Send location map
+            await sendCenterLocation(from)
+            
+            return NextResponse.json(successResponse({ messageId, action: 'contact_sent' }))
+          }
         }
 
         // Get conversation history for context
@@ -129,7 +196,7 @@ export async function POST(req: NextRequest) {
           ]) || []
 
         // Generate AI response
-        const aiResponse = await generateWhatsAppResponse(from || '', text, conversationHistory)
+        const aiResponse = await generateWhatsAppResponse(from, text, conversationHistory)
 
         // Save conversation to database
         await supabaseAdmin.from('conversation_history').insert({
@@ -139,26 +206,74 @@ export async function POST(req: NextRequest) {
           session_id: messageId || undefined,
         })
 
-        // Send WhatsApp reply
-        await sendWhatsAppMessage(from, aiResponse.text)
+        // Check if AI extracted booking details
+        const bookingDetails = parseBookingFromAI(aiResponse.text)
 
-        // Check if message contains booking keywords
-        const bookingKeywords = ['حجز', 'موعد', 'appointment', 'book', 'schedule']
-        const isBookingRequest = bookingKeywords.some((keyword) =>
-          text.toLowerCase().includes(keyword.toLowerCase())
-        )
+        if (bookingDetails && bookingDetails.isComplete) {
+          // Create appointment in database
+          try {
+            const { data: appointment, error: aptError } = await supabaseAdmin
+              .from('appointments')
+              .insert({
+                patient_name: bookingDetails.patientName,
+                phone: bookingDetails.phone || from,
+                specialist: bookingDetails.specialist,
+                date: new Date(`${bookingDetails.date}T${bookingDetails.time}`).toISOString(),
+                status: 'pending',
+                notes: `Service: ${bookingDetails.service || 'Not specified'}`
+              })
+              .select()
+              .single()
 
-        if (isBookingRequest) {
-          // Extract appointment details from message (simplified - can be enhanced with AI)
-          // TODO: Use AI to extract appointment details and create calendar event via /api/calendar
-          // Note: Booking requests are logged in conversation_history for manual processing
+            if (!aptError && appointment) {
+              // Send confirmation with buttons
+              await sendAppointmentConfirmation(from, {
+                specialist: bookingDetails.specialist || 'الأخصائي',
+                date: formatAppointmentDate(bookingDetails.date || ''),
+                time: formatAppointmentTime(bookingDetails.time || '')
+              })
+
+              return NextResponse.json(
+                successResponse({
+                  messageId,
+                  aiResponse: aiResponse.text,
+                  model: aiResponse.model,
+                  bookingCreated: true,
+                  appointmentId: appointment.id
+                })
+              )
+            }
+          } catch (error) {
+            console.error('Error creating appointment:', error)
+            // Continue with regular response if booking fails
+          }
+        }
+
+        // Send AI response (clean version without [BOOKING_READY] marker)
+        const cleanResponse = aiResponse.text.replace(/\[BOOKING_READY\][\s\S]*?}/g, '').trim()
+        await sendTextMessage(from, cleanResponse)
+
+        // If message has booking intent but details incomplete, offer help
+        if (hasBookingIntent(text) && !bookingDetails?.isComplete) {
+          setTimeout(async () => {
+            await sendButtonMessage(
+              from,
+              'هل تحتاج مساعدة في حجز الموعد؟',
+              [
+                { type: 'reply', reply: { id: 'book_appointment', title: 'نعم، ساعدني' } },
+                { type: 'reply', reply: { id: 'continue_chat', title: 'لا، شكراً' } }
+              ]
+            )
+          }, 2000) // Send after 2 seconds
         }
 
         return NextResponse.json(
           successResponse({
             messageId,
-            aiResponse: aiResponse.text,
+            aiResponse: cleanResponse,
             model: aiResponse.model,
+            bookingIntent: hasBookingIntent(text),
+            bookingComplete: bookingDetails?.isComplete || false
           })
         )
       }

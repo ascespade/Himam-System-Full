@@ -98,48 +98,77 @@ export async function askAI(prompt: string, context?: string): Promise<AIRespons
 }
 
 /**
- * Generate AI response for WhatsApp messages
- * @param userMessage - User's WhatsApp message
+ * Generate AI response for WhatsApp messages with booking extraction
  * @param userPhone - User's phone number
+ * @param userMessage - User's WhatsApp message
  * @param conversationHistory - Previous messages in the conversation
- * @returns AI response
+ * @returns AI response with potential booking data
  */
 export async function generateWhatsAppResponse(
-  userMessage: string,
   userPhone: string,
+  userMessage: string,
   conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
 ): Promise<AIResponse> {
   const systemPrompt = `أنت مساعد ذكي لمركز الهمم الطبي في جدة، المملكة العربية السعودية.
-  
-مهمتك:
+
+مهمتك الأساسية:
 - الرد على استفسارات المرضى بشكل مهني ومتعاطف
 - مساعدة المرضى في حجز المواعيد
 - تقديم معلومات عن الخدمات الطبية المتاحة
-- الرد بالعربية والإنجليزية حسب الحاجة
+- الرد بالعربية والإنجليزية حسب لغة المريض
+
+معلومات المركز:
+📍 الموقع: جدة، المملكة العربية السعودية
+📞 الهاتف: +966 12 345 6789
+📧 البريد: info@al-himam.com
+⏰ أوقات العمل: الأحد-الخميس، 9 صباحاً - 5 مساءً
 
 الخدمات المتاحة:
-- جلسات تخاطب
-- تعديل السلوك
-- العلاج الوظيفي
-- التكامل الحسي
-- التدخل المبكر
+1. 🗣️ علاج النطق (Speech Therapy) - جلسات تخاطب متخصصة
+2. 🧠 تعديل السلوك (Behavior Modification) - برامج سلوكية مخصصة
+3. 🤲 العلاج الوظيفي (Occupational Therapy) - تطوير المهارات الحياتية
+4. 🎯 التكامل الحسي (Sensory Integration)
+5. 👶 التدخل المبكر (Early Intervention)
 
-كن مهذباً، مفيداً، ومهتماً بصحة المرضى.`
+الأخصائيون المتاحون:
+- د. سارة الزهراني - علاج النطق (Speech Therapy)
+- أ. عبدالله العتيبي - تعديل السلوك (Behavior Modification)
+- أ. ريم بخاش - العلاج الوظيفي (Occupational Therapy)
+
+عند طلب حجز موعد:
+1. اسأل عن: اسم المريض، رقم الجوال، نوع الخدمة المطلوبة، التاريخ والوقت المفضل
+2. تأكد من توفر الأخصائي في الوقت المطلوب
+3. عندما تكتمل جميع المعلومات، قل:
+
+[BOOKING_READY]
+{
+  "patient_name": "اسم المريض",
+  "phone": "رقم الجوال",
+  "specialist": "اسم الأخصائي",
+  "service": "نوع الخدمة",
+  "date": "YYYY-MM-DD",
+  "time": "HH:MM"
+}
+
+ملاحظات مهمة:
+- كن مهذباً ومتعاطفاً دائماً
+- إذا كانت المعلومات ناقصة، اسأل بلطف
+- قدم خيارات واضحة للمريض
+- أكد على سرية المعلومات الطبية
+- في حالة الطوارئ، انصح بالاتصال فوراً أو زيارة أقرب مستشفى`
 
   let prompt = systemPrompt
 
   // Add conversation history if available
   if (conversationHistory && conversationHistory.length > 0) {
     const historyText = conversationHistory
+      .slice(-10) // Last 10 messages only
       .map((msg) => `${msg.role === 'user' ? 'المريض' : 'المساعد'}: ${msg.content}`)
       .join('\n')
-    prompt += `\n\nتاريخ المحادثة:\n${historyText}\n\nالرسالة الجديدة من المريض: ${userMessage}`
+    prompt += `\n\nتاريخ المحادثة السابقة:\n${historyText}\n\nالرسالة الجديدة من المريض: ${userMessage}`
   } else {
     prompt += `\n\nرسالة المريض: ${userMessage}`
   }
 
   return await askAI(prompt, `User phone: ${userPhone}`)
 }
-
-
-
