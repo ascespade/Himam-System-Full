@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.2.1",
+    "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.41.0",
     "archiver": "^6.0.1",
     "autoprefixer": "^10.4.16",
