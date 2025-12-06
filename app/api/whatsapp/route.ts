@@ -36,42 +36,56 @@ export async function GET(req: NextRequest) {
     const token = searchParams.get('hub.verify_token')
     const challenge = searchParams.get('hub.challenge')
 
-    const settings = await getWhatsAppSettings()
+    // Get settings - use environment variables first for faster response during verification
+    let verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || ''
+    
+    // Try database if env var not available
+    if (!verifyToken) {
+      try {
+        const settings = await getWhatsAppSettings()
+        verifyToken = settings.verifyToken || ''
+      } catch (dbError) {
+        console.error('Database error during verification:', dbError)
+        // Continue with empty token, will fail gracefully
+      }
+    }
 
     // Debug logging
     console.log('Webhook verification request:', {
       mode,
-      token: token ? '***' : 'missing',
-      expectedToken: settings.verifyToken ? '***' : 'missing',
-      challenge,
-      tokenMatch: token === settings.verifyToken,
-      tokenLength: token?.length,
-      expectedLength: settings.verifyToken?.length
+      hasToken: !!token,
+      hasExpectedToken: !!verifyToken,
+      hasChallenge: !!challenge,
+      tokenMatch: token === verifyToken
     })
 
     // Check if mode and token match
-    if (mode === 'subscribe' && token && settings.verifyToken && token === settings.verifyToken) {
+    if (mode === 'subscribe' && token && verifyToken && token === verifyToken) {
       if (!challenge) {
-        return NextResponse.json({ error: 'Challenge missing' }, { status: 400 })
+        return new NextResponse('Challenge missing', { 
+          status: 400,
+          headers: { 'Content-Type': 'text/plain' }
+        })
       }
+      // Return challenge as plain text (not JSON)
       return new NextResponse(challenge, { 
         status: 200,
         headers: {
-          'Content-Type': 'text/plain'
+          'Content-Type': 'text/plain; charset=utf-8'
         }
       })
     }
 
-    return NextResponse.json({ 
-      error: 'Forbidden',
-      message: 'Invalid verify token or mode'
-    }, { status: 403 })
+    return new NextResponse('Forbidden', { 
+      status: 403,
+      headers: { 'Content-Type': 'text/plain' }
+    })
   } catch (error: any) {
     console.error('Webhook verification error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return new NextResponse('Internal server error', { 
+      status: 500,
+      headers: { 'Content-Type': 'text/plain' }
+    })
   }
 }
 
