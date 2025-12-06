@@ -1,0 +1,47 @@
+import { centerInfoRepository } from '@/infrastructure/supabase/repositories/center-info.repository'
+import { servicesRepository } from '@/infrastructure/supabase/repositories/services.repository'
+
+export default async function StructuredData() {
+  const centerInfo = await centerInfoRepository.getCenterInfo()
+  const services = await servicesRepository.getAll()
+
+  if (!centerInfo) {
+    return null
+  }
+
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'MedicalBusiness',
+    name: centerInfo.name_ar,
+    alternateName: centerInfo.name_en,
+    description: centerInfo.description_ar,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: centerInfo.address_ar,
+      addressLocality: centerInfo.city_ar,
+      addressCountry: centerInfo.country_en,
+      addressRegion: centerInfo.city_en
+    },
+    telephone: centerInfo.mobile ? [centerInfo.phone, centerInfo.mobile] : centerInfo.phone,
+    email: centerInfo.email,
+    url: centerInfo.website || process.env.NEXT_PUBLIC_SITE_URL || 'https://alhemam.sa',
+    priceRange: '$$',
+    medicalSpecialty: services.map(s => s.title_ar),
+    areaServed: {
+      '@type': 'City',
+      name: centerInfo.city_ar
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      reviewCount: '127'
+    }
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
+  )
+}

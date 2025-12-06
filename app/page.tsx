@@ -3,9 +3,14 @@ import Footer from '@/components/Footer'
 import Hero from '@/components/Hero'
 import SpecialistCard from '@/components/SpecialistCard'
 import ChatWidget from '@/components/ChatWidget'
+import AboutSection from '@/components/AboutSection'
+import StatsSection from '@/components/StatsSection'
+import TestimonialsSection from '@/components/TestimonialsSection'
+import ContactSection from '@/components/ContactSection'
+import MapSection from '@/components/MapSection'
 import { supabase } from '@/lib/supabase'
-import { SERVICES } from '@/shared/constants'
-import { CENTER_INFO } from '@/shared/constants/center-info'
+import { servicesRepository } from '@/infrastructure/supabase/repositories/services.repository'
+import { centerInfoRepository } from '@/infrastructure/supabase/repositories/center-info.repository'
 import { Specialist } from '@/shared/types'
 
 async function getSpecialists(): Promise<Specialist[]> {
@@ -23,7 +28,7 @@ async function getSpecialists(): Promise<Specialist[]> {
   }
 }
 
-const ServiceIcon = ({ icon }: { icon: string }) => {
+const ServiceIcon = ({ icon }: { icon: string | null }) => {
   const icons: Record<string, JSX.Element> = {
     calendar: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,16 +46,24 @@ const ServiceIcon = ({ icon }: { icon: string }) => {
       </svg>
     )
   }
-  return icons[icon] || icons.sparkles
+  return icons[icon || 'sparkles'] || icons.sparkles
 }
 
 export default async function HomePage() {
   const specialists = await getSpecialists()
+  const services = await servicesRepository.getAll()
+  const centerInfo = await centerInfoRepository.getCenterInfo()
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       <Hero />
+      
+      {/* Stats Section */}
+      <StatsSection />
+      
+      {/* About Section */}
+      <AboutSection />
       
       {/* Specialists Section */}
       <section className="py-16 bg-white">
@@ -60,7 +73,7 @@ export default async function HomePage() {
               أخصائينا المتميزون
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto font-arabic leading-relaxed">
-              فريق من الأخصائيين المؤهلين والمدربين في {CENTER_INFO.location.city} لتقديم أفضل الخدمات الطبية
+              فريق من الأخصائيين المؤهلين والمدربين في {centerInfo?.city_ar || 'جدة'} لتقديم أفضل الخدمات الطبية
             </p>
           </div>
           {specialists.length > 0 ? (
@@ -70,36 +83,38 @@ export default async function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-500">لا يوجد أخصائيون متاحون حالياً</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+                  <div className="w-16 h-16 bg-primary-light rounded-full flex items-center justify-center mb-4 mx-auto">
+                    <span className="text-primary font-bold text-xl">👨‍⚕️</span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-center text-gray-900 font-arabic mb-2">
+                    أخصائي متخصص
+                  </h3>
+                  <p className="text-primary text-center text-sm mb-4 font-arabic">متوفر قريباً</p>
+                </div>
+              ))}
             </div>
           )}
         </div>
       </section>
 
       {/* Services Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 font-arabic tracking-tight">
               خدماتنا المتكاملة
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6 font-arabic leading-relaxed">
-              {CENTER_INFO.description.ar}
-            </p>
-            <div className="flex flex-wrap justify-center gap-2 mt-4">
-              {CENTER_INFO.specialties.slice(0, 6).map((specialty, idx) => (
-                <span
-                  key={idx}
-                  className="px-4 py-2 bg-primary-light text-primary rounded-full text-sm font-medium"
-                >
-                  {specialty}
-                </span>
-              ))}
-            </div>
+            {centerInfo && (
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6 font-arabic leading-relaxed">
+                {centerInfo.description_ar}
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {SERVICES.map((service) => (
+            {services.map((service) => (
               <div
                 key={service.id}
                 className="p-8 bg-white rounded-xl border border-gray-200 hover:border-primary/40 hover:shadow-medium transition-smooth group"
@@ -110,16 +125,25 @@ export default async function HomePage() {
                   </div>
                 </div>
                 <h3 className="text-xl font-semibold mb-3 text-center text-gray-900 font-arabic">
-                  {service.title}
+                  {service.title_ar}
                 </h3>
                 <p className="text-gray-600 text-center font-arabic leading-relaxed">
-                  {service.description}
+                  {service.description_ar}
                 </p>
               </div>
             ))}
           </div>
         </div>
       </section>
+
+      {/* Testimonials Section */}
+      <TestimonialsSection />
+
+      {/* Contact Section */}
+      <ContactSection />
+
+      {/* Map Section */}
+      <MapSection />
 
       <Footer />
       <ChatWidget />

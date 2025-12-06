@@ -6,7 +6,10 @@
     "dev": "next dev -p ${PORT:-3000}",
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",
-    "lint": "next lint"
+    "lint": "next lint",
+    "migration:apply": "node scripts/apply-migration.js",
+    "migration:cleanup": "bash scripts/cleanup-migrations.sh",
+    "migration:manual": "bash scripts/apply-migration-manual.sh"
   },
   "dependencies": {
     "@google/generative-ai": "^0.2.1",

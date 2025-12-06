@@ -1,11 +1,18 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Script from 'next/script'
+import StructuredData from '@/components/StructuredData'
 
 export const metadata: Metadata = {
-  title: 'مركز الهمم - منصة مركز الهممة الذكية',
-  description: 'مركز الهمم في جدة - رعاية طبية متخصصة في علاج النطق، تعديل السلوك، العلاج الوظيفي، والتكامل الحسي. فريق من الأخصائيين المؤهلين لخدمتك.',
-  keywords: 'مركز الهمم, جدة, علاج النطق, تعديل السلوك, العلاج الوظيفي, التكامل الحسي, التدخل المبكر, تشخيص التوحد',
+  title: 'مركز الهمم - رعاية طبية متخصصة في جدة',
+  description: 'مركز الهمم في جدة - رعاية طبية متخصصة في علاج النطق، تعديل السلوك، العلاج الوظيفي، والتكامل الحسي. فريق من الأخصائيين المؤهلين لخدمتك. حجز موعد الآن.',
+  keywords: 'مركز الهمم, جدة, علاج النطق, تعديل السلوك, العلاج الوظيفي, التكامل الحسي, التدخل المبكر, تشخيص التوحد, مركز طبي جدة, علاج النطق جدة',
+  openGraph: {
+    title: 'مركز الهمم - رعاية طبية متخصصة في جدة',
+    description: 'رعاية طبية متخصصة في علاج النطق، تعديل السلوك، العلاج الوظيفي، والتكامل الحسي',
+    type: 'website',
+    locale: 'ar_SA',
+  },
 }
 
 export default function RootLayout({
@@ -16,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className="light">
       <body className="font-sans antialiased bg-white text-gray-900">
+        <StructuredData />
         {children}
         <Script src="https://cdn.jsdelivr.net/npm/preline@2.0.0/dist/preline.js" strategy="lazyOnload" />
       </body>

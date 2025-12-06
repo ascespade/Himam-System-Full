@@ -15,7 +15,7 @@
     --color-foreground: #1a1a1a; /* Near black for excellent readability */
     --color-border: rgba(0, 0, 0, 0.08); /* Subtle border */
     --color-input: #f8f9fa; /* Light gray for inputs */
-    --color-ring: #009d63; /* Logo green - Primary brand color */
+    --color-ring: #f97316; /* Orange - Primary brand color */
 
     /* Card and Surface Colors - Polished */
     --color-card: #FFFFFF; /* White cards */
@@ -27,14 +27,14 @@
     --color-muted: #f8f9fa; /* Very light gray for backgrounds */
     --color-muted-foreground: #6c757d; /* Medium gray for secondary text */
 
-    /* Primary Colors - Matching Logo Green (#009d63) - Polished */
-    --color-primary: #009d63; /* Logo green - Primary brand color */
-    --color-primary-foreground: #FFFFFF; /* white - High contrast on green */
-    --color-primary-hover: #00b872; /* Brighter green for hover (better visibility) */
-    --color-primary-dark: #007a4d; /* Darker green for active states */
-    --color-primary-light: #e6f5f0; /* Light green for backgrounds */
-    --color-primary-lighter: #f0f9f6; /* Very light green for subtle backgrounds */
-    --color-primary-gradient: linear-gradient(135deg, #009d63 0%, #00b872 100%);
+    /* Primary Colors - Orange Theme - Balanced Contrast */
+    --color-primary: #f97316; /* Orange 500 - Primary brand color */
+    --color-primary-foreground: #FFFFFF; /* white - High contrast on orange */
+    --color-primary-hover: #fb923c; /* Orange 400 - Lighter for hover */
+    --color-primary-dark: #ea580c; /* Orange 600 - Darker for active states */
+    --color-primary-light: #fff7ed; /* Orange 50 - Very light for backgrounds */
+    --color-primary-lighter: #ffedd5; /* Orange 100 - Light for subtle backgrounds */
+    --color-primary-gradient: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
 
     /* Secondary Colors - Polished */
     --color-secondary: #f8f9fa; /* Light gray for secondary elements */
@@ -48,13 +48,13 @@
     --color-accent: #f0f9f6; /* Very light green tint */
     --color-accent-foreground: #009d63; /* Primary green for accent text */
 
-    /* Success Colors - Using logo green accent */
-    --color-success: #009d63; /* Logo green for success states */
+    /* Success Colors - Balanced green */
+    --color-success: #10b981; /* Green 500 for success states */
     --color-success-foreground: #FFFFFF; /* white - High contrast on green */
     
-    /* Accent Colors from Logo */
-    --color-accent-green: #009d63; /* Green from logo */
-    --color-accent-blue: #29abe2; /* Blue from logo */
+    /* Accent Colors - Balanced palette */
+    --color-accent-green: #10b981; /* Green accent */
+    --color-accent-blue: #3b82f6; /* Blue accent */
 
     /* Warning Colors - Polished */
     --color-warning: #ffc107; /* Professional amber */
@@ -217,17 +217,17 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Shadow utilities */
+  /* Shadow utilities - Balanced */
   .shadow-soft {
-    box-shadow: 0 2px 8px rgba(0, 157, 99, 0.08);
+    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.08);
   }
 
   .shadow-medium {
-    box-shadow: 0 4px 16px rgba(0, 157, 99, 0.12);
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.12);
   }
 
   .shadow-strong {
-    box-shadow: 0 8px 24px rgba(0, 157, 99, 0.16);
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.16);
   }
 }
 
