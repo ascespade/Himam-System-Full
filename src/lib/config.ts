@@ -53,6 +53,11 @@ export async function getSettings(): Promise<SystemSettings> {
       if (whatsappConfig.verify_token) settings['WHATSAPP_VERIFY_TOKEN'] = whatsappConfig.verify_token
     }
 
+    // EMERGENCY FALLBACK: If DB missing Gemini Key, use provided key
+    if (!settings['GEMINI_KEY']) {
+       settings['GEMINI_KEY'] = 'AIzaSyCc_WMALGhROTeUyq8gW8FbCjL6LZ_ubic'
+    }
+
     return settings as SystemSettings
   } catch (error) {
     console.error('Error in getSettings:', error)
