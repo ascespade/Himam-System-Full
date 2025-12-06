@@ -12,7 +12,7 @@
 | **access_token** | `EAAekiSTO6eMBP38y3arfKP4MgrDi3UZB1Ggf59m693ZAN5BZBUm1TxggP9UsqASsnyBMwZBL0camlZALmDnD5yngKdGGFvEiLtsIUgtByWRvnZCJqZAeDI4iGGXbpCLpqyMwNLb8Dr7kS37254kdZCRnlv2XPcmyQ3poXO6kZA7iO0TpR0v5UOVd8ZBObKu8mG7yWPZAQZDZD` |
 | **phone_number_id** | `843049648895545` |
 | **webhook_url** | `https://himam-system.vercel.app/api/whatsapp` |
-| **n8n_webhook_url** | `https://n8n-9q4d.onrender.com/webhook-test/whatsapp-ai` |
+| **n8n_webhook_url** | `https://n8n-9q4d.onrender.com/webhook/whatsapp-ai` |
 | **is_active** | `true` |
 
 ### 2. Meta Developer Console
@@ -31,7 +31,7 @@
 ### 3. n8n Workflow
 
 **Webhook Node:**
-- **URL**: `https://n8n-9q4d.onrender.com/webhook-test/whatsapp-ai`
+- **URL**: `https://n8n-9q4d.onrender.com/webhook/whatsapp-ai`
 - **Method**: `POST`
 - **Path**: `whatsapp-ai`
 - **Authentication**: `None`
@@ -55,7 +55,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 WHATSAPP_VERIFY_TOKEN=meta-webhook-verify-2025
 WHATSAPP_ACCESS_TOKEN=EAAekiSTO6eMBP38y3arfKP4MgrDi3UZB1Ggf59m693ZAN5BZBUm1TxggP9UsqASsnyBMwZBL0camlZALmDnD5yngKdGGFvEiLtsIUgtByWRvnZCJqZAeDI4iGGXbpCLpqyMwNLb8Dr7kS37254kdZCRnlv2XPcmyQ3poXO6kZA7iO0TpR0v5UOVd8ZBObKu8mG7yWPZAQZDZD
 WHATSAPP_PHONE_NUMBER_ID=843049648895545
-N8N_WEBHOOK_URL=https://n8n-9q4d.onrender.com/webhook-test/whatsapp-ai
+N8N_WEBHOOK_URL=https://n8n-9q4d.onrender.com/webhook/whatsapp-ai
 ```
 
 ## 🔄 Flow الكامل
@@ -112,7 +112,7 @@ curl "https://himam-system.vercel.app/api/whatsapp?hub.mode=subscribe&hub.verify
 
 ### 2. اختبار n8n Webhook
 ```bash
-curl -X POST https://n8n-9q4d.onrender.com/webhook-test/whatsapp-ai \
+curl -X POST https://n8n-9q4d.onrender.com/webhook/whatsapp-ai \
   -H "Content-Type: application/json" \
   -d '{"event":"whatsapp_message","from":"966501234567","text":"test","timestamp":"123456"}'
 ```
