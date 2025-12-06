@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
-import { NAV_LINKS } from '@/src/shared/constants'
+import { NAV_LINKS } from '@/shared'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)

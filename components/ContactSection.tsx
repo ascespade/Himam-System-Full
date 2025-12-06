@@ -1,4 +1,4 @@
-import { centerInfoRepository } from '@/src/infrastructure/supabase/repositories/center-info.repository'
+import { centerInfoRepository } from '@/infrastructure/supabase/repositories'
 
 export default async function ContactSection() {
   const centerInfo = await centerInfoRepository.getCenterInfo()

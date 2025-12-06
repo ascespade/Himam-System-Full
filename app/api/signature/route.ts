@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/src/lib/supabase'
+import { supabaseAdmin } from '@/lib'
 
 export async function POST(req: NextRequest) {
   try {

@@ -8,10 +8,9 @@ import StatsSection from '@/components/StatsSection'
 import TestimonialsSection from '@/components/TestimonialsSection'
 import ContactSection from '@/components/ContactSection'
 import MapSection from '@/components/MapSection'
-import { supabase } from '@/src/lib/supabase'
-import { servicesRepository } from '@/src/infrastructure/supabase/repositories/services.repository'
-import { centerInfoRepository } from '@/src/infrastructure/supabase/repositories/center-info.repository'
-import { Specialist } from '@/src/shared/types'
+import { supabase } from '@/lib'
+import { servicesRepository, centerInfoRepository } from '@/infrastructure/supabase/repositories'
+import { Specialist } from '@/shared'
 
 async function getSpecialists(): Promise<Specialist[]> {
   try {

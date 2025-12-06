@@ -1,5 +1,4 @@
-import { centerInfoRepository } from '@/src/infrastructure/supabase/repositories/center-info.repository'
-import { servicesRepository } from '@/src/infrastructure/supabase/repositories/services.repository'
+import { centerInfoRepository, servicesRepository } from '@/infrastructure/supabase/repositories'
 import Link from 'next/link'
 
 export default async function Footer() {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { whatsappSettingsRepository } from '@/src/infrastructure/supabase/repositories/whatsapp-settings.repository'
+import { whatsappSettingsRepository } from '@/infrastructure/supabase/repositories'
 
 // Get settings from database (with fallback to environment variables)
 async function getWhatsAppSettings() {

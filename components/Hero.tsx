@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useState } from 'react'
 import BookingForm from './BookingForm'
-import Button from '@/src/shared/components/ui/Button'
+import Button from '@/shared/components/ui/Button'
 
 export default function Hero() {
   const [showBookingForm, setShowBookingForm] = useState(false)
