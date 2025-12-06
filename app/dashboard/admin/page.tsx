@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
-import { supabase } from '@/lib'
+import { supabaseAdmin } from '@/lib'
 
 interface Patient {
   id: string
@@ -34,15 +34,33 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
+      setLoading(true)
+      // Use API routes for client-side data fetching (admin client is server-side only)
       const [patientsRes, specialistsRes] = await Promise.all([
-        supabase.from('patients').select('*').order('created_at', { ascending: false }),
-        supabase.from('specialists').select('*')
+        fetch('/api/patients'),
+        fetch('/api/specialists')
       ])
 
-      if (patientsRes.data) setPatients(patientsRes.data)
-      if (specialistsRes.data) setSpecialists(specialistsRes.data)
+      const patientsData = await patientsRes.json()
+      const specialistsData = await specialistsRes.json()
+
+      if (patientsData.success && patientsData.data) {
+        setPatients(Array.isArray(patientsData.data) ? patientsData.data : [])
+      } else {
+        console.error('Error loading patients:', patientsData.error)
+        setPatients([])
+      }
+      
+      if (specialistsData.success && specialistsData.data) {
+        setSpecialists(Array.isArray(specialistsData.data) ? specialistsData.data : [])
+      } else {
+        console.error('Error loading specialists:', specialistsData.error)
+        setSpecialists([])
+      }
     } catch (error) {
       console.error('Error loading data:', error)
+      setPatients([])
+      setSpecialists([])
     } finally {
       setLoading(false)
     }

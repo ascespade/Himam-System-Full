@@ -1,6 +1,6 @@
 /**
- * Patients API Route
- * Manages patient data
+ * Specialists API Route
+ * Manages specialist data
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -15,20 +15,20 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '100')
 
     let query = supabaseAdmin
-      .from('patients')
+      .from('specialists')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('name')
       .limit(limit)
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`)
+      query = query.or(`name.ilike.%${search}%,specialty.ilike.%${search}%,email.ilike.%${search}%`)
     }
 
-    const { data: patients, error } = await query
+    const { data: specialists, error } = await query
 
     if (error) throw error
 
-    return NextResponse.json(successResponse(patients || []))
+    return NextResponse.json(successResponse(specialists || []))
   } catch (error: unknown) {
     return handleApiError(error)
   }
@@ -37,30 +37,31 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, phone, nationality, status } = body
+    const { name, specialty, nationality, email } = body
 
-    if (!name || !phone) {
+    if (!name || !specialty) {
       return NextResponse.json(
-        errorResponse('Name and phone are required'),
+        errorResponse('Name and specialty are required'),
         { status: HTTP_STATUS.BAD_REQUEST }
       )
     }
 
-    const { data: patient, error } = await supabaseAdmin
-      .from('patients')
+    const { data: specialist, error } = await supabaseAdmin
+      .from('specialists')
       .insert({
         name,
-        phone,
+        specialty,
         nationality: nationality || '',
-        status: status || 'active',
+        email: email || '',
       })
       .select()
       .single()
 
     if (error) throw error
 
-    return NextResponse.json(successResponse(patient), { status: HTTP_STATUS.CREATED })
+    return NextResponse.json(successResponse(specialist), { status: HTTP_STATUS.CREATED })
   } catch (error: unknown) {
     return handleApiError(error)
   }
 }
+

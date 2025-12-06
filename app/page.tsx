@@ -8,18 +8,21 @@ import StatsSection from '@/components/StatsSection'
 import TestimonialsSection from '@/components/TestimonialsSection'
 import ContactSection from '@/components/ContactSection'
 import MapSection from '@/components/MapSection'
-import { supabase } from '@/lib'
+import { supabaseAdmin } from '@/lib'
 import { servicesRepository, centerInfoRepository } from '@/infrastructure/supabase/repositories'
 import { Specialist } from '@/shared'
 
 async function getSpecialists(): Promise<Specialist[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('specialists')
       .select('*')
       .limit(6)
 
-    if (error) throw error
+    if (error) {
+      console.error('Error fetching specialists:', error)
+      return []
+    }
     return (data || []) as Specialist[]
   } catch (error) {
     console.error('Error fetching specialists:', error)

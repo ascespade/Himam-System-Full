@@ -22,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ar" dir="rtl" className="light">
-      <body className="font-sans antialiased bg-background text-foreground">
+    <html lang="ar" dir="rtl" className="light" suppressHydrationWarning>
+      <body className="font-sans antialiased bg-background text-foreground" suppressHydrationWarning>
         <StructuredData />
         {children}
         <Script src="https://cdn.jsdelivr.net/npm/preline@2.0.0/dist/preline.js" strategy="lazyOnload" />

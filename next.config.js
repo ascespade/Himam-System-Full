@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Remove standalone output for dev server compatibility
+  // output: 'standalone', // Only for production builds
   images: {
     remotePatterns: [
       {
@@ -12,9 +14,13 @@ const nextConfig = {
         hostname: '**.supabase.in',
       },
     ],
+    // Suppress hydration warnings for browser automation attributes
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   // Webpack configuration for path aliases (Vercel compatibility)
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     const path = require('path')
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -26,11 +32,14 @@ const nextConfig = {
     }
     return config
   },
-  // Output configuration for Vercel
-  output: 'standalone',
   // Experimental features
   experimental: {
     optimizePackageImports: ['@google/generative-ai', 'openai'],
+  },
+  // Suppress hydration warnings in development
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
   },
 }
 

@@ -20,7 +20,7 @@ export async function GET() {
     if (error) throw error
 
     return NextResponse.json(
-      successResponse<SystemSetting[]>(settings || [])
+      successResponse(settings || [])
     )
   } catch (error) {
     console.error('Error fetching settings:', error)

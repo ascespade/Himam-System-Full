@@ -8,12 +8,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSettings } from '@/lib/config'
 import { generateWhatsAppResponse } from '@/lib/ai'
 import { supabaseAdmin } from '@/lib'
-// Calendar functions are used via API route, not direct import
+import { successResponse, errorResponse, parseRequestBody } from '@/shared/utils/api'
+import { HTTP_STATUS } from '@/shared/constants'
+import { logError } from '@/shared/utils/logger'
+import type { WhatsAppWebhookPayload } from '@/shared/types'
 
 /**
  * Send WhatsApp message via Meta API
  */
-async function sendWhatsAppMessage(to: string, message: string): Promise<any> {
+async function sendWhatsAppMessage(to: string, message: string): Promise<{ success: boolean; messageId?: string }> {
   const settings = await getSettings()
 
   if (!settings.WHATSAPP_TOKEN || !settings.WHATSAPP_PHONE_NUMBER_ID) {
@@ -78,10 +81,10 @@ export async function GET(req: NextRequest) {
       status: 403,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     })
-  } catch (error: any) {
-    console.error('Webhook verification error:', error)
+  } catch (error) {
+    logError('Webhook verification error', error)
     return new NextResponse('Internal server error', {
-      status: 500,
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       headers: { 'Content-Type': 'text/plain' },
     })
   }
@@ -92,7 +95,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    const body = await parseRequestBody<WhatsAppWebhookPayload>(req)
 
     // Handle WhatsApp webhook events
     if (body.object === 'whatsapp_business_account') {
@@ -100,14 +103,14 @@ export async function POST(req: NextRequest) {
       const changes = entry?.changes?.[0]
       const value = changes?.value
 
-      if (value?.messages) {
+      if (value?.messages && value.messages.length > 0) {
         const message = value.messages[0]
         const from = message.from
         const text = message.text?.body || ''
         const messageId = message.id
 
-        if (!text) {
-          return NextResponse.json({ success: true, message: 'No text content' })
+        if (!text || !from) {
+          return NextResponse.json(successResponse(null, 'No text content or sender'))
         }
 
         // Get conversation history for context
@@ -126,14 +129,14 @@ export async function POST(req: NextRequest) {
           ]) || []
 
         // Generate AI response
-        const aiResponse = await generateWhatsAppResponse(from, text, conversationHistory)
+        const aiResponse = await generateWhatsAppResponse(from || '', text, conversationHistory)
 
         // Save conversation to database
         await supabaseAdmin.from('conversation_history').insert({
           user_phone: from,
           user_message: text,
           ai_response: aiResponse.text,
-          session_id: messageId,
+          session_id: messageId || undefined,
         })
 
         // Send WhatsApp reply
@@ -151,24 +154,22 @@ export async function POST(req: NextRequest) {
           // Note: Booking requests are logged in conversation_history for manual processing
         }
 
-        return NextResponse.json({
-          success: true,
-          messageId,
-          aiResponse: aiResponse.text,
-          model: aiResponse.model,
-        })
+        return NextResponse.json(
+          successResponse({
+            messageId,
+            aiResponse: aiResponse.text,
+            model: aiResponse.model,
+          })
+        )
       }
     }
 
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('WhatsApp API Error:', error)
+    return NextResponse.json(successResponse(null))
+  } catch (error) {
+    logError('WhatsApp API Error', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to process WhatsApp webhook',
-      },
-      { status: 500 }
+      errorResponse(error),
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
 }

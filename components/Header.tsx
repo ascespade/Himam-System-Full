@@ -21,6 +21,7 @@ export default function Header() {
                 height={40}
                 className="h-10 w-auto"
                 priority
+                suppressHydrationWarning
               />
               <span className="text-xl font-bold text-gray-900 font-arabic tracking-tight">مركز الهمم</span>
             </Link>

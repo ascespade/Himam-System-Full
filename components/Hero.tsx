@@ -19,6 +19,7 @@ export default function Hero() {
           className="object-cover"
           priority
           quality={90}
+          suppressHydrationWarning
         />
       </div>
       

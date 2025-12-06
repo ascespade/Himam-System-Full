@@ -89,7 +89,7 @@ export function isValidPhone(phone: string): boolean {
 /**
  * Validates required field
  */
-export function isRequired(value: any): boolean {
+export function isRequired(value: unknown): boolean {
   if (typeof value === 'string') {
     return value.trim().length > 0
   }
@@ -262,10 +262,13 @@ export async function retry<T>(
  */
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
-    return error.message
+    return error.message || 'حدث خطأ غير متوقع'
   }
   if (typeof error === 'string') {
     return error
+  }
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String(error.message)
   }
   return 'حدث خطأ غير متوقع'
 }

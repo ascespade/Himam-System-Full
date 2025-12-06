@@ -116,15 +116,18 @@ CREATE POLICY "signatures_service_role_all" ON signatures
 
 -- Initial settings (can be updated via admin UI)
 INSERT INTO settings (key, value, description) VALUES
-  ('GEMINI_KEY', '', 'Google Gemini API Key'),
-  ('OPENAI_KEY', '', 'OpenAI API Key (fallback)'),
+  ('GEMINI_KEY', '', 'Google Gemini API Key for AI responses'),
+  ('OPENAI_KEY', '', 'OpenAI API Key (fallback AI service)'),
   ('WHATSAPP_TOKEN', '', 'Meta WhatsApp Cloud API Access Token'),
-  ('WHATSAPP_PHONE_NUMBER_ID', '', 'WhatsApp Phone Number ID'),
-  ('WHATSAPP_VERIFY_TOKEN', '', 'Webhook verification token'),
-  ('GOOGLE_CLIENT_EMAIL', '', 'Google Service Account Email'),
-  ('GOOGLE_PRIVATE_KEY', '', 'Google Service Account Private Key'),
-  ('GOOGLE_CALENDAR_ID', '', 'Google Calendar ID'),
-  ('CRM_URL', '', 'External CRM API URL'),
+  ('WHATSAPP_PHONE_NUMBER_ID', '', 'WhatsApp Phone Number ID from Meta'),
+  ('WHATSAPP_VERIFY_TOKEN', 'meta-webhook-verify-2025', 'Webhook verification token for Meta'),
+  ('WHATSAPP_APP_ID', '', 'Meta WhatsApp App ID from Developer Console'),
+  ('WHATSAPP_WABA_ID', '', 'WhatsApp Business Account ID (WABA ID)'),
+  ('WHATSAPP_PHONE_NUMBER', '', 'WhatsApp Business Phone Number (e.g., +13684645555)'),
+  ('GOOGLE_CLIENT_EMAIL', '', 'Google Service Account Email for Calendar integration'),
+  ('GOOGLE_PRIVATE_KEY', '', 'Google Service Account Private Key (JSON format)'),
+  ('GOOGLE_CALENDAR_ID', '', 'Google Calendar ID for appointments'),
+  ('CRM_URL', '', 'External CRM API URL for data synchronization'),
   ('CRM_TOKEN', '', 'CRM API Authentication Token')
 ON CONFLICT (key) DO NOTHING;
 

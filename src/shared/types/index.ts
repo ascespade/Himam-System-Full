@@ -3,6 +3,9 @@
  * All shared types used across the application
  */
 
+// Re-export error types
+export * from './errors'
+
 // ============================================================================
 // API Response Types
 // ============================================================================
@@ -199,13 +202,14 @@ export interface WhatsAppMessage {
 }
 
 export interface WhatsAppWebhookPayload {
-  entry: Array<{
-    changes: Array<{
-      value: {
+  object?: string
+  entry?: Array<{
+    changes?: Array<{
+      value?: {
         messages?: Array<{
-          from: string
-          text?: { body: string }
-          id: string
+          from?: string
+          text?: { body?: string }
+          id?: string
         }>
       }
     }>

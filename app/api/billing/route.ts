@@ -6,16 +6,39 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib'
 import { getSettings } from '@/lib/config'
+import { successResponse, errorResponse, parseRequestBody, validateRequestBody } from '@/shared/utils/api'
+import { HTTP_STATUS, SUCCESS_MESSAGES } from '@/shared/constants'
+import { logError, logWarn } from '@/shared/utils/logger'
+import type { Billing } from '@/shared/types'
+
+interface CreateBillingRequest {
+  patientName: string
+  phone?: string
+  amount: number
+  notes?: string
+  invoiceNumber?: string
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { patientName, phone, amount, notes, invoiceNumber } = body
-
-    if (!patientName || !amount) {
+    const body = await parseRequestBody<CreateBillingRequest>(req)
+    
+    const validation = validateRequestBody(body, ['patientName', 'amount'])
+    if (!validation.isValid || !validation.data) {
       return NextResponse.json(
-        { error: 'Patient name and amount are required' },
-        { status: 400 }
+        errorResponse(validation.errors.join(', ')),
+        { status: HTTP_STATUS.BAD_REQUEST }
+      )
+    }
+    
+    const { patientName, phone, amount, notes, invoiceNumber } = validation.data
+
+    // Validate and parse amount
+    const amountValue = typeof amount === 'number' ? amount : parseFloat(String(amount))
+    if (isNaN(amountValue)) {
+      return NextResponse.json(
+        errorResponse('Invalid amount value'),
+        { status: HTTP_STATUS.BAD_REQUEST }
       )
     }
 
@@ -25,7 +48,7 @@ export async function POST(req: NextRequest) {
       .insert({
         patient_name: patientName,
         phone,
-        amount: parseFloat(amount.toString()),
+        amount: amountValue,
         paid: false,
         invoice_number: invoiceNumber || `INV-${Date.now()}`,
         notes,
@@ -35,59 +58,71 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error
 
-    // Sync with CRM if configured
+    // Sync with CRM if configured (non-blocking)
     const settings = await getSettings()
     if (settings.CRM_URL && settings.CRM_TOKEN) {
-      try {
-        await fetch(`${settings.CRM_URL}/billing`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${settings.CRM_TOKEN}`,
-          },
-          body: JSON.stringify({
-            action: 'create_invoice',
-            billingId: billing.id,
-            patientName,
-            amount,
-            invoiceNumber: billing.invoice_number,
-          }),
-        }).catch(console.error)
-      } catch (crmError) {
-        console.error('CRM billing sync error:', crmError)
-        // Non-blocking
-      }
+      fetch(`${settings.CRM_URL}/billing`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${settings.CRM_TOKEN}`,
+        },
+        body: JSON.stringify({
+          action: 'create_invoice',
+          billingId: billing.id,
+          patientName,
+          amount,
+          invoiceNumber: billing.invoice_number,
+        }),
+      }).catch((crmError) => {
+        logError('CRM billing sync error', crmError, { billingId: billing.id })
+      })
     }
 
-    return NextResponse.json({
-      success: true,
-      billing,
-    })
-  } catch (error: any) {
-    console.error('Billing API Error:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to create billing record',
-      },
-      { status: 500 }
+      successResponse<Billing>(billing, SUCCESS_MESSAGES.CREATED)
+    )
+  } catch (error) {
+    logError('Billing API Error', error)
+    return NextResponse.json(
+      errorResponse(error),
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
 }
 
+interface UpdateBillingRequest {
+  id: string
+  paid?: boolean
+  amount?: number
+  notes?: string
+}
+
 export async function PUT(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { id, paid, amount, notes } = body
-
-    if (!id) {
-      return NextResponse.json({ error: 'Billing ID is required' }, { status: 400 })
+    const body = await parseRequestBody<UpdateBillingRequest>(req)
+    
+    const validation = validateRequestBody(body, ['id'])
+    if (!validation.isValid || !validation.data) {
+      return NextResponse.json(
+        errorResponse('Billing ID is required'),
+        { status: HTTP_STATUS.BAD_REQUEST }
+      )
     }
+    
+    const { id, paid, amount, notes } = validation.data
 
-    const updates: any = {}
-    if (paid !== undefined) updates.paid = paid
-    if (amount !== undefined) updates.amount = parseFloat(amount.toString())
-    if (notes !== undefined) updates.notes = notes
+    const updates: Partial<Billing> = {}
+    if (paid !== undefined && paid !== null) updates.paid = Boolean(paid)
+    if (amount !== undefined && amount !== null) {
+      const amountValue = typeof amount === 'number' ? amount : parseFloat(String(amount))
+      if (!isNaN(amountValue)) {
+        updates.amount = amountValue
+      }
+    }
+    if (notes !== undefined && notes !== null && typeof notes === 'string') {
+      updates.notes = notes
+    }
 
     const { data: billing, error } = await supabaseAdmin
       .from('billing')
@@ -98,18 +133,14 @@ export async function PUT(req: NextRequest) {
 
     if (error) throw error
 
-    return NextResponse.json({
-      success: true,
-      billing,
-    })
-  } catch (error: any) {
-    console.error('Billing update error:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to update billing record',
-      },
-      { status: 500 }
+      successResponse<Billing>(billing, SUCCESS_MESSAGES.UPDATED)
+    )
+  } catch (error) {
+    logError('Billing update error', error)
+    return NextResponse.json(
+      errorResponse(error),
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
 }
@@ -126,7 +157,7 @@ export async function GET(req: NextRequest) {
       query = query.ilike('patient_name', `%${patientName}%`)
     }
 
-    if (paid !== null) {
+    if (paid !== null && paid !== undefined) {
       query = query.eq('paid', paid === 'true')
     }
 
@@ -134,18 +165,14 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    return NextResponse.json({
-      success: true,
-      billing: billing || [],
-    })
-  } catch (error: any) {
-    console.error('Billing GET error:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to fetch billing records',
-      },
-      { status: 500 }
+      successResponse<Billing[]>(billing || [])
+    )
+  } catch (error) {
+    logError('Billing GET error', error)
+    return NextResponse.json(
+      errorResponse(error),
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
 }

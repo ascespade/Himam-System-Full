@@ -3,7 +3,7 @@
  * Centralized config management for the entire system
  */
 
-import { supabase } from './supabase'
+import { supabase, supabaseAdmin } from './supabase'
 
 export interface SystemSettings {
   GEMINI_KEY: string
@@ -83,7 +83,7 @@ export async function updateSetting(
   description?: string
 ): Promise<boolean> {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('settings')
       .upsert({
         key,
@@ -116,7 +116,7 @@ export async function updateSettings(settings: Record<string, string>): Promise<
       updated_at: new Date().toISOString(),
     }))
 
-    const { error } = await supabase.from('settings').upsert(updates)
+    const { error } = await supabaseAdmin.from('settings').upsert(updates)
 
     if (error) {
       console.error('Error updating settings:', error)

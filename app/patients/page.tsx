@@ -1,15 +1,18 @@
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
-import { supabase } from '@/lib'
+import { supabaseAdmin } from '@/lib'
 
 async function getPatients() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('patients')
       .select('*')
       .order('created_at', { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      console.error('Error fetching patients:', error)
+      return []
+    }
     return data || []
   } catch (error) {
     console.error('Error fetching patients:', error)

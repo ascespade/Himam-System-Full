@@ -43,7 +43,7 @@ export function validatePhone(phone: string): ValidationResult {
 /**
  * Validates required field
  */
-export function validateRequired(value: any, fieldName?: string): ValidationResult {
+export function validateRequired(value: unknown, fieldName?: string): ValidationResult {
   if (value === null || value === undefined || value === '') {
     return {
       isValid: false,
@@ -135,9 +135,9 @@ export function validateFutureDate(date: string | Date): ValidationResult {
 /**
  * Validates multiple fields
  */
-export function validateFields<T extends Record<string, any>>(
+export function validateFields<T extends Record<string, unknown>>(
   data: T,
-  validators: Partial<Record<keyof T, (value: any) => ValidationResult>>
+  validators: Partial<Record<keyof T, (value: unknown) => ValidationResult>>
 ): { isValid: boolean; errors: Partial<Record<keyof T, string>> } {
   const errors: Partial<Record<keyof T, string>> = {}
   
