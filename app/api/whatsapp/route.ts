@@ -225,12 +225,29 @@ export async function POST(req: NextRequest) {
         const bookingDetails = parseBookingFromAI(aiResponse.text)
 
         if (bookingDetails && bookingDetails.isComplete) {
-          // Create appointment in database
           try {
+            // 1. Upsert Patient (Critical: Ensure patient exists in DB)
+            const { data: patient, error: patientError } = await supabaseAdmin
+               .from('patients')
+               .upsert({
+                  phone: bookingDetails.phone || from,
+                  name: bookingDetails.patientName,
+                  status: 'active',
+                  created_at: new Date().toISOString()
+               }, { onConflict: 'phone' })
+               .select()
+               .single()
+
+            if (patientError) {
+               console.error('Error creating patient record:', patientError)
+            }
+
+            // 2. Create Appointment
             const { data: appointment, error: aptError } = await supabaseAdmin
               .from('appointments')
               .insert({
-                patient_name: bookingDetails.patientName,
+                patient_name: bookingDetails.patientName, // Fallback
+                patient_id: patient?.id, // Link to real patient
                 phone: bookingDetails.phone || from,
                 specialist: bookingDetails.specialist,
                 date: new Date(`${bookingDetails.date}T${bookingDetails.time}`).toISOString(),
