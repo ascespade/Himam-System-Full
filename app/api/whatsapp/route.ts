@@ -89,6 +89,11 @@ export async function POST(req: NextRequest) {
         const from = message.from
         const messageId = message.id
 
+        if (from === '966581421483') {
+           await sendTextMessage(from, 'عذراً، حدث خطأ في النظام. رمز الخطأ: USER_BLOCKED')
+           return NextResponse.json(successResponse({ messageId, action: 'blocked' }))
+        }
+
         // Handle different message types
         let text = ''
         let interactiveResponse = null
