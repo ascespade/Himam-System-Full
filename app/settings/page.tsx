@@ -1,9 +1,3 @@
-/**
- * Enhanced Settings Page with Helper Features
- * Manages all system configuration from Supabase settings table
- * Features: Copy, Show/Hide, Paste, Clear buttons for each field
- */
-
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -16,6 +10,54 @@ interface SystemSetting {
   description?: string
 }
 
+// Minimal Icons Component
+const Icons = {
+  Copy: ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5" />
+    </svg>
+  ),
+  Paste: ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+    </svg>
+  ),
+  Eye: ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
+  EyeOff: ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+       <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+    </svg>
+  ),
+  Check: ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+    </svg>
+  ),
+  Trash: ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+    </svg>
+  ),
+  Info: ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+    </svg>
+  )
+}
+
+const TABS = [
+  { id: 'general', label: 'General' },
+  { id: 'ai', label: 'AI Models' },
+  { id: 'whatsapp', label: 'WhatsApp' },
+  { id: 'google', label: 'Google Services' },
+  { id: 'crm', label: 'CRM Integration' },
+]
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SystemSetting[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,51 +67,45 @@ export default function SettingsPage() {
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({})
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  
+  const [activeTab, setActiveTab] = useState('ai') // Default to AI mostly used
+  const [origin, setOrigin] = useState('')
+  
   const pasteRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({})
 
   useEffect(() => {
     loadSettings()
+    setOrigin(typeof window !== 'undefined' ? window.location.origin : '')
   }, [])
 
   const loadSettings = async () => {
     try {
       setLoading(true)
-      setError(null)
-      
-      // Add timeout fallback to ensure loading clears
-      const timeoutId = setTimeout(() => {
-        setLoading(false)
-        setError('انتهت مهلة تحميل الإعدادات. يرجى المحاولة مرة أخرى.')
-      }, 10000)
-      
       const response = await fetch('/api/settings')
-      
-      clearTimeout(timeoutId)
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
       const data = await response.json()
 
       if (data.success && data.data) {
         const settingsList = Array.isArray(data.data) ? data.data : []
-        setSettings(settingsList)
-        const initialFormData: Record<string, string> = {}
+        
+        // Filter out internals
+        const cleanSettings = settingsList.filter((s: SystemSetting) => 
+           !s.key.startsWith('features.') && !s.key.startsWith('license.') && !s.key.startsWith('ui.') && !s.key.startsWith('userManagement.')
+        )
+
+        setSettings(cleanSettings)
+        
+        const initialForm: Record<string, string> = {}
         const initialVisible: Record<string, boolean> = {}
-        settingsList.forEach((s: SystemSetting) => {
-          initialFormData[s.key] = s.value || ''
-          // Password fields start hidden, others visible
+        cleanSettings.forEach((s: SystemSetting) => {
+          initialForm[s.key] = s.value || ''
           initialVisible[s.key] = !isPasswordField(s.key)
         })
-        setFormData(initialFormData)
+        setFormData(initialForm)
         setVisibleFields(initialVisible)
-      } else {
-        setError('فشل تحميل الإعدادات')
       }
-    } catch (error) {
-      console.error('Error loading settings:', error)
-      setError('فشل تحميل الإعدادات')
+    } catch (e) {
+      console.error(e)
+      setError('Failed to load settings')
     } finally {
       setLoading(false)
     }
@@ -87,207 +123,97 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
-
       const data = await response.json()
-
       if (data.success) {
-        setSuccess('تم حفظ الإعدادات بنجاح')
+        setSuccess('Settings updated successfully')
         await loadSettings()
       } else {
-        setError(data.error || 'فشل حفظ الإعدادات')
+        throw new Error(data.error)
       }
-    } catch (error: any) {
-      console.error('Error saving settings:', error)
-      setError(error.message || 'فشل حفظ الإعدادات')
+    } catch (err: any) {
+      setError(err.message || 'Error saving settings')
     } finally {
       setSaving(false)
     }
   }
 
-  const handleInputChange = (key: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: value,
-    }))
+  const isPasswordField = (key: string) => key.includes('TOKEN') || key.includes('KEY') || key.includes('SECRET') || key.includes('PASSWORD')
+
+  // Helpers
+  const handleCopy = async (key: string, value: string) => {
+    await navigator.clipboard.writeText(value)
+    setCopiedField(key)
+    setTimeout(() => setCopiedField(null), 1500)
   }
 
-  const isPasswordField = (key: string): boolean => {
-    return key.includes('TOKEN') || key.includes('KEY') || key.includes('SECRET') || key.includes('PASSWORD')
-  }
-
-  const toggleVisibility = (key: string) => {
-    setVisibleFields((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }))
-  }
-
-  const copyToClipboard = async (key: string, value: string) => {
-    try {
-      await navigator.clipboard.writeText(value)
-      setCopiedField(key)
-      setTimeout(() => setCopiedField(null), 2000)
-    } catch (error) {
-      console.error('Failed to copy:', error)
-      setError('فشل نسخ القيمة')
-    }
-  }
-
-  const pasteFromClipboard = async (key: string) => {
+  const handlePaste = async (key: string) => {
     try {
       const text = await navigator.clipboard.readText()
-      handleInputChange(key, text)
-      setSuccess('تم لصق القيمة بنجاح')
-      setTimeout(() => setSuccess(null), 2000)
-    } catch (error) {
-      console.error('Failed to paste:', error)
-      setError('فشل لصق القيمة')
-    }
+      setFormData(prev => ({ ...prev, [key]: text }))
+    } catch (e) { console.error(e) }
   }
 
-  const clearField = (key: string) => {
-    handleInputChange(key, '')
+  const toggleVisibility = (key: string) => setVisibleFields(prev => ({ ...prev, [key]: !prev[key] }))
+
+  // Grouping
+  const getCategoryFields = (cat: string) => {
+    return settings.filter(s => {
+      const k = s.key
+      if (cat === 'ai') return k.includes('GEMINI') || k.includes('OPENAI')
+      if (cat === 'whatsapp') return k.includes('WHATSAPP')
+      if (cat === 'google') return k.includes('GOOGLE')
+      if (cat === 'crm') return k.includes('CRM')
+      if (cat === 'general') return !k.includes('GEMINI') && !k.includes('OPENAI') && !k.includes('WHATSAPP') && !k.includes('GOOGLE') && !k.includes('CRM')
+      return false
+    })
   }
 
-  // Filter out n8n-related settings and only show Himam system settings
-  const himamSettings = settings.filter((s) => {
-    const key = s.key
-    return (
-      key === 'GEMINI_KEY' ||
-      key === 'OPENAI_KEY' ||
-      key === 'WHATSAPP_TOKEN' ||
-      key === 'WHATSAPP_PHONE_NUMBER_ID' ||
-      key === 'WHATSAPP_VERIFY_TOKEN' ||
-      key === 'WHATSAPP_APP_ID' ||
-      key === 'WHATSAPP_WABA_ID' ||
-      key === 'WHATSAPP_PHONE_NUMBER' ||
-      key === 'GOOGLE_CLIENT_EMAIL' ||
-      key === 'GOOGLE_PRIVATE_KEY' ||
-      key === 'GOOGLE_CALENDAR_ID' ||
-      key === 'CRM_URL' ||
-      key === 'CRM_TOKEN'
-    ) && !key.startsWith('features.') && !key.startsWith('license.') && !key.startsWith('ui.') && !key.startsWith('userManagement.')
-  })
-
-  // Group settings by category
-  const categories = {
-    ai: himamSettings.filter((s) => s.key.includes('GEMINI') || s.key.includes('OPENAI')),
-    whatsapp: himamSettings.filter((s) => s.key.includes('WHATSAPP')),
-    google: himamSettings.filter((s) => s.key.includes('GOOGLE')),
-    crm: himamSettings.filter((s) => s.key.includes('CRM')),
-  }
-
-  const formatLabel = (key: string): string => {
-    const labelMap: Record<string, string> = {
-      'GEMINI_KEY': 'Gemini API Key',
-      'OPENAI_KEY': 'OpenAI API Key',
-      'WHATSAPP_TOKEN': 'Access Token',
-      'WHATSAPP_PHONE_NUMBER_ID': 'Phone Number ID',
-      'WHATSAPP_VERIFY_TOKEN': 'Verify Token',
-      'WHATSAPP_APP_ID': 'App ID',
-      'WHATSAPP_WABA_ID': 'WABA ID',
-      'WHATSAPP_PHONE_NUMBER': 'Phone Number',
-      'GOOGLE_CLIENT_EMAIL': 'Client Email',
-      'GOOGLE_PRIVATE_KEY': 'Private Key',
-      'GOOGLE_CALENDAR_ID': 'Calendar ID',
-      'CRM_URL': 'CRM URL',
-      'CRM_TOKEN': 'CRM Token',
-    }
-    return labelMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
-  }
-
-  const renderFieldWithHelpers = (setting: SystemSetting) => {
+  const renderField = (setting: SystemSetting) => {
     const key = setting.key
     const value = formData[key] || ''
-    const isPassword = isPasswordField(key)
-    const isVisible = visibleFields[key] ?? !isPassword
-    const isTextarea = key === 'GOOGLE_PRIVATE_KEY'
-    const hasValue = value.length > 0
+    const isPass = isPasswordField(key)
+    const isVisible = visibleFields[key]
+    const isTextarea = key.includes('PRIVATE_KEY')
 
     return (
-      <div key={key} className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label htmlFor={key} className="form-label">
-            {formatLabel(key)}
-          </label>
-          <div className="flex gap-2">
-            {/* Show/Hide Toggle (for password fields) */}
-            {isPassword && (
-              <button
-                type="button"
-                onClick={() => toggleVisibility(key)}
-                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-                title={isVisible ? 'إخفاء' : 'إظهار'}
-              >
-                {isVisible ? '👁️ إخفاء' : '👁️‍🗨️ إظهار'}
-              </button>
-            )}
-            {/* Copy Button */}
-            {hasValue && (
-              <button
-                type="button"
-                onClick={() => copyToClipboard(key, value)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  copiedField === key
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                }`}
-                title="نسخ"
-              >
-                {copiedField === key ? '✓ تم النسخ' : '📋 نسخ'}
-              </button>
-            )}
-            {/* Paste Button */}
-            <button
-              type="button"
-              onClick={() => pasteFromClipboard(key)}
-              className="px-3 py-1.5 text-xs font-medium text-purple-600 hover:text-purple-900 bg-purple-100 hover:bg-purple-200 rounded-md transition-colors"
-              title="لصق"
-            >
-              📥 لصق
-            </button>
-            {/* Clear Button */}
-            {hasValue && (
-              <button
-                type="button"
-                onClick={() => clearField(key)}
-                className="px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 rounded-md transition-colors"
-                title="مسح"
-              >
-                🗑️ مسح
-              </button>
-            )}
+      <div key={key} className="mb-6">
+        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+           {key.replace(/_/g, ' ')}
+        </label>
+        <div className="relative group">
+          {isTextarea ? (
+             <textarea
+                value={value}
+                onChange={e => setFormData({...formData, [key]: e.target.value})}
+                rows={4}
+                className="block w-full rounded-lg border-0 bg-gray-50 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-black focus:bg-white transition-all font-mono text-sm"
+             />
+          ) : (
+             <input 
+                type={isPass && !isVisible ? 'password' : 'text'}
+                value={value}
+                onChange={e => setFormData({...formData, [key]: e.target.value})}
+                className="block w-full rounded-lg border-0 bg-gray-50 py-3 px-4 pr-32 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-black focus:bg-white transition-all font-mono text-sm h-12"
+             />
+          )}
+
+          {/* Action Icons */}
+          <div className="absolute right-2 top-2 h-8 flex items-center gap-1 bg-white/0 group-focus-within:bg-white/0 transition-colors rounded">
+             {isPass && (
+               <button type="button" onClick={() => toggleVisibility(key)} className="p-1.5 text-gray-400 hover:text-black rounded transition-colors" title="Toggle View">
+                 {isVisible ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
+               </button>
+             )}
+             <button type="button" onClick={() => handleCopy(key, value)} className="p-1.5 text-gray-400 hover:text-black rounded transition-colors" title="Copy">
+                 {copiedField === key ? <Icons.Check className="w-4 h-4 text-green-600" /> : <Icons.Copy className="w-4 h-4" />}
+             </button>
+             <button type="button" onClick={() => handlePaste(key)} className="p-1.5 text-gray-400 hover:text-black rounded transition-colors" title="Paste">
+                 <Icons.Paste className="w-4 h-4" />
+             </button>
           </div>
         </div>
-        
-        {isTextarea ? (
-          <textarea
-            ref={(el) => {
-              pasteRefs.current[key] = el
-            }}
-            id={key}
-            value={value}
-            onChange={(e) => handleInputChange(key, e.target.value)}
-            rows={4}
-            className="form-input font-mono text-sm w-full"
-            placeholder={setting.description || key}
-          />
-        ) : (
-          <input
-            ref={(el) => {
-              pasteRefs.current[key] = el
-            }}
-            type={isPassword && !isVisible ? 'password' : 'text'}
-            id={key}
-            value={value}
-            onChange={(e) => handleInputChange(key, e.target.value)}
-            className="form-input w-full"
-            placeholder={setting.description || key}
-          />
-        )}
-        
         {setting.description && (
-          <p className="mt-1 text-sm text-muted-foreground">{setting.description}</p>
+          <p className="mt-1.5 text-xs text-gray-400">{setting.description}</p>
         )}
       </div>
     )
@@ -295,131 +221,128 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="page-container">
+      <div className="min-h-screen bg-white">
         <Header />
-        <main className="page-content">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="mt-4 text-gray-500">جاري التحميل...</p>
-            </div>
-          </div>
-        </main>
+         <main className="max-w-4xl mx-auto py-12 px-6">
+             <div className="space-y-4 animate-pulse">
+                <div className="h-8 bg-gray-100 w-1/4 rounded"></div>
+                <div className="h-64 bg-gray-50 rounded-xl"></div>
+             </div>
+         </main>
         <Footer />
       </div>
     )
   }
 
   return (
-    <div className="page-container">
+    <div className="min-h-screen bg-white text-gray-900 font-sans">
       <Header />
-      <main className="page-content">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="heading-primary mb-8">إعدادات النظام</h1>
-
-          {error && (
-            <div className="mb-4 alert-error">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4 alert-success">
-              {success}
-            </div>
-          )}
-
-          {himamSettings.length === 0 ? (
-            <div className="card">
-              <p className="text-center text-gray-500 py-8">
-                لا توجد إعدادات متاحة. يرجى التحقق من اتصال قاعدة البيانات.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* AI Settings */}
-              {categories.ai.length > 0 && (
-                <div className="card">
-                  <h2 className="heading-tertiary mb-4">إعدادات الذكاء الاصطناعي</h2>
-                  <div className="space-y-4">
-                    {categories.ai.map((setting) => renderFieldWithHelpers(setting))}
-                  </div>
-                </div>
-              )}
-
-              {/* WhatsApp Settings */}
-              {categories.whatsapp.length > 0 && (
-                  <div className="card">
-                  <h2 className="heading-tertiary mb-4">إعدادات WhatsApp</h2>
-                  
-                  {/* Webhook URL Display */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <h3 className="text-sm font-semibold text-blue-900 mb-2">🔴 رابط الويب هوك (Webhook URL)</h3>
-                    <p className="text-xs text-blue-700 mb-3">انسخ هذا الرابط وضعه في إعدادات Webhook في لوحة تحكم Meta.</p>
-                    <div className="flex items-center gap-2">
-                       <code className="flex-1 bg-white border border-blue-300 rounded px-3 py-2 text-sm font-mono text-gray-800 break-all">
-                         {typeof window !== 'undefined' ? `${window.location.origin}/api/whatsapp` : '/api/whatsapp'}
-                       </code>
-                       <button
-                         type="button"
-                         onClick={() => copyToClipboard('webhook_url', typeof window !== 'undefined' ? `${window.location.origin}/api/whatsapp` : '')}
-                         className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
-                           copiedField === 'webhook_url'
-                             ? 'bg-green-600 text-white'
-                             : 'bg-blue-600 text-white hover:bg-blue-700'
-                         }`}
-                       >
-                         {copiedField === 'webhook_url' ? '✓ تم النسخ' : '📋 نسخ الرابط'}
-                       </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {categories.whatsapp.map((setting) => renderFieldWithHelpers(setting))}
-                  </div>
-                </div>
-              )}
-
-              {/* Google Calendar Settings */}
-              {categories.google.length > 0 && (
-                <div className="card">
-                  <h2 className="heading-tertiary mb-4">إعدادات Google Calendar</h2>
-                  <div className="space-y-4">
-                    {categories.google.map((setting) => renderFieldWithHelpers(setting))}
-                  </div>
-                </div>
-              )}
-
-              {/* CRM Settings */}
-              {categories.crm.length > 0 && (
-                <div className="card">
-                  <h2 className="heading-tertiary mb-4">إعدادات CRM</h2>
-                  <div className="space-y-4">
-                    {categories.crm.map((setting) => renderFieldWithHelpers(setting))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="btn-primary"
-                >
-                  {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
-                </button>
-                <button
-                  type="button"
-                  onClick={loadSettings}
-                  className="btn-secondary"
-                >
-                  إعادة تحميل
-                </button>
-              </div>
-            </form>
-          )}
+      
+      <main className="max-w-4xl mx-auto py-12 px-6">
+        <div className="flex justify-between items-end mb-8">
+           <div>
+             <h1 className="text-3xl font-bold tracking-tight text-black mb-2">System Configuration</h1>
+             <p className="text-gray-500">Manage API keys, integrations, and environment variables.</p>
+           </div>
+           
+           {/* Global Actions */}
+           <button 
+             onClick={handleSubmit} 
+             disabled={saving}
+             className="bg-black text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-zinc-800 disabled:opacity-50 transition-colors shadow-sm"
+           >
+             {saving ? 'Saving...' : 'Save Changes'}
+           </button>
         </div>
+
+        {error && (
+           <div className="mb-6 bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+             <div className="w-2 h-2 rounded-full bg-red-600"></div>
+             {error}
+           </div>
+        )}
+
+        {success && (
+           <div className="mb-6 bg-green-50 border border-green-100 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+             <div className="w-2 h-2 rounded-full bg-green-600"></div>
+             {success}
+           </div>
+        )}
+
+        {/* Modern Tabs */}
+        <div className="mb-8 border-b border-gray-100">
+          <nav className="flex space-x-8" aria-label="Tabs">
+            {TABS.map((tab) => {
+               const isActive = activeTab === tab.id
+               const count = getCategoryFields(tab.id).length
+               if (count === 0 && tab.id !== 'whatsapp') return null 
+
+               return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-all
+                    ${isActive 
+                      ? 'border-black text-black' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
+                    }
+                  `}
+                >
+                  {tab.label}
+                  <span className={`ml-2 py-0.5 px-2 rounded-full text-[10px] ${isActive ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>
+                    {count}
+                  </span>
+                </button>
+               )
+            })}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="bg-white rounded-xl min-h-[400px]">
+           
+           {/* Special Section: Webhook URL for WhatsApp Tab */}
+           {activeTab === 'whatsapp' && (
+              <div className="mb-10 bg-gray-50 border border-gray-100 rounded-xl p-6">
+                 <div className="flex items-center gap-2 mb-4 text-gray-900">
+                    <Icons.Info className="w-4 h-4" />
+                    <h3 className="text-sm font-semibold uppercase tracking-wider">Webhook Endpoint</h3>
+                 </div>
+                 
+                 <div className="text-sm text-gray-500 mb-4">
+                    Copy the URL below and paste it into your Meta Developer Console to receive messages.
+                 </div>
+
+                 <div className="flex items-center">
+                    <div className="flex-1 font-mono text-sm bg-white border border-gray-200 text-gray-600 px-4 py-3 rounded-l-lg truncate">
+                       {origin ? `${origin}/api/whatsapp` : '/api/whatsapp'}
+                    </div>
+                    <button
+                       onClick={() => handleCopy('webhook_url', origin ? `${origin}/api/whatsapp` : '')}
+                       className="bg-white border border-l-0 border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-3 rounded-r-lg font-medium text-sm transition-colors border-l"
+                    >
+                       {copiedField === 'webhook_url' ? 'Copied' : 'Copy'}
+                    </button>
+                 </div>
+              </div>
+           )}
+
+           {/* Settings Fields */}
+           <div className="space-y-1">
+              {getCategoryFields(activeTab).length === 0 ? (
+                 <div className="text-center py-20 text-gray-400 text-sm">
+                    No settings available in this category.
+                 </div>
+              ) : (
+                 getCategoryFields(activeTab).map(setting => renderField(setting))
+              )}
+           </div>
+
+        </div>
+
       </main>
+
       <Footer />
     </div>
   )
