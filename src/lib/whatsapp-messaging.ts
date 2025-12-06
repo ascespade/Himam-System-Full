@@ -413,3 +413,43 @@ export async function sendTemplateMessage(
 
   return response.json()
 }
+
+/**
+ * Send an audio message
+ */
+export async function sendAudioMessage(
+  to: string,
+  audioId: string
+): Promise<{ success: boolean; messageId?: string }> {
+  const settings = await getSettings()
+
+  if (!settings.WHATSAPP_TOKEN || !settings.WHATSAPP_PHONE_NUMBER_ID) {
+    throw new Error('WhatsApp API not configured')
+  }
+
+  const response = await fetch(
+    `https://graph.facebook.com/v20.0/${settings.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${settings.WHATSAPP_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to,
+        type: 'audio',
+        audio: {
+          id: audioId
+        }
+      }),
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error?.message || 'Failed to send audio message')
+  }
+
+  return response.json()
+}

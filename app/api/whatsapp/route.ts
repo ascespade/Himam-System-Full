@@ -20,8 +20,11 @@ import {
   sendButtonMessage,
   sendCenterLocation,
   sendDocumentMessage,
-  sendTemplateMessage
+  sendDocumentMessage,
+  sendTemplateMessage,
+  sendAudioMessage
 } from '@/lib/whatsapp-messaging'
+import { transcribeAudio, generateAndUploadVoice } from '@/lib/voice-handler'
 import {
   parseBookingFromAI,
   hasBookingIntent,
@@ -99,9 +102,15 @@ export async function POST(req: NextRequest) {
         // Handle different message types
         let text = ''
         let interactiveResponse = null
+        let shouldReplyWithVoice = false
 
         if (message.type === 'text') {
           text = message.text?.body || ''
+        } else if (message.type === 'audio') {
+          shouldReplyWithVoice = true
+          await sendTextMessage(from || '', '✨ جاري الاستماع إلى رسالتك الصوتية...')
+          text = await transcribeAudio((message as any).audio?.id)
+          if (!text) text = '[صوت غير واضح]'
         } else if (message.type === 'interactive' && message.interactive) {
           // Handle button/list responses
           interactiveResponse = message.interactive
@@ -110,17 +119,15 @@ export async function POST(req: NextRequest) {
           } else if (interactiveResponse.type === 'list_reply' && interactiveResponse.list_reply) {
             text = interactiveResponse.list_reply.title || ''
           }
-        } else if (message.type === 'image' || message.type === 'document' || message.type === 'audio' || message.type === 'location') {
-          // Handle media messages
+        } else if (message.type === 'image' || message.type === 'document' || message.type === 'location') {
+          // Handle media messages (excluding audio which is handled above)
           const mediaTypeMap: Record<string, string> = {
              image: 'صورة',
              document: 'ملف',
-             audio: 'تسجيل صوتي',
              location: 'موقع جغرافي'
           }
           const mediaType = mediaTypeMap[message.type] || 'ملف'
           
-          // Set text so AI knows about it
           text = `[User sent a ${message.type.toUpperCase()}]`
           
           await sendTextMessage(from || '', `تم استلام ${mediaType}. جاري المعالجة...`)
@@ -128,8 +135,8 @@ export async function POST(req: NextRequest) {
           // Log explicitly
            await supabaseAdmin.from('conversation_history').insert({
             user_phone: from,
-            user_message: `[${message.type.toUpperCase()}] ID: ${message[message.type]?.id || 'unknown'}`,
-            ai_response: 'System: Media received', // Temporary placeholder, real AI response comes later
+            user_message: `[${message.type.toUpperCase()}] ID: ${(message as any)[message.type]?.id || 'unknown'}`,
+            ai_response: 'System: Media received', 
             session_id: messageId || undefined,
           })
         }
@@ -290,7 +297,19 @@ export async function POST(req: NextRequest) {
 
         // Send AI response (clean version without [BOOKING_READY] marker)
         const cleanResponse = aiResponse.text.replace(/\[BOOKING_READY\][\s\S]*?}/g, '').trim()
-        await sendTextMessage(from, cleanResponse)
+        
+        if (shouldReplyWithVoice) {
+           await sendTextMessage(from, '✨ جاري تحويل الرد إلى رسالة صوتية...')
+           // Generate Voice
+           const audioId = await generateAndUploadVoice(cleanResponse)
+           if (audioId) {
+              await sendAudioMessage(from, audioId)
+           } else {
+              await sendTextMessage(from, cleanResponse)
+           }
+        } else {
+           await sendTextMessage(from, cleanResponse)
+        }
 
         // If message has booking intent but details incomplete, offer help
         if (hasBookingIntent(text) && !bookingDetails?.isComplete) {
