@@ -22,11 +22,6 @@ interface Specialist {
   email: string
 }
 
-interface ContentItem {
-  id: string
-  type: string
-  title_ar: string
-  title_en: string | null
   description_ar: string | null
   value: string | null
   is_active: boolean
