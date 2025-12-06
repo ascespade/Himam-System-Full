@@ -5,21 +5,6 @@ import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
 import Modal from '../../../components/Modal'
 
-interface Patient {
-  id: string
-  name: string
-  phone: string
-  nationality: string
-  status: string
-  created_at: string
-}
-
-interface Specialist {
-  id: string
-  name: string
-  specialty: string
-  nationality: string
-  email: string
 }
 
   description_ar: string | null
