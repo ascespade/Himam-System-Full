@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import Script from 'next/script'
 import StructuredData from '@/components/StructuredData'
+import ChatWidget from '@/components/ChatWidget'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://alhemam.a'),
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body className="font-sans antialiased bg-background text-foreground" suppressHydrationWarning>
         <StructuredData />
         {children}
+        <ChatWidget />
         <Script src="https://cdn.jsdelivr.net/npm/preline@2.0.0/dist/preline.js" strategy="lazyOnload" />
       </body>
     </html>
