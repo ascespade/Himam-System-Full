@@ -1,7 +1,7 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import ChatWidget from '@/components/ChatWidget'
-import { ArrowRight, Star, Shield, Activity, Users, Clock, MapPin, Heart, Brain, Ear, Baby, Stethoscope, Award, MessageCircle } from 'lucide-react'
+import { ArrowRight, Star, Shield, Activity, Users, Clock, MapPin, Heart, Brain, Ear, Baby, Stethoscope, Award, MessageCircle, Building2, Sparkles, GraduationCap, CheckCircle2, Microscope, Pill, Syringe, Eye, Smile } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -11,7 +11,7 @@ export default function HomePage() {
       <Header />
       
       {/* --- HERO SECTION --- */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-gradient-to-b from-blue-50/50 to-white">
+      <section className="relative pt-40 pb-20 lg:pt-56 lg:pb-32 overflow-hidden bg-gradient-to-b from-blue-50/50 to-white">
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-100/30 rounded-full blur-[100px]"></div>
            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-orange-100/30 rounded-full blur-[100px]"></div>
@@ -21,11 +21,6 @@ export default function HomePage() {
           <div className="flex flex-col lg:flex-row items-center gap-16">
              {/* Text Content */}
              <div className="flex-1 text-center lg:text-right">
-                <div className="inline-flex items-center gap-2 bg-white border border-gray-100 px-4 py-2 rounded-full mb-8 shadow-sm animate-fade-in-up">
-                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                   <span className="text-sm font-bold text-gray-600">جدة - حي الصفا</span>
-                </div>
-                
                 <h1 className="text-5xl lg:text-7xl font-extrabold text-gray-900 leading-[1.2] mb-6 tracking-tight">
                    رعاية متخصصة <br/>
                    <span className="text-primary relative inline-block">
@@ -168,6 +163,277 @@ export default function HomePage() {
                         احجز موعد
                         <ArrowRight size={16} className="mr-2 rtl:rotate-180" />
                      </Link>
+                  </div>
+               ))}
+            </div>
+         </div>
+      </section>
+
+      {/* --- MEDICAL CENTERS SECTION --- */}
+      <section id="centers" className="py-24 bg-white">
+         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+               <h2 className="text-sm font-bold text-primary tracking-wider uppercase mb-2">مراكزنا الطبية</h2>
+               <h3 className="text-4xl font-extrabold text-gray-900 mb-4">مراكز متخصصة تحت سقف واحد</h3>
+               <p className="text-gray-500 max-w-2xl mx-auto text-lg">نوفر لك أحدث المراكز الطبية المتخصصة بأعلى معايير الجودة</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               {[
+                  { 
+                     title: "مركز التخاطب والنطق", 
+                     icon: <MessageCircle size={32} />, 
+                     desc: "أحدث تقنيات علاج النطق والتخاطب للأطفال والكبار مع أخصائيين معتمدين دولياً.",
+                     features: ["تقييم شامل", "برامج فردية", "متابعة دورية"],
+                     color: "bg-blue-50 text-blue-600",
+                     borderColor: "border-blue-200"
+                  },
+                  { 
+                     title: "مركز تعديل السلوك", 
+                     icon: <Brain size={32} />, 
+                     desc: "برامج متخصصة لتعديل السلوكيات غير المرغوبة وتعزيز السلوكيات الإيجابية.",
+                     features: ["تحليل سلوكي", "تدخل مبكر", "تدريب أسر"],
+                     color: "bg-orange-50 text-orange-600",
+                     borderColor: "border-orange-200"
+                  },
+                  { 
+                     title: "مركز العلاج الوظيفي", 
+                     icon: <Activity size={32} />, 
+                     desc: "تنمية المهارات الحركية والإدراكية لتحسين الاستقلالية في الحياة اليومية.",
+                     features: ["تقييم وظيفي", "تدريب عملي", "تأهيل منزلي"],
+                     color: "bg-green-50 text-green-600",
+                     borderColor: "border-green-200"
+                  },
+                  { 
+                     title: "مركز التكامل الحسي", 
+                     icon: <Ear size={32} />, 
+                     desc: "معالجة الاضطرابات الحسية وتحسين الاستجابة للمؤثرات البيئية المختلفة.",
+                     features: ["غرف حسية", "برامج مكثفة", "تقييم دوري"],
+                     color: "bg-purple-50 text-purple-600",
+                     borderColor: "border-purple-200"
+                  },
+                  { 
+                     title: "مركز التدخل المبكر", 
+                     icon: <Baby size={32} />, 
+                     desc: "برامج مكثفة للأطفال من الولادة حتى 5 سنوات لتحقيق أفضل النتائج.",
+                     features: ["فريق متعدد", "برامج منزلية", "متابعة أسبوعية"],
+                     color: "bg-pink-50 text-pink-600",
+                     borderColor: "border-pink-200"
+                  },
+                  { 
+                     title: "مركز تنمية المهارات", 
+                     icon: <GraduationCap size={32} />, 
+                     desc: "إعداد الأطفال للمدرسة من خلال برامج تعليمية وإدراكية متخصصة.",
+                     features: ["مهارات أكاديمية", "مهارات اجتماعية", "جاهزية مدرسية"],
+                     color: "bg-yellow-50 text-yellow-600",
+                     borderColor: "border-yellow-200"
+                  },
+               ].map((center, idx) => (
+                  <div key={idx} className="bg-white rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 border-2 border-gray-100 hover:border-primary/30 hover:-translate-y-2 group">
+                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 ${center.color}`}>
+                        {center.icon}
+                     </div>
+                     <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-primary transition-colors">{center.title}</h3>
+                     <p className="text-gray-500 leading-relaxed mb-6">
+                        {center.desc}
+                     </p>
+                     <div className="space-y-2 mb-6">
+                        {center.features.map((feature, i) => (
+                           <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                              <CheckCircle2 size={16} className="text-primary" />
+                              <span>{feature}</span>
+                           </div>
+                        ))}
+                     </div>
+                     <Link href="#appointment" className="inline-flex items-center text-sm font-bold text-gray-900 hover:text-primary transition-colors">
+                        احجز موعد
+                        <ArrowRight size={16} className="mr-2 rtl:rotate-180" />
+                     </Link>
+                  </div>
+               ))}
+            </div>
+         </div>
+      </section>
+
+      {/* --- FEATURES SECTION --- */}
+      <section id="features" className="py-24 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
+         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+            <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]"></div>
+            <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[40%] bg-blue-100/20 rounded-full blur-[120px]"></div>
+         </div>
+         
+         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="text-center mb-16">
+               <h2 className="text-sm font-bold text-primary tracking-wider uppercase mb-2">مميزاتنا</h2>
+               <h3 className="text-4xl font-extrabold text-gray-900 mb-4">لماذا تختار مركز الهمم؟</h3>
+               <p className="text-gray-500 max-w-2xl mx-auto text-lg">نقدم لك تجربة علاجية استثنائية بأعلى معايير الجودة</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+               {[
+                  { 
+                     title: "أحدث التقنيات", 
+                     icon: <Microscope size={28} />, 
+                     desc: "نستخدم أحدث الأجهزة والبرامج العلاجية المعتمدة عالمياً",
+                     color: "from-blue-500 to-blue-600",
+                     bgColor: "bg-blue-50"
+                  },
+                  { 
+                     title: "فريق استشاري", 
+                     icon: <Users size={28} />, 
+                     desc: "نخبة من الاستشاريين والأخصائيين المعتمدين دولياً",
+                     color: "from-orange-500 to-orange-600",
+                     bgColor: "bg-orange-50"
+                  },
+                  { 
+                     title: "خطط فردية", 
+                     icon: <Heart size={28} />, 
+                     desc: "كل خطة علاجية مصممة خصيصاً لاحتياجات طفلك الفردية",
+                     color: "from-pink-500 to-pink-600",
+                     bgColor: "bg-pink-50"
+                  },
+                  { 
+                     title: "متابعة مستمرة", 
+                     icon: <Activity size={28} />, 
+                     desc: "نظام متابعة شامل مع تقارير دورية وتحديثات مستمرة",
+                     color: "from-green-500 to-green-600",
+                     bgColor: "bg-green-50"
+                  },
+                  { 
+                     title: "بيئة آمنة", 
+                     icon: <Shield size={28} />, 
+                     desc: "مرافق آمنة ومجهزة بأعلى معايير السلامة والصحة",
+                     color: "from-purple-500 to-purple-600",
+                     bgColor: "bg-purple-50"
+                  },
+                  { 
+                     title: "رعاية أسرية", 
+                     icon: <Heart size={28} />, 
+                     desc: "برامج تدريبية للأسرة لضمان استمرارية العلاج في المنزل",
+                     color: "from-red-500 to-red-600",
+                     bgColor: "bg-red-50"
+                  },
+                  { 
+                     title: "نتائج مثبتة", 
+                     icon: <Award size={28} />, 
+                     desc: "سجل حافل من النجاحات مع آلاف الحالات المحسنة",
+                     color: "from-yellow-500 to-yellow-600",
+                     bgColor: "bg-yellow-50"
+                  },
+                  { 
+                     title: "سهولة الوصول", 
+                     icon: <MapPin size={28} />, 
+                     desc: "موقع استراتيجي في قلب جدة مع مواقف مجانية ووسائل نقل",
+                     color: "from-indigo-500 to-indigo-600",
+                     bgColor: "bg-indigo-50"
+                  },
+               ].map((feature, idx) => (
+                  <div key={idx} className="bg-white rounded-3xl p-8 shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:-translate-y-2 group">
+                     <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white mb-6 transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg`}>
+                        {feature.icon}
+                     </div>
+                     <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary transition-colors">{feature.title}</h3>
+                     <p className="text-gray-500 leading-relaxed text-sm">
+                        {feature.desc}
+                     </p>
+                  </div>
+               ))}
+            </div>
+         </div>
+      </section>
+
+      {/* --- SPECIALTIES SECTION --- */}
+      <section id="specialties" className="py-24 bg-white">
+         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+               <h2 className="text-sm font-bold text-primary tracking-wider uppercase mb-2">تخصصاتنا</h2>
+               <h3 className="text-4xl font-extrabold text-gray-900 mb-4">مجالات التخصص الطبي</h3>
+               <p className="text-gray-500 max-w-2xl mx-auto text-lg">نغطي جميع جوانب الرعاية الصحية والتأهيلية لذوي الهمم</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+               {[
+                  { 
+                     title: "طب الأطفال التطوري", 
+                     icon: <Baby size={36} />, 
+                     desc: "تشخيص وعلاج اضطرابات النمو والتطور لدى الأطفال",
+                     color: "bg-blue-100 text-blue-700",
+                     borderColor: "border-blue-300"
+                  },
+                  { 
+                     title: "طب الأعصاب للأطفال", 
+                     icon: <Brain size={36} />, 
+                     desc: "تشخيص وعلاج الاضطرابات العصبية والتشنجات",
+                     color: "bg-purple-100 text-purple-700",
+                     borderColor: "border-purple-300"
+                  },
+                  { 
+                     title: "طب النطق واللغة", 
+                     icon: <MessageCircle size={36} />, 
+                     desc: "علاج اضطرابات النطق واللغة والتواصل",
+                     color: "bg-green-100 text-green-700",
+                     borderColor: "border-green-300"
+                  },
+                  { 
+                     title: "العلاج الوظيفي", 
+                     icon: <Activity size={36} />, 
+                     desc: "تحسين المهارات الحركية والوظائف اليومية",
+                     color: "bg-orange-100 text-orange-700",
+                     borderColor: "border-orange-300"
+                  },
+                  { 
+                     title: "العلاج الطبيعي", 
+                     icon: <Heart size={36} />, 
+                     desc: "تأهيل حركي شامل لتحسين القوة والتوازن",
+                     color: "bg-pink-100 text-pink-700",
+                     borderColor: "border-pink-300"
+                  },
+                  { 
+                     title: "طب العيون للأطفال", 
+                     icon: <Eye size={36} />, 
+                     desc: "فحص وعلاج مشاكل البصر واضطرابات العين",
+                     color: "bg-cyan-100 text-cyan-700",
+                     borderColor: "border-cyan-300"
+                  },
+                  { 
+                     title: "طب الأسنان للأطفال", 
+                     icon: <Smile size={36} />, 
+                     desc: "رعاية أسنان متخصصة لذوي الاحتياجات الخاصة",
+                     color: "bg-teal-100 text-teal-700",
+                     borderColor: "border-teal-300"
+                  },
+                  { 
+                     title: "الطب النفسي للأطفال", 
+                     icon: <Brain size={36} />, 
+                     desc: "تشخيص وعلاج الاضطرابات النفسية والسلوكية",
+                     color: "bg-indigo-100 text-indigo-700",
+                     borderColor: "border-indigo-300"
+                  },
+                  { 
+                     title: "الطب التأهيلي", 
+                     icon: <Stethoscope size={36} />, 
+                     desc: "برامج تأهيلية شاملة لتحسين جودة الحياة",
+                     color: "bg-amber-100 text-amber-700",
+                     borderColor: "border-amber-300"
+                  },
+               ].map((specialty, idx) => (
+                  <div key={idx} className="group relative bg-white rounded-3xl p-8 border-2 border-gray-100 hover:border-primary/40 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 overflow-hidden">
+                     {/* Background gradient on hover */}
+                     <div className={`absolute inset-0 bg-gradient-to-br ${specialty.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
+                     
+                     <div className="relative z-10">
+                        <div className={`w-20 h-20 rounded-2xl ${specialty.color} flex items-center justify-center mb-6 transition-transform group-hover:scale-110 group-hover:rotate-3`}>
+                           {specialty.icon}
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-primary transition-colors">{specialty.title}</h3>
+                        <p className="text-gray-600 leading-relaxed mb-6">
+                           {specialty.desc}
+                        </p>
+                        <Link href="#appointment" className="inline-flex items-center text-sm font-bold text-gray-900 hover:text-primary transition-colors group/link">
+                           احجز استشارة
+                           <ArrowRight size={16} className="mr-2 rtl:rotate-180 group-hover/link:translate-x-1 transition-transform" />
+                        </Link>
+                     </div>
                   </div>
                ))}
             </div>

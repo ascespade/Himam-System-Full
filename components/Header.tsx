@@ -23,44 +23,48 @@ export default function Header() {
         : 'bg-transparent py-4'
     }`}>
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+        <div className="flex justify-between items-center h-32 relative">
+          {/* Logo - Circular with orange border, starts from top and extends below header */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-              <div className={`relative transition-all duration-300 ${scrolled ? 'w-10 h-10' : 'w-12 h-12'}`}>
-                  {/* Fallback to text if img fails, but assuming it exists */}
+            <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity group">
+              <div className="absolute top-0 -mb-20">
+                {/* Orange circle border */}
+                <div className="absolute inset-0 rounded-full border-4 border-primary -z-10 transform scale-110"></div>
+                {/* Logo container - circular, larger than header, starts from top and extends below */}
+                <div className={`relative rounded-full overflow-hidden transition-all duration-300 shadow-2xl backdrop-blur-sm bg-white/90 border border-white/20 ${
+                  scrolled ? 'w-36 h-36' : 'w-48 h-48'
+                }`}>
+                  {/* Glassmorphism effect with subtle shine */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent rounded-full"></div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-white/20 rounded-full"></div>
+                  {/* Subtle shine overlay */}
+                  <div className="absolute top-0 left-1/4 w-1/2 h-1/3 bg-gradient-to-b from-white/60 to-transparent rounded-full blur-sm"></div>
                   <Image
                     src="/logo.png"
                     alt="Himam Logo"
                     fill
-                    className="object-contain"
+                    className="object-contain p-3 relative z-10"
                     priority
                   />
-              </div>
-              <div className="flex flex-col">
-                 <span className={`font-bold font-arabic tracking-tight transition-colors duration-300 ${scrolled ? 'text-gray-900 text-lg' : 'text-gray-900 text-xl'}`}>
-                    مركز الهمم
-                 </span>
+                </div>
               </div>
             </Link>
           </div>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
-            <div className="flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-6">
                {NAV_LINKS.map((link) => (
                <Link
                   key={link.href}
                   href={link.href}
-                  className={`text-sm font-bold font-arabic transition-all duration-300 relative group ${scrolled ? 'text-gray-600' : 'text-gray-800'}`}
+                  className={`text-base font-bold font-arabic transition-all duration-300 relative group py-2 ${scrolled ? 'text-gray-600' : 'text-gray-800'}`}
                >
                   {link.label}
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
                </Link>
                ))}
-            </div>
             
-            <Link href="#appointment" className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-primary/30 transform hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2">
+            <Link href="#appointment" className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-full font-bold text-base shadow-lg shadow-primary/30 transform hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2">
                <Calendar size={18} />
                <span>حجز موعد</span>
             </Link>
