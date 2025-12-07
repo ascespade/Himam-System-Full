@@ -2,6 +2,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/doctor/patients
  * Get patients assigned to the logged-in doctor

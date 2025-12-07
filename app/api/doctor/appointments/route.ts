@@ -2,6 +2,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/doctor/appointments
  * Get today's appointments for the logged-in doctor
