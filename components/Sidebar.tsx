@@ -10,7 +10,10 @@ import {
   FileText, 
   Settings, 
   LogOut,
-  BrainCircuit
+  BrainCircuit,
+  Stethoscope,
+  Shield,
+  UserCheck
 } from 'lucide-react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
@@ -28,14 +31,20 @@ export default function Sidebar() {
     router.push('/login')
   }
 
+  // Get user role from session (TODO: implement auth check)
+  // For now, show all menu items - will be filtered based on role
   const menuItems = [
-    { name: 'الرئيسية', href: '/dashboard/admin', icon: LayoutDashboard },
-    { name: 'التقويم', href: '/dashboard/calendar', icon: Calendar },
-    { name: 'المحادثات', href: '/dashboard/chat', icon: MessageSquare },
-    { name: 'المستخدمين', href: '/dashboard/users', icon: Users },
-    { name: 'المحتوى', href: '/dashboard/content', icon: FileText },
-    { name: 'الذكاء الاصطناعي', href: '/dashboard/knowledge', icon: BrainCircuit },
-    { name: 'الإعدادات', href: '/settings', icon: Settings },
+    { name: 'الرئيسية', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['admin'] },
+    { name: 'الاستقبال', href: '/dashboard/reception', icon: UserCheck, roles: ['admin', 'reception'] },
+    { name: 'شاشة الطبيب', href: '/dashboard/doctor', icon: Stethoscope, roles: ['admin', 'doctor'] },
+    { name: 'التأمينات', href: '/dashboard/insurance', icon: Shield, roles: ['admin', 'insurance'] },
+    { name: 'الأطباء', href: '/dashboard/doctors', icon: Users, roles: ['admin', 'doctor'] },
+    { name: 'التقويم', href: '/dashboard/calendar', icon: Calendar, roles: ['admin', 'doctor', 'reception'] },
+    { name: 'المحادثات', href: '/dashboard/chat', icon: MessageSquare, roles: ['admin', 'doctor'] },
+    { name: 'المستخدمين', href: '/dashboard/users', icon: Users, roles: ['admin'] },
+    { name: 'المحتوى', href: '/dashboard/content', icon: FileText, roles: ['admin'] },
+    { name: 'الذكاء الاصطناعي', href: '/dashboard/knowledge', icon: BrainCircuit, roles: ['admin'] },
+    { name: 'الإعدادات', href: '/settings', icon: Settings, roles: ['admin', 'doctor', 'reception', 'insurance'] },
   ]
 
   return (

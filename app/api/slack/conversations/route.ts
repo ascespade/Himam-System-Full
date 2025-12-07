@@ -1,0 +1,124 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+
+/**
+ * GET /api/slack/conversations
+ * Get Slack conversations for doctor-patient communication
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const doctorId = searchParams.get('doctor_id')
+    const patientId = searchParams.get('patient_id')
+
+    let query = supabaseAdmin
+      .from('slack_conversations')
+      .select(`
+        *,
+        patients (
+          id,
+          name,
+          phone
+        ),
+        users (
+          id,
+          name,
+          email
+        )
+      `)
+      .order('last_message_at', { ascending: false })
+
+    if (doctorId) {
+      query = query.eq('doctor_id', doctorId)
+    }
+
+    if (patientId) {
+      query = query.eq('patient_id', patientId)
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+
+    const transformed = (data || []).map((conv: any) => ({
+      ...conv,
+      patient_name: conv.patients?.name || 'غير معروف',
+      doctor_name: conv.users?.name || 'غير معروف'
+    }))
+
+    return NextResponse.json({
+      success: true,
+      data: transformed
+    })
+  } catch (error: any) {
+    console.error('Error fetching Slack conversations:', error)
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * POST /api/slack/conversations
+ * Create or get Slack conversation between doctor and patient
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const { doctor_id, patient_id } = body
+
+    if (!doctor_id || !patient_id) {
+      return NextResponse.json(
+        { success: false, error: 'Doctor ID and Patient ID are required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if conversation exists
+    const { data: existing } = await supabaseAdmin
+      .from('slack_conversations')
+      .select('*')
+      .eq('doctor_id', doctor_id)
+      .eq('patient_id', patient_id)
+      .single()
+
+    if (existing) {
+      return NextResponse.json({
+        success: true,
+        data: existing,
+        message: 'Conversation already exists'
+      })
+    }
+
+    // TODO: Create Slack channel via Slack API
+    // For now, generate a channel ID
+    const channelId = `C${Date.now()}${Math.random().toString(36).substr(2, 9)}`
+
+    const { data, error } = await supabaseAdmin
+      .from('slack_conversations')
+      .insert({
+        doctor_id,
+        patient_id,
+        slack_channel_id: channelId,
+        status: 'active'
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return NextResponse.json({
+      success: true,
+      data,
+      message: 'Slack conversation created. Channel will be created via Slack API.'
+    }, { status: 201 })
+  } catch (error: any) {
+    console.error('Error creating Slack conversation:', error)
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    )
+  }
+}
+
