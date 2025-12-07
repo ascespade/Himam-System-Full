@@ -255,7 +255,36 @@ export async function POST(req: NextRequest) {
                console.error('Error creating patient record:', patientError)
             }
 
-            // 2. Create Appointment
+            // 2. Create Google Calendar Event (if configured)
+            let calendarEventId: string | null = null
+            const appointmentDate = new Date(`${bookingDetails.date}T${bookingDetails.time}`).toISOString()
+            
+            try {
+              const calendarResponse = await fetch(`${req.nextUrl.origin}/api/calendar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'create',
+                  patientName: bookingDetails.patientName,
+                  phone: bookingDetails.phone || from,
+                  specialist: bookingDetails.specialist || 'الأخصائي',
+                  date: appointmentDate,
+                  duration: 60
+                })
+              })
+
+              if (calendarResponse.ok) {
+                const calendarData = await calendarResponse.json()
+                calendarEventId = calendarData.calendarEventId || null
+              } else {
+                console.warn('Calendar event creation failed, continuing with DB-only appointment')
+              }
+            } catch (calendarError) {
+              console.error('Error creating calendar event:', calendarError)
+              // Continue with DB-only appointment if calendar fails
+            }
+
+            // 3. Create Appointment in Database
             const { data: appointment, error: aptError } = await supabaseAdmin
               .from('appointments')
               .insert({
@@ -263,15 +292,40 @@ export async function POST(req: NextRequest) {
                 patient_id: patient?.id, // Link to real patient
                 phone: bookingDetails.phone || from,
                 specialist: bookingDetails.specialist,
-                date: new Date(`${bookingDetails.date}T${bookingDetails.time}`).toISOString(),
-                status: 'pending',
+                date: appointmentDate,
+                status: calendarEventId ? 'confirmed' : 'pending',
+                calendar_event_id: calendarEventId,
                 notes: `Service: ${bookingDetails.service || 'Not specified'}`
               })
               .select()
               .single()
 
             if (!aptError && appointment) {
-              // Send confirmation with buttons
+              // 4. Sync with CRM (non-blocking)
+              try {
+                await fetch(`${req.nextUrl.origin}/api/crm`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'create_appointment',
+                    patientId: patient?.id,
+                    sessionId: messageId,
+                    data: {
+                      appointmentId: appointment.id,
+                      patientName: bookingDetails.patientName,
+                      specialist: bookingDetails.specialist,
+                      date: appointmentDate,
+                      calendarEventId
+                    }
+                  })
+                }).catch((crmError) => {
+                  console.warn('CRM sync failed (non-blocking):', crmError)
+                })
+              } catch (crmError) {
+                // CRM sync is optional, continue even if it fails
+              }
+
+              // 5. Send confirmation with buttons
               await sendAppointmentConfirmation(from, {
                 specialist: bookingDetails.specialist || 'الأخصائي',
                 date: formatAppointmentDate(bookingDetails.date || ''),
@@ -284,7 +338,8 @@ export async function POST(req: NextRequest) {
                   aiResponse: aiResponse.text,
                   model: aiResponse.model,
                   bookingCreated: true,
-                  appointmentId: appointment.id
+                  appointmentId: appointment.id,
+                  calendarEventId
                 })
               )
             }

@@ -65,17 +65,23 @@ Meta Webhook → /api/whatsapp (POST)
 WhatsApp Message (booking request)
     │
     ▼
-AI detects booking intent
+AI detects booking intent & extracts details
     │
-    ├─→ Extract: patient name, date, specialist
+    ├─→ Parse [BOOKING_READY] marker from AI response
     │
-    ├─→ Create Google Calendar event (lib/calendar.ts)
+    ├─→ Upsert patient record (patients table)
     │
-    ├─→ Save to appointments table
+    ├─→ Create Google Calendar event via /api/calendar
+    │   │
+    │   └─→ lib/calendar.ts → Google Calendar API
     │
-    ├─→ Sync with CRM (if configured)
+    ├─→ Save appointment to appointments table
+    │   │
+    │   └─→ Link calendar_event_id
     │
-    └─→ Send confirmation via WhatsApp
+    ├─→ Sync with CRM via /api/crm (non-blocking)
+    │
+    └─→ Send confirmation via WhatsApp (with buttons)
 ```
 
 ### 3. Billing Flow
