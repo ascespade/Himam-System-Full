@@ -1,9 +1,11 @@
 'use client'
 
-import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, isToday, startOfMonth, startOfWeek, subMonths } from 'date-fns'
+import { addMonths, format, isSameDay, isToday, subMonths } from 'date-fns'
 import { arSA } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
+
+const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export default function AdminCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -29,115 +31,143 @@ export default function AdminCalendar() {
     }
   }
 
-  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1))
-  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1))
+  const handlePrevMonth = () => {
+    setCurrentDate(subMonths(currentDate, 1))
+  }
 
-  const monthStart = startOfMonth(currentDate)
-  const monthEnd = endOfMonth(monthStart)
-  const startDate = startOfWeek(monthStart)
-  const endDate = endOfWeek(monthEnd)
+  const handleNextMonth = () => {
+    setCurrentDate(addMonths(currentDate, 1))
+  }
 
-  const calendarDays = eachDayOfInterval({
-    start: startDate,
-    end: endDate,
-  })
+  const getEventsForDate = (date: Date) => {
+    return events.filter(event => isSameDay(new Date(event.date), date))
+  }
 
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const renderCalendarCells = () => {
+    const year = currentDate.getFullYear()
+    const month = currentDate.getMonth()
 
-  const getEventsForDay = (day: Date) => {
-    return events.filter(event => isSameDay(new Date(event.date), day))
+    const firstDayOfMonth = new Date(year, month, 1).getDay()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const daysInPrevMonth = new Date(year, month, 0).getDate()
+
+    const cells = []
+
+    // Previous month days
+    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+      const day = daysInPrevMonth - i
+      cells.push(
+        <td key={`prev-${day}`} className="border border-[#eff1f3] p-2 align-top h-24 bg-gray-50/30">
+          <div className="opacity-30">
+            <div className="text-[#67779d] p-2">{day}</div>
+          </div>
+        </td>
+      )
+    }
+
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day)
+      const dayOfWeek = date.getDay()
+      const isCurrentDay = isToday(date)
+      const dayEvents = getEventsForDate(date)
+
+      cells.push(
+        <td key={`current-${day}`} className="border border-[#eff1f3] p-2 align-top h-24 bg-white hover:bg-gray-50 transition-colors">
+          <div className={`${dayOfWeek === 0 ? 'text-[#fb6340]' : 'text-[#67779d]'} p-2 ${isCurrentDay ? 'font-bold bg-primary/10 rounded-full w-8 h-8 flex items-center justify-center text-primary' : ''}`}>
+            {day}
+          </div>
+          <div className="space-y-1 mt-1">
+            {dayEvents.map((event: any) => (
+              <div
+                key={event.id}
+                className={`
+                  text-white text-xs px-2 py-1 rounded cursor-pointer truncate
+                  ${event.status === 'confirmed' ? 'bg-green-500' :
+                    event.status === 'cancelled' ? 'bg-red-500' :
+                    'bg-[#5e72e4]'}
+                `}
+                title={`${event.patient_name} - ${event.specialist}`}
+              >
+                {event.patient_name}
+              </div>
+            ))}
+          </div>
+        </td>
+      )
+    }
+
+    // Next month days to fill the grid
+    const totalCells = cells.length
+    const remainingCells = Math.ceil(totalCells / 7) * 7 - totalCells
+
+    for (let day = 1; day <= remainingCells; day++) {
+      cells.push(
+        <td key={`next-${day}`} className="border border-[#eff1f3] p-2 align-top h-24 bg-gray-50/30">
+          <div className="opacity-30">
+            <div className="text-[#67779d] p-2">{day}</div>
+          </div>
+        </td>
+      )
+    }
+
+    // Group into rows
+    const rows = []
+    for (let i = 0; i < cells.length; i += 7) {
+      rows.push(
+        <tr key={`row-${i}`}>
+          {cells.slice(i, i + 7)}
+        </tr>
+      )
+    }
+
+    return rows
   }
 
   return (
-    <div className="w-full bg-[#f8f9fe] px-[30px] py-8 rounded-xl">
-      <div className="flex flex-wrap -mx-[15px]">
-        <div className="flex-grow max-w-full px-[15px] relative w-full">
-          <div className="bg-white rounded-md shadow-[0_0_32px_rgba(136,152,170,0.15)] flex flex-col mb-[30px] relative break-words">
-
-            {/* Header */}
-            <div className="bg-white rounded-t-md p-6 border-b border-[#eff1f3] flex justify-between items-center">
-              <h5 className="text-[#32325d] text-[17px] font-semibold">
-                {format(currentDate, 'MMMM yyyy', { locale: arSA })}
-              </h5>
-              <div className="flex gap-2">
-                <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                  <ChevronRight className="w-5 h-5 text-[#32325d]" />
-                </button>
-                <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                  <ChevronLeft className="w-5 h-5 text-[#32325d]" />
-                </button>
-              </div>
-            </div>
-
-            {/* Calendar Grid */}
-            <div className="flex-grow min-h-[1px]">
-              <div className="flex flex-col z-0">
-                <div className="border-[#eff1f3] flex-grow relative h-[908px]">
-                  <div className="absolute inset-0 overflow-hidden">
-                    <div className="h-full w-full flex flex-col">
-
-                      {/* Weekday Headers */}
-                      <div className="flex border-b border-[#eff1f3]">
-                        {weekDays.map((day) => (
-                          <div key={day} className="flex-1 py-3 px-4 text-[#8898aa] text-xs font-semibold uppercase border-r border-[#eff1f3] last:border-r-0">
-                            {day}
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Days Grid */}
-                      <div className="flex-grow grid grid-cols-7 grid-rows-5">
-                        {calendarDays.map((day, dayIdx) => {
-                          const dayEvents = getEventsForDay(day)
-                          const isCurrentMonth = isSameMonth(day, monthStart)
-
-                          return (
-                            <div
-                              key={day.toString()}
-                              className={`
-                                border-b border-r border-[#eff1f3] p-2 min-h-[100px] relative
-                                ${!isCurrentMonth ? 'bg-gray-50/50' : ''}
-                                ${(dayIdx + 1) % 7 === 0 ? 'border-r-0' : ''}
-                              `}
-                            >
-                              <div className="flex justify-between items-start mb-2">
-                                <span className={`
-                                  text-sm font-semibold px-2 py-1 rounded-full
-                                  ${isToday(day) ? 'bg-primary text-white' : 'text-[#8898aa]'}
-                                `}>
-                                  {format(day, 'd')}
-                                </span>
-                              </div>
-
-                              <div className="space-y-1">
-                                {dayEvents.map((event, idx) => (
-                                  <div
-                                    key={idx}
-                                    className={`
-                                      text-xs px-2 py-1 rounded text-white truncate cursor-pointer hover:opacity-90 transition-opacity
-                                      ${event.status === 'confirmed' ? 'bg-green-500' :
-                                        event.status === 'cancelled' ? 'bg-red-500' :
-                                        'bg-[#5e72e4]'}
-                                    `}
-                                    title={`${event.patient_name} - ${event.specialist}`}
-                                  >
-                                    {event.patient_name}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
+    <div className="bg-white rounded-md shadow-lg">
+      {/* Header */}
+      <div className="bg-white rounded-t-md p-5 flex items-center justify-between border-b border-[#eff1f3]">
+        <h5 className="text-[#32325d] text-lg font-semibold m-0">
+          {format(currentDate, 'MMMM yyyy', { locale: arSA })}
+        </h5>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handlePrevMonth}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Previous month"
+          >
+            <ChevronRight className="w-5 h-5 text-[#8898aa]" />
+          </button>
+          <button
+            onClick={handleNextMonth}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Next month"
+          >
+            <ChevronLeft className="w-5 h-5 text-[#8898aa]" />
+          </button>
         </div>
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="p-4">
+        <table className="w-full border-collapse table-fixed">
+          <thead>
+            <tr>
+              {DAYS_OF_WEEK.map(day => (
+                <th
+                  key={day}
+                  className="border border-[#eff1f3] text-[#8898aa] uppercase text-xs p-3 bg-gray-50 font-semibold"
+                >
+                  {day}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {renderCalendarCells()}
+          </tbody>
+        </table>
       </div>
     </div>
   )
