@@ -36,7 +36,12 @@ async function cleanupAppliedMigrations() {
         'lab_results', 'imaging_results', 'vital_signs',
         'doctor_profiles', 'doctor_patient_relationships',
         'insurance_claims', 'reception_queue',
-        'slack_conversations', 'slack_messages'
+        'slack_conversations', 'slack_messages',
+        'notifications', 'appointment_reminders', 'audit_logs',
+        'file_attachments', 'prescription_items', 'doctor_schedules',
+        'appointment_slots', 'payment_transactions', 'invoices',
+        'patient_consents', 'referrals', 'vaccinations',
+        'medications', 'patient_allergies', 'patient_chronic_conditions'
       )
       ORDER BY table_name
     `)
@@ -74,6 +79,25 @@ async function cleanupAppliedMigrations() {
         existingTables.has('prescriptions') &&
         existingTables.has('doctor_profiles')) {
       appliedMigrations.push('004_create_medical_records_system.sql')
+    }
+
+    // Check 005 - complete missing tables
+    if (existingTables.has('notifications') && 
+        existingTables.has('appointment_reminders') && 
+        existingTables.has('audit_logs') &&
+        existingTables.has('file_attachments') &&
+        existingTables.has('prescription_items') &&
+        existingTables.has('doctor_schedules') &&
+        existingTables.has('appointment_slots') &&
+        existingTables.has('payment_transactions') &&
+        existingTables.has('invoices') &&
+        existingTables.has('patient_consents') &&
+        existingTables.has('referrals') &&
+        existingTables.has('vaccinations') &&
+        existingTables.has('medications') &&
+        existingTables.has('patient_allergies') &&
+        existingTables.has('patient_chronic_conditions')) {
+      appliedMigrations.push('005_complete_missing_tables.sql')
     }
 
     console.log('📋 Applied migrations:', appliedMigrations.join(', '))
