@@ -1,3 +1,4 @@
+import Script from 'next/script'
 import { centerInfoRepository, servicesRepository } from '@/infrastructure/supabase/repositories'
 
 export default async function StructuredData() {
@@ -38,7 +39,8 @@ export default async function StructuredData() {
   }
 
   return (
-    <script
+    <Script
+      id="structured-data"
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
     />

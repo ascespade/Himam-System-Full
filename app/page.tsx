@@ -1,7 +1,6 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import ChatWidget from '@/components/ChatWidget'
-import StructuredData from '@/components/StructuredData'
 import { ArrowRight, Star, Shield, Activity, Users, Clock, MapPin, Heart, Brain, Ear, Baby, Stethoscope, Award, MessageCircle, Building2, Sparkles, GraduationCap, CheckCircle2, Microscope, Pill, Syringe, Eye, Smile, Phone, Mail } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -9,7 +8,6 @@ import Image from 'next/image'
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#FDFDFD] overflow-x-hidden selection:bg-orange-100 font-arabic" dir="rtl">
-      <StructuredData />
       <Header />
       
       {/* --- HERO SECTION --- */}
@@ -193,7 +191,7 @@ export default function HomePage() {
                         {service.desc}
                      </p>
                      <a 
-                        href="https://wa.me/966555381558?text=أود%20حجز%20موعد%20لخدمة%20" + encodeURIComponent(service.title)
+                        href={`https://wa.me/966555381558?text=أود%20حجز%20موعد%20لخدمة%20${encodeURIComponent(service.title)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center text-sm font-bold text-gray-900 hover:text-primary transition-colors"
