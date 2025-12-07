@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/users
  * Get all users with optional filtering
  */
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url)
+    const searchParams = req.nextUrl.searchParams
     const role = searchParams.get('role')
     const search = searchParams.get('search')
     const page = parseInt(searchParams.get('page') || '1')

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/slack/messages
  * Get messages from a Slack conversation
  */
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url)
+    const searchParams = req.nextUrl.searchParams
     const conversationId = searchParams.get('conversation_id')
 
     if (!conversationId) {

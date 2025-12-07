@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/slack/conversations
  * Get Slack conversations for doctor-patient communication
  */
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url)
+    const searchParams = req.nextUrl.searchParams
     const doctorId = searchParams.get('doctor_id')
     const patientId = searchParams.get('patient_id')
 

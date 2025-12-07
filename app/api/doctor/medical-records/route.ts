@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/doctor/medical-records
  * Get medical records for doctor's patients
@@ -8,7 +10,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 export async function GET(req: NextRequest) {
   try {
     // TODO: Get doctor_id from auth session
-    const { searchParams } = new URL(req.url)
+    const searchParams = req.nextUrl.searchParams
     const patientId = searchParams.get('patient_id')
     const recordType = searchParams.get('type')
 
