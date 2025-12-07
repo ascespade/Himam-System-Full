@@ -8,6 +8,8 @@
     "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
     "migration:apply": "node scripts/apply-migration.js",
+    "migration:auto": "node scripts/apply-migrations-auto.js",
+    "migration:mcp": "node scripts/apply-migrations-mcp.js",
     "migration:cleanup": "bash scripts/cleanup-migrations.sh",
     "migration:manual": "bash scripts/apply-migration-manual.sh"
   },
@@ -44,6 +46,7 @@
     "@types/react-dom": "^18.3.7",
     "@types/signature_pad": "^4.0.0",
     "@types/uuid": "^10.0.0",
+    "pg": "^8.16.3",
     "typescript": "^5.9.3"
   }
 }

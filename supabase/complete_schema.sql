@@ -135,14 +135,46 @@ CREATE TABLE IF NOT EXISTS center_info (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Users table (for admin dashboard)
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  role VARCHAR(50) NOT NULL DEFAULT 'patient' CHECK (role IN ('admin', 'doctor', 'staff', 'patient')),
+  password_hash VARCHAR(255),
+  last_login TIMESTAMP,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Knowledge Base table (for AI knowledge management)
+CREATE TABLE IF NOT EXISTS knowledge_base (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(500) NOT NULL,
+  content TEXT NOT NULL,
+  category VARCHAR(50) NOT NULL CHECK (category IN ('faq', 'article', 'training', 'policy')),
+  tags TEXT[] DEFAULT '{}',
+  views INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Unified Content Items (services, testimonials, statistics, etc.)
 CREATE TABLE IF NOT EXISTS content_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  type TEXT NOT NULL CHECK (type IN ('service', 'testimonial', 'statistic', 'value', 'feature', 'social_media')),
-  title_ar TEXT NOT NULL,
+  title VARCHAR(500),
+  title_ar TEXT,
   title_en TEXT,
+  description TEXT,
   description_ar TEXT,
   description_en TEXT,
+  type TEXT NOT NULL CHECK (type IN ('service', 'testimonial', 'statistic', 'value', 'feature', 'social_media', 'article', 'video', 'image', 'document')),
+  category VARCHAR(100),
+  status VARCHAR(50) NOT NULL DEFAULT 'draft' CHECK (status IN ('published', 'draft', 'archived')),
+  author VARCHAR(255),
+  views INTEGER DEFAULT 0,
+  order_index INTEGER DEFAULT 0,
   icon TEXT,
   value TEXT,
   rating INTEGER CHECK (rating >= 1 AND rating <= 5),
@@ -152,7 +184,6 @@ CREATE TABLE IF NOT EXISTS content_items (
   platform TEXT,
   is_featured BOOLEAN DEFAULT FALSE,
   is_active BOOLEAN DEFAULT TRUE,
-  order_index INTEGER DEFAULT 0,
   metadata JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -193,6 +224,14 @@ CREATE INDEX IF NOT EXISTS idx_sessions_specialist_id ON sessions(specialist_id)
 CREATE INDEX IF NOT EXISTS idx_content_items_type ON content_items(type);
 CREATE INDEX IF NOT EXISTS idx_content_items_is_active ON content_items(is_active);
 CREATE INDEX IF NOT EXISTS idx_content_items_order_index ON content_items(order_index);
+CREATE INDEX IF NOT EXISTS idx_content_items_status ON content_items(status);
+CREATE INDEX IF NOT EXISTS idx_content_items_category ON content_items(category);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+CREATE INDEX IF NOT EXISTS idx_knowledge_base_category ON knowledge_base(category);
+CREATE INDEX IF NOT EXISTS idx_knowledge_base_created_at ON knowledge_base(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_knowledge_base_tags ON knowledge_base USING GIN(tags);
 
 -- ============================================
 -- TRIGGERS
@@ -232,6 +271,14 @@ CREATE TRIGGER update_whatsapp_settings_updated_at
   BEFORE UPDATE ON whatsapp_settings
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+CREATE TRIGGER update_users_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_knowledge_base_updated_at
+  BEFORE UPDATE ON knowledge_base
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
 -- ============================================
 -- ROW LEVEL SECURITY (RLS)
 -- ============================================
@@ -248,6 +295,8 @@ ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE center_info ENABLE ROW LEVEL SECURITY;
 ALTER TABLE content_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE whatsapp_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE knowledge_base ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies (service role has full access, anon has read access to public data)
 CREATE POLICY "settings_service_role_all" ON settings
@@ -294,6 +343,15 @@ CREATE POLICY "content_items_anon_read" ON content_items
 
 CREATE POLICY "whatsapp_settings_service_role_all" ON whatsapp_settings
   FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "users_service_role_all" ON users
+  FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "knowledge_base_service_role_all" ON knowledge_base
+  FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "knowledge_base_anon_read" ON knowledge_base
+  FOR SELECT USING (true);
 
 -- ============================================
 -- SEED DATA
