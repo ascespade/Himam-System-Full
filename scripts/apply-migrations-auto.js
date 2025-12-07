@@ -77,7 +77,8 @@ async function applyMigrationsAuto() {
     '002_create_knowledge_base_table.sql',
     '003_update_content_items_table.sql',
     '004_create_medical_records_system.sql',
-    '005_complete_missing_tables.sql'
+    '005_complete_missing_tables.sql',
+    '006_fix_missing_index.sql'
   ]
 
   const migrationsDir = path.join(__dirname, '../supabase/migrations')
