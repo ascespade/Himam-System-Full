@@ -47,7 +47,7 @@ export default function Sidebar() {
     { name: 'المستخدمين', href: '/dashboard/users', icon: Users, roles: ['admin'] },
     { name: 'المحتوى', href: '/dashboard/content', icon: FileText, roles: ['admin'] },
     { name: 'الذكاء الاصطناعي', href: '/dashboard/knowledge', icon: BrainCircuit, roles: ['admin'] },
-    { name: 'الإعدادات', href: '/settings', icon: Settings, roles: ['admin', 'doctor', 'reception', 'insurance'] },
+    { name: 'الإعدادات', href: '/dashboard/admin/settings', icon: Settings, roles: ['admin'] },
   ]
 
   return (
