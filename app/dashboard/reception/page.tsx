@@ -37,12 +37,13 @@ export default function ReceptionPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
 
   const calculateStats = (items: QueueItem[]) => {
+    const safeItems = Array.isArray(items) ? items : []
     setStats({
-      total: items.length,
-      waiting: items.filter(i => i.status === 'waiting' || i.status === 'checked_in').length,
-      in_progress: items.filter(i => i.status === 'in_progress').length,
-      completed: items.filter(i => i.status === 'completed').length,
-      cancelled: items.filter(i => i.status === 'cancelled' || i.status === 'no_show').length
+      total: safeItems.length,
+      waiting: safeItems.filter(i => i.status === 'waiting' || i.status === 'checked_in').length,
+      in_progress: safeItems.filter(i => i.status === 'in_progress').length,
+      completed: safeItems.filter(i => i.status === 'completed').length,
+      cancelled: safeItems.filter(i => i.status === 'cancelled' || i.status === 'no_show').length
     })
   }
 
