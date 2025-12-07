@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
 import Modal from '../../../components/Modal'
 
@@ -145,8 +144,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-[#1A1A1A] font-sans selection:bg-primary/20">
-      <Header />
-      
       <main className="max-w-[1400px] mx-auto p-4 md:p-8">
          <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>

@@ -1,4 +1,3 @@
-import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { supabaseAdmin } from '@/lib'
 
@@ -25,7 +24,6 @@ export default async function PatientsPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <main className="flex-1 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold mb-8 text-gray-900">لوحة المرضى</h1>

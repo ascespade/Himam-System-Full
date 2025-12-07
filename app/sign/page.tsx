@@ -2,7 +2,6 @@
 
 import { useRef, useEffect, useState } from 'react'
 import type SignaturePad from 'signature_pad'
-import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 
 export default function SignaturePage() {
@@ -87,7 +86,6 @@ export default function SignaturePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <main className="flex-1 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-lg shadow-md p-8">

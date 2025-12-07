@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
 interface SystemSetting {
@@ -224,7 +223,6 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
          <main className="max-w-4xl mx-auto py-12 px-6">
              <div className="space-y-6 animate-pulse">
                 <div className="h-10 bg-muted w-1/4 rounded"></div>
@@ -238,8 +236,6 @@ export default function SettingsPage() {
 
   return (
     <div className="page-container">
-      <Header />
-      
       <main className="page-content max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
            <div>
