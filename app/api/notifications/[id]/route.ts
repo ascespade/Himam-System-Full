@@ -2,11 +2,10 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
-/**
- * GET /api/doctor/appointments
- * Get today's appointments for the logged-in doctor
- */
-export async function GET(req: NextRequest) {
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -27,28 +26,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    const today = new Date().toISOString().split('T')[0]
-
     const { data, error } = await supabaseAdmin
-      .from('appointments')
-      .select('*, patients(name, phone)')
-      .eq('doctor_id', user.id)
-      .gte('date', `${today}T00:00:00`)
-      .lt('date', `${today}T23:59:59`)
-      .order('date', { ascending: true })
+      .from('notifications')
+      .update({ is_read: true, read_at: new Date().toISOString() })
+      .eq('id', params.id)
+      .eq('user_id', user.id) // Ensure user owns notification
+      .select()
+      .single()
 
     if (error) throw error
 
-
-    return NextResponse.json({
-      success: true,
-      data: formattedData
-    })
+    return NextResponse.json({ success: true, data })
   } catch (error: any) {
-    console.error('Error fetching appointments:', error)
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }

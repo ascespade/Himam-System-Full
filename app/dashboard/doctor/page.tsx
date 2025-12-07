@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Stethoscope, Users, Calendar, FileText, MessageSquare, Clock, Search, Eye, Plus, Activity, Heart, Thermometer, Droplet } from 'lucide-react'
-import Modal from '@/components/Modal'
+import { Calendar, Clock, Droplet, Eye, FileText, MessageSquare, Search, Users } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 interface Patient {
   id: string
@@ -36,12 +36,10 @@ interface TodayAppointment {
 }
 
 export default function DoctorPage() {
+  const router = useRouter()
   const [myPatients, setMyPatients] = useState<Patient[]>([])
   const [todayAppointments, setTodayAppointments] = useState<TodayAppointment[]>([])
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([])
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
-  const [showPatientModal, setShowPatientModal] = useState(false)
-  const [showRecordModal, setShowRecordModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState<'appointments' | 'patients' | 'records'>('appointments')
@@ -63,9 +61,9 @@ export default function DoctorPage() {
       const patientsData = await patientsRes.json()
       const recordsData = await recordsRes.json()
 
-      if (appointmentsData.success) setTodayAppointments(appointmentsData.data || [])
-      if (patientsData.success) setMyPatients(patientsData.data || [])
-      if (recordsData.success) setMedicalRecords(recordsData.data || [])
+      setTodayAppointments(appointmentsData || [])
+      setMyPatients(patientsData || [])
+      setMedicalRecords(recordsData || [])
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -73,23 +71,18 @@ export default function DoctorPage() {
     }
   }
 
-  const viewPatientFile = async (patientId: string) => {
-    try {
-      const res = await fetch(`/api/patients/${patientId}/medical-file`)
-      const data = await res.json()
-      if (data.success) {
-        setSelectedPatient(data.data.patient)
-        setShowPatientModal(true)
-      }
-    } catch (error) {
-      console.error('Error fetching patient file:', error)
-    }
+  const viewPatientFile = (patientId: string) => {
+    router.push(`/dashboard/doctor/patients/${patientId}`)
   }
 
   const filteredPatients = myPatients.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.phone.includes(searchTerm)
   )
+
+  if (loading) {
+    return <div className="p-8 text-center">جاري تحميل البيانات...</div>
+  }
 
   return (
     <div className="p-8">
@@ -312,7 +305,10 @@ export default function DoctorPage() {
                       <p className="text-gray-600">{record.description}</p>
                     )}
                   </div>
-                  <button className="px-4 py-2 text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                  <button
+                    onClick={() => viewPatientFile(record.patient_id)}
+                    className="px-4 py-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                  >
                     <Eye size={18} />
                   </button>
                 </div>
@@ -321,95 +317,6 @@ export default function DoctorPage() {
           )}
         </div>
       )}
-
-      {/* Patient File Modal */}
-      <Modal
-        isOpen={showPatientModal}
-        onClose={() => {
-          setShowPatientModal(false)
-          setSelectedPatient(null)
-        }}
-        title={selectedPatient ? `الملف الطبي - ${selectedPatient.name}` : 'الملف الطبي'}
-        size="xl"
-      >
-        {selectedPatient && (
-          <div className="space-y-6">
-            {/* Patient Info */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">الاسم الكامل</label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">{selectedPatient.name}</div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">رقم الهاتف</label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">{selectedPatient.phone}</div>
-              </div>
-              {selectedPatient.date_of_birth && (
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">تاريخ الميلاد</label>
-                  <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                    {new Date(selectedPatient.date_of_birth).toLocaleDateString('ar-SA')}
-                  </div>
-                </div>
-              )}
-              {selectedPatient.gender && (
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">الجنس</label>
-                  <div className="px-4 py-3 bg-gray-50 rounded-lg">{selectedPatient.gender}</div>
-                </div>
-              )}
-              {selectedPatient.blood_type && (
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">فصيلة الدم</label>
-                  <div className="px-4 py-3 bg-gray-50 rounded-lg">{selectedPatient.blood_type}</div>
-                </div>
-              )}
-            </div>
-
-            {/* Allergies */}
-            {selectedPatient.allergies && selectedPatient.allergies.length > 0 && (
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">الحساسيات</label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedPatient.allergies.map((allergy, idx) => (
-                    <span key={idx} className="px-3 py-2 bg-red-50 text-red-700 rounded-lg text-sm font-bold">
-                      {allergy}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Chronic Diseases */}
-            {selectedPatient.chronic_diseases && selectedPatient.chronic_diseases.length > 0 && (
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">الأمراض المزمنة</label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedPatient.chronic_diseases.map((disease, idx) => (
-                    <span key={idx} className="px-3 py-2 bg-orange-50 text-orange-700 rounded-lg text-sm font-bold">
-                      {disease}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Medical History Section */}
-            <div className="pt-4 border-t border-gray-200">
-              <h4 className="text-lg font-bold text-gray-900 mb-4">السجل الطبي</h4>
-              <div className="space-y-3">
-                <button className="w-full px-4 py-3 bg-primary/10 text-primary rounded-lg font-bold text-right hover:bg-primary/20 transition-colors">
-                  عرض جميع السجلات الطبية
-                </button>
-                <button className="w-full px-4 py-3 bg-primary/10 text-primary rounded-lg font-bold text-right hover:bg-primary/20 transition-colors">
-                  إضافة سجل طبي جديد
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   )
 }
-

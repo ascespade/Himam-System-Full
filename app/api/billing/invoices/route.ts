@@ -5,8 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 /**
- * GET /api/reception/queue
- * Get reception queue for today
+ * GET /api/billing/invoices
+ * Get all invoices
  */
 export async function GET(req: NextRequest) {
   try {
@@ -30,44 +30,37 @@ export async function GET(req: NextRequest) {
     }
 
     const searchParams = req.nextUrl.searchParams
-    const date = searchParams.get('date') || new Date().toISOString().split('T')[0]
     const status = searchParams.get('status')
+    const patientId = searchParams.get('patient_id')
 
     let query = supabaseAdmin
-      .from('reception_queue')
+      .from('invoices')
       .select(`
         *,
         patients (
           id,
           name,
           phone
-        ),
-        appointments (
-          id,
-          date,
-          specialist
         )
       `)
-      .gte('created_at', `${date}T00:00:00`)
-      .lt('created_at', `${date}T23:59:59`)
+      .order('created_at', { ascending: false })
 
     if (status && status !== 'all') {
       query = query.eq('status', status)
     }
 
-    query = query.order('queue_number', { ascending: true })
+    if (patientId) {
+      query = query.eq('patient_id', patientId)
+    }
 
     const { data, error } = await query
 
     if (error) throw error
 
-    // Transform data
     const transformed = (data || []).map((item: any) => ({
       ...item,
       patient_name: item.patients?.name || 'غير معروف',
-      patient_phone: item.patients?.phone || '',
-      appointment_time: item.appointments?.date,
-      doctor_name: item.appointments?.specialist
+      patient_phone: item.patients?.phone || ''
     }))
 
     return NextResponse.json({
@@ -75,7 +68,7 @@ export async function GET(req: NextRequest) {
       data: transformed
     })
   } catch (error: any) {
-    console.error('Error fetching queue:', error)
+    console.error('Error fetching invoices:', error)
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -84,8 +77,8 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * POST /api/reception/queue
- * Add patient to queue
+ * POST /api/billing/invoices
+ * Create new invoice
  */
 export async function POST(req: NextRequest) {
   try {
@@ -109,53 +102,80 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { patient_id, appointment_id, notes } = body
+    const {
+      patient_id,
+      items,
+      discount = 0,
+      tax_rate = 0.15, // 15% VAT default
+      notes
+    } = body
 
-    if (!patient_id) {
+    if (!patient_id || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Patient ID is required' },
+        { success: false, error: 'Missing required fields' },
         { status: 400 }
       )
     }
 
-    // Get next queue number for today
-    const today = new Date().toISOString().split('T')[0]
-    const { data: lastQueue } = await supabaseAdmin
-      .from('reception_queue')
-      .select('queue_number')
-      .gte('created_at', `${today}T00:00:00`)
-      .lt('created_at', `${today}T23:59:59`)
-      .order('queue_number', { ascending: false })
-      .limit(1)
-      .single()
+    // Calculate totals
+    const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
+    const tax = (subtotal - discount) * tax_rate
+    const total = subtotal - discount + tax
 
-    const nextQueueNumber = lastQueue?.queue_number ? lastQueue.queue_number + 1 : 1
+    // Generate invoice number
+    const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`
 
-    const { data, error } = await supabaseAdmin
-      .from('reception_queue')
+    // 1. Create Invoice
+    const { data: invoice, error: invoiceError } = await supabaseAdmin
+      .from('invoices')
       .insert({
         patient_id,
-        appointment_id: appointment_id || null,
-        queue_number: nextQueueNumber,
-        status: 'checked_in',
-        checked_in_at: new Date().toISOString(),
-        notes: notes || null
+        invoice_number: invoiceNumber,
+        subtotal,
+        tax,
+        discount,
+        total,
+        status: 'pending',
+        due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Due in 7 days
+        notes
       })
       .select()
       .single()
 
-    if (error) throw error
+    if (invoiceError) throw invoiceError
+
+    // 2. Create Invoice Items
+    const invoiceItems = items.map((item: any) => ({
+      invoice_id: invoice.id,
+      description: item.description,
+      quantity: item.quantity,
+      unit_price: item.price,
+      total_price: item.price * item.quantity
+    }))
+
+    const { error: itemsError } = await supabaseAdmin
+      .from('invoice_items')
+      .insert(invoiceItems)
+
+    if (itemsError) throw itemsError
+
+    // Audit Log
+    try {
+      const { logAudit } = await import('@/lib/audit')
+      await logAudit(user.id, 'create_invoice', 'invoice', invoice.id, { patient_id, total, invoice_number: invoiceNumber }, req)
+    } catch (e) {
+      console.error('Failed to log audit:', e)
+    }
 
     return NextResponse.json({
       success: true,
-      data
+      data: invoice
     }, { status: 201 })
   } catch (error: any) {
-    console.error('Error adding to queue:', error)
+    console.error('Error creating invoice:', error)
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
     )
   }
 }
-

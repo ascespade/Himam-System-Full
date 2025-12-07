@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
 import Footer from '@/components/Footer'
+import { useEffect, useRef, useState } from 'react'
 
 interface SystemSetting {
   key: string
@@ -66,10 +66,10 @@ export default function SettingsPage() {
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({})
   const [copiedField, setCopiedField] = useState<string | null>(null)
-  
+
   const [activeTab, setActiveTab] = useState('ai') // Default to AI mostly used
   const [origin, setOrigin] = useState('')
-  
+
   const pasteRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({})
 
   useEffect(() => {
@@ -85,14 +85,14 @@ export default function SettingsPage() {
 
       if (data.success && data.data) {
         const settingsList = Array.isArray(data.data) ? data.data : []
-        
+
         // Filter out internals
-        const cleanSettings = settingsList.filter((s: SystemSetting) => 
+        const cleanSettings = settingsList.filter((s: SystemSetting) =>
            !s.key.startsWith('features.') && !s.key.startsWith('license.') && !s.key.startsWith('ui.') && !s.key.startsWith('userManagement.')
         )
 
         setSettings(cleanSettings)
-        
+
         const initialForm: Record<string, string> = {}
         const initialVisible: Record<string, boolean> = {}
         cleanSettings.forEach((s: SystemSetting) => {
@@ -189,7 +189,7 @@ export default function SettingsPage() {
                 dir="ltr"
              />
           ) : (
-             <input 
+             <input
                 type={isPass && !isVisible ? 'password' : 'text'}
                 value={value}
                 onChange={e => setFormData({...formData, [key]: e.target.value})}
@@ -242,10 +242,10 @@ export default function SettingsPage() {
              <h1 className="heading-primary mb-2 text-primary">إعدادات النظام (Configuration)</h1>
              <p className="text-muted-foreground text-lg">إدارة مفاتيح API، والربط مع الخدمات الخارجية، وإعدادات الذكاء الاصطناعي.</p>
            </div>
-           
+
            {/* Global Actions */}
-           <button 
-             onClick={handleSubmit} 
+           <button
+             onClick={handleSubmit}
              disabled={saving}
              className="btn-primary shadow-medium text-lg px-8 py-3"
            >
@@ -273,7 +273,7 @@ export default function SettingsPage() {
             {TABS.map((tab) => {
                const isActive = activeTab === tab.id
                const count = getCategoryFields(tab.id).length
-               if (count === 0 && tab.id !== 'whatsapp') return null 
+               if (count === 0 && tab.id !== 'whatsapp') return null
 
                return (
                 <button
@@ -281,8 +281,8 @@ export default function SettingsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`
                     whitespace-nowrap pb-4 px-2 border-b-2 font-bold text-base transition-smooth
-                    ${isActive 
-                      ? 'border-primary text-primary' 
+                    ${isActive
+                      ? 'border-primary text-primary'
                       : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                     }
                   `}
@@ -299,7 +299,27 @@ export default function SettingsPage() {
 
         {/* Tab Content */}
         <div className="card shadow-medium min-h-[500px] border border-border/50">
-           
+
+           {/* Integration Status Indicators */}
+           <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {activeTab === 'whatsapp' && (
+                 <div className={`p-4 rounded-xl border ${formData['WHATSAPP_TOKEN'] ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                    <div className="flex items-center gap-2">
+                       <div className={`w-3 h-3 rounded-full ${formData['WHATSAPP_TOKEN'] ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                       <span className="font-bold text-gray-900">حالة الواتساب: {formData['WHATSAPP_TOKEN'] ? 'متصل' : 'غير متصل'}</span>
+                    </div>
+                 </div>
+              )}
+              {activeTab === 'ai' && (
+                 <div className={`p-4 rounded-xl border ${formData['GEMINI_KEY'] ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                    <div className="flex items-center gap-2">
+                       <div className={`w-3 h-3 rounded-full ${formData['GEMINI_KEY'] ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                       <span className="font-bold text-gray-900">حالة الذكاء الاصطناعي: {formData['GEMINI_KEY'] ? 'متصل' : 'غير متصل'}</span>
+                    </div>
+                 </div>
+              )}
+           </div>
+
            {/* Special Section: Webhook URL for WhatsApp Tab */}
            {activeTab === 'whatsapp' && (
               <div className="mb-10 bg-primary-light border border-primary/20 rounded-lg p-6 shadow-soft">
@@ -307,7 +327,7 @@ export default function SettingsPage() {
                     <Icons.Info className="w-5 h-5" />
                     <h3 className="text-base font-bold uppercase tracking-wider">رابط الويب هوك (Webhook Endpoint)</h3>
                  </div>
-                 
+
                  <div className="text-sm text-primary-dark/80 mb-4 font-medium">
                     قم بنسخ الرابط أدناه ولصقه في إعدادات Meta Developer Console لاستلام الرسائل.
                  </div>

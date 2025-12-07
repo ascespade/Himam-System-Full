@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * GET /api/patients/[id]/medical-file
@@ -10,71 +11,66 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Get patient info
+    // 1. Check Authentication
+    const cookieStore = req.cookies
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            // API routes can't set cookies easily in this pattern, but we only need to read
+          },
+          remove(name: string, options: CookieOptions) {
+          },
+        },
+      }
+    )
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 2. Get patient info
     const { data: patient, error: patientError } = await supabaseAdmin
       .from('patients')
       .select('*')
       .eq('id', params.id)
       .single()
 
-    if (patientError) throw patientError
+    if (patientError) {
+       if (patientError.code === 'PGRST116') {
+         return NextResponse.json({ success: false, error: 'Patient not found' }, { status: 404 })
+       }
+       throw patientError
+    }
 
-    // Get medical records
-    const { data: records, error: recordsError } = await supabaseAdmin
-      .from('medical_records')
-      .select('*')
-      .eq('patient_id', params.id)
-      .order('date', { ascending: false })
-
-    // Get diagnoses
-    const { data: diagnoses, error: diagnosesError } = await supabaseAdmin
-      .from('diagnoses')
-      .select('*')
-      .eq('patient_id', params.id)
-      .order('diagnosed_date', { ascending: false })
-
-    // Get prescriptions
-    const { data: prescriptions, error: prescriptionsError } = await supabaseAdmin
-      .from('prescriptions')
-      .select('*')
-      .eq('patient_id', params.id)
-      .order('prescribed_date', { ascending: false })
-
-    // Get lab results
-    const { data: labResults, error: labError } = await supabaseAdmin
-      .from('lab_results')
-      .select('*')
-      .eq('patient_id', params.id)
-      .order('performed_date', { ascending: false })
-
-    // Get imaging results
-    const { data: imagingResults, error: imagingError } = await supabaseAdmin
-      .from('imaging_results')
-      .select('*')
-      .eq('patient_id', params.id)
-      .order('performed_date', { ascending: false })
-
-    // Get vital signs
-    const { data: vitalSigns, error: vitalError } = await supabaseAdmin
-      .from('vital_signs')
-      .select('*')
-      .eq('patient_id', params.id)
-      .order('visit_date', { ascending: false })
-      .limit(10)
-
-    // Get doctor relationships
-    const { data: doctors, error: doctorsError } = await supabaseAdmin
-      .from('doctor_patient_relationships')
-      .select(`
-        *,
-        users (
-          id,
-          name,
-          email
-        )
-      `)
-      .eq('patient_id', params.id)
-      .is('end_date', null)
+    // 3. Parallel Fetching for Performance
+    const [
+      { data: records },
+      { data: diagnoses },
+      { data: prescriptions },
+      { data: labResults },
+      { data: imagingResults },
+      { data: vitalSigns },
+      { data: doctors }
+    ] = await Promise.all([
+      supabaseAdmin.from('medical_records').select('*').eq('patient_id', params.id).order('date', { ascending: false }),
+      supabaseAdmin.from('diagnoses').select('*').eq('patient_id', params.id).order('diagnosed_date', { ascending: false }),
+      supabaseAdmin.from('prescriptions').select('*').eq('patient_id', params.id).order('prescribed_date', { ascending: false }),
+      supabaseAdmin.from('lab_results').select('*').eq('patient_id', params.id).order('performed_date', { ascending: false }),
+      supabaseAdmin.from('imaging_results').select('*').eq('patient_id', params.id).order('performed_date', { ascending: false }),
+      supabaseAdmin.from('vital_signs').select('*').eq('patient_id', params.id).order('visit_date', { ascending: false }).limit(10),
+      supabaseAdmin.from('doctor_patient_relationships').select('*, users!doctor_id(id, name, email)').eq('patient_id', params.id).is('end_date', null)
+    ])
 
     return NextResponse.json({
       success: true,
@@ -88,7 +84,8 @@ export async function GET(
         vital_signs: vitalSigns || [],
         doctors: (doctors || []).map((d: any) => ({
           ...d,
-          doctor_name: d.users?.name
+          doctor_name: d.users?.name,
+          doctor_email: d.users?.email
         }))
       }
     })

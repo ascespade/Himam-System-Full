@@ -109,8 +109,248 @@ export interface Service {
 }
 
 // ============================================================================
-// Settings Types
+// Medical Types
 // ============================================================================
+
+export interface MedicalRecord {
+  id: string
+  patientId: string
+  doctorId: string
+  date: string
+  recordType: 'visit' | 'diagnosis' | 'prescription' | 'lab_result' | 'imaging' | 'surgery' | 'vaccination' | 'note' | 'referral'
+  chiefComplaint?: string
+  history?: string
+  examination?: string
+  assessment?: string
+  plan?: string
+  notes?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface Diagnosis {
+  id: string
+  patientId: string
+  medicalRecordId?: string
+  doctorId?: string
+  diagnosisCode?: string
+  diagnosisName: string
+  diagnosedDate: string
+  severity?: 'mild' | 'moderate' | 'severe' | 'critical'
+  status: 'active' | 'resolved' | 'chronic'
+  notes?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface Prescription {
+  id: string
+  patientId: string
+  doctorId: string
+  medicalRecordId?: string
+  prescribedDate: string
+  status: 'active' | 'completed' | 'cancelled' | 'expired'
+  notes?: string
+  items?: PrescriptionItem[]
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface PrescriptionItem {
+  id: string
+  prescriptionId: string
+  medicationName: string
+  dosage: string
+  frequency: string
+  duration: string
+  instructions?: string
+  isDispensed: boolean
+  createdAt: string
+}
+
+export interface LabResult {
+  id: string
+  patientId: string
+  medicalRecordId?: string
+  testName: string
+  testType?: string
+  orderedBy?: string
+  orderedDate: string
+  performedDate?: string
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  results?: any
+  interpretation?: string
+  fileUrl?: string
+  isAbnormal: boolean
+  reviewedBy?: string
+  reviewedAt?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface ImagingResult {
+  id: string
+  patientId: string
+  medicalRecordId?: string
+  imagingType: string
+  bodyPart?: string
+  orderedBy?: string
+  orderedDate: string
+  performedDate?: string
+  status: 'pending' | 'scheduled' | 'completed' | 'cancelled'
+  reportText?: string
+  imageUrls?: string[]
+  impression?: string
+  radiologistName?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface VitalSign {
+  id: string
+  patientId: string
+  visitDate: string
+  temperature?: number
+  bloodPressureSystolic?: number
+  bloodPressureDiastolic?: number
+  heartRate?: number
+  respiratoryRate?: number
+  oxygenSaturation?: number
+  weight?: number
+  height?: number
+  bmi?: number
+  notes?: string
+  recordedBy?: string
+  createdAt: string
+}
+
+// ============================================================================
+// Doctor Management Types
+// ============================================================================
+
+export interface DoctorProfile {
+  id: string
+  userId: string
+  specialization: string
+  licenseNumber?: string
+  bioAr?: string
+  bioEn?: string
+  education?: string
+  experienceYears?: number
+  consultationFee?: number
+  isActive: boolean
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface DoctorSchedule {
+  id: string
+  doctorId: string
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  breakStart?: string
+  breakEnd?: string
+  slotDuration: number
+  isActive: boolean
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface AppointmentSlot {
+  id: string
+  doctorId: string
+  date: string
+  startTime: string
+  endTime: string
+  isAvailable: boolean
+  isBooked: boolean
+  appointmentId?: string
+  createdAt: string
+}
+
+// ============================================================================
+// Operations & Billing Types
+// ============================================================================
+
+export interface ReceptionQueue {
+  id: string
+  patientId: string
+  appointmentId?: string
+  queueNumber: number
+  status: 'waiting' | 'checked_in' | 'in_progress' | 'completed' | 'no_show' | 'cancelled'
+  checkedInAt: string
+  calledAt?: string
+  completedAt?: string
+  notes?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface Invoice {
+  id: string
+  invoiceNumber: string
+  patientId: string
+  appointmentId?: string
+  status: 'pending' | 'paid' | 'partially_paid' | 'cancelled' | 'refunded'
+  subtotal: number
+  taxAmount: number
+  discountAmount: number
+  totalAmount: number
+  paidAmount: number
+  dueDate?: string
+  paidAt?: string
+  notes?: string
+  insuranceClaimId?: string
+  items?: InvoiceItem[]
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface InvoiceItem {
+  id: string
+  invoiceId: string
+  description: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+  serviceType?: string
+  createdAt: string
+}
+
+export interface InsuranceClaim {
+  id: string
+  patientId: string
+  invoiceId?: string
+  insuranceProvider: string
+  policyNumber?: string
+  claimType?: string
+  serviceDate?: string
+  totalAmount: number
+  coveredAmount?: number
+  patientResponsibility?: number
+  status: 'pending' | 'submitted' | 'under_review' | 'approved' | 'partially_approved' | 'rejected' | 'paid'
+  submittedDate?: string
+  processedDate?: string
+  rejectionReason?: string
+  resubmissionNotes?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface Notification {
+  id: string
+  userId?: string
+  patientId?: string
+  type: string
+  title: string
+  message: string
+  entityType?: string
+  entityId?: string
+  isRead: boolean
+  readAt?: string
+  createdAt: string
+}
 
 export interface SystemSetting {
   key: string
@@ -123,21 +363,21 @@ export interface SystemSettings {
   // AI Settings
   GEMINI_KEY: string
   OPENAI_KEY: string
-  
+
   // WhatsApp Settings
   WHATSAPP_TOKEN: string
   WHATSAPP_PHONE_NUMBER_ID: string
   WHATSAPP_VERIFY_TOKEN: string
-  
+
   // Google Calendar Settings
   GOOGLE_CLIENT_EMAIL: string
   GOOGLE_PRIVATE_KEY: string
   GOOGLE_CALENDAR_ID: string
-  
+
   // CRM Settings
   CRM_URL: string
   CRM_TOKEN: string
-  
+
   [key: string]: string
 }
 

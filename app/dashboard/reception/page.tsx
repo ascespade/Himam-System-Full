@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Users, Clock, CheckCircle, XCircle, Search, Plus, Phone, Calendar, User, AlertCircle, Bell } from 'lucide-react'
+import { Bell, Calendar, CheckCircle, Clock, Phone, Search, User } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 interface QueueItem {
   id: string
@@ -28,17 +29,22 @@ interface TodayStats {
 }
 
 export default function ReceptionPage() {
+  const router = useRouter()
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [stats, setStats] = useState<TodayStats>({ total: 0, waiting: 0, in_progress: 0, completed: 0, cancelled: 0 })
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
 
-  useEffect(() => {
-    fetchQueue()
-    const interval = setInterval(fetchQueue, 30000) // Refresh every 30 seconds
-    return () => clearInterval(interval)
-  }, [])
+  const calculateStats = (items: QueueItem[]) => {
+    setStats({
+      total: items.length,
+      waiting: items.filter(i => i.status === 'waiting' || i.status === 'checked_in').length,
+      in_progress: items.filter(i => i.status === 'in_progress').length,
+      completed: items.filter(i => i.status === 'completed').length,
+      cancelled: items.filter(i => i.status === 'cancelled' || i.status === 'no_show').length
+    })
+  }
 
   const fetchQueue = async () => {
     try {
@@ -56,15 +62,11 @@ export default function ReceptionPage() {
     }
   }
 
-  const calculateStats = (items: QueueItem[]) => {
-    setStats({
-      total: items.length,
-      waiting: items.filter(i => i.status === 'waiting' || i.status === 'checked_in').length,
-      in_progress: items.filter(i => i.status === 'in_progress').length,
-      completed: items.filter(i => i.status === 'completed').length,
-      cancelled: items.filter(i => i.status === 'cancelled' || i.status === 'no_show').length
-    })
-  }
+  useEffect(() => {
+    fetchQueue()
+    const interval = setInterval(fetchQueue, 30000) // Refresh every 30 seconds
+    return () => clearInterval(interval)
+  }, [])
 
   const updateQueueStatus = async (id: string, status: QueueItem['status']) => {
     try {
@@ -90,13 +92,13 @@ export default function ReceptionPage() {
   }
 
   const filteredQueue = queue.filter(item => {
-    const matchesSearch = 
+    const matchesSearch =
       item.patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.patient_phone.includes(searchTerm) ||
       item.queue_number.toString().includes(searchTerm)
-    
+
     const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus
-    
+
     return matchesSearch && matchesStatus
   })
 
@@ -184,6 +186,14 @@ export default function ReceptionPage() {
             <option value="completed">مكتمل</option>
             <option value="cancelled">ملغي</option>
           </select>
+
+          <button
+            onClick={() => router.push('/dashboard/reception/book-appointment')}
+            className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all"
+          >
+            <Calendar size={20} />
+            حجز موعد
+          </button>
 
           <button
             onClick={callNext}

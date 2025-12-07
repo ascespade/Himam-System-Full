@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * GET /api/doctor/patients
@@ -7,8 +8,25 @@ import { supabaseAdmin } from '@/lib/supabase'
  */
 export async function GET(req: NextRequest) {
   try {
-    // TODO: Get doctor_id from auth session
-    // For now, get all patients with doctor relationships
+    const cookieStore = req.cookies
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set(name: string, value: string, options: CookieOptions) {},
+          remove(name: string, options: CookieOptions) {},
+        },
+      }
+    )
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { data, error } = await supabaseAdmin
       .from('doctor_patient_relationships')
       .select(`
@@ -24,7 +42,7 @@ export async function GET(req: NextRequest) {
           chronic_diseases
         )
       `)
-      .eq('relationship_type', 'primary')
+      .eq('doctor_id', user.id)
       .is('end_date', null)
 
     if (error) throw error
@@ -43,4 +61,3 @@ export async function GET(req: NextRequest) {
     )
   }
 }
-

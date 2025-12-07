@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -23,19 +23,35 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
-      if (!error) {
-        router.push('/dashboard/admin')
+      if (authError) throw authError
+
+      if (user) {
+        // Fetch user role
+        const { data: userData, error: roleError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+
+        if (roleError) {
+          console.error('Error fetching role:', roleError)
+          // Fallback to admin if role fetch fails, middleware will handle unauthorized access
+          router.push('/dashboard/admin')
+        } else {
+          const role = userData?.role || 'admin'
+          router.push(`/dashboard/${role}`)
+        }
+
         router.refresh()
-      } else {
-        setError(error.message === 'Invalid login credentials' ? 'البيانات غير صحيحة' : error.message)
       }
     } catch (err: any) {
-      setError('حدث خطأ في النظام')
+      console.error('Login error:', err)
+      setError(err.message === 'Invalid login credentials' ? 'البيانات غير صحيحة' : err.message)
     } finally {
       setLoading(false)
     }
@@ -55,7 +71,7 @@ export default function LoginPage() {
           <h2 className="text-3xl font-extrabold text-gray-900 mb-2">تسجيل الدخول</h2>
           <p className="text-sm text-gray-500">لوحة تحكم إدارة مركز الهمم</p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           <div className="rounded-md shadow-sm space-y-4">
             <div>
@@ -102,7 +118,7 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
-        
+
         <div className="text-center text-xs text-gray-400">
            محمية بواسطة Himam Secure System v2.0
         </div>

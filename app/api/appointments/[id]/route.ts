@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { sendTextMessage } from '@/lib/whatsapp'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function PUT(
   request: NextRequest,
@@ -38,6 +38,16 @@ export async function PUT(
       }
     }
 
+    // Audit Log
+    try {
+      const { logAudit } = await import('@/lib/audit')
+      // Note: We don't have user_id here easily without auth check, passing undefined for now or need to add auth check
+      // Ideally we should add auth check to this route too
+      await logAudit(undefined, 'update_appointment', 'appointment', id, { status }, request)
+    } catch (e) {
+      console.error('Failed to log audit:', e)
+    }
+
     return NextResponse.json({ success: true, data: appointment })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
@@ -57,6 +67,14 @@ export async function DELETE(
       .eq('id', id)
 
     if (error) throw error
+
+    // Audit Log
+    try {
+      const { logAudit } = await import('@/lib/audit')
+      await logAudit(undefined, 'delete_appointment', 'appointment', id, {}, request)
+    } catch (e) {
+      console.error('Failed to log audit:', e)
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

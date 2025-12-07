@@ -1,22 +1,23 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  MessageSquare, 
-  Users, 
-  FileText, 
-  Settings, 
-  LogOut,
-  BrainCircuit,
-  Stethoscope,
-  Shield,
-  UserCheck
-} from 'lucide-react'
 import { createBrowserClient } from '@supabase/ssr'
-import { useRouter } from 'next/navigation'
+import {
+    BarChart,
+    BrainCircuit,
+    Calendar,
+    DollarSign,
+    FileText,
+    LayoutDashboard,
+    LogOut,
+    MessageSquare,
+    Settings,
+    Shield,
+    Stethoscope,
+    UserCheck,
+    Users
+} from 'lucide-react'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 
 export default function Sidebar() {
   const pathname = usePathname()
@@ -38,6 +39,8 @@ export default function Sidebar() {
     { name: 'الاستقبال', href: '/dashboard/reception', icon: UserCheck, roles: ['admin', 'reception'] },
     { name: 'شاشة الطبيب', href: '/dashboard/doctor', icon: Stethoscope, roles: ['admin', 'doctor'] },
     { name: 'التأمينات', href: '/dashboard/insurance', icon: Shield, roles: ['admin', 'insurance'] },
+    { name: 'الفواتير', href: '/dashboard/billing', icon: DollarSign, roles: ['admin', 'reception', 'accountant'] },
+    { name: 'التقارير', href: '/dashboard/reports', icon: BarChart, roles: ['admin'] },
     { name: 'الأطباء', href: '/dashboard/doctors', icon: Users, roles: ['admin', 'doctor'] },
     { name: 'التقويم', href: '/dashboard/calendar', icon: Calendar, roles: ['admin', 'doctor', 'reception'] },
     { name: 'المحادثات', href: '/dashboard/chat', icon: MessageSquare, roles: ['admin', 'doctor'] },
@@ -67,8 +70,8 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                isActive 
-                  ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                isActive
+                  ? 'bg-primary text-white shadow-md shadow-primary/20'
                   : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
@@ -80,7 +83,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-100">
-        <button 
+        <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors"
         >

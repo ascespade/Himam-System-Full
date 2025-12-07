@@ -1,57 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextRequest, NextResponse } from 'next/server'
 
-/**
- * PUT /api/reception/queue/[id]
- * Update queue item status
- */
 export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const cookieStore = req.cookies
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set(name: string, value: string, options: CookieOptions) {},
+          remove(name: string, options: CookieOptions) {},
+        },
+      }
+    )
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await req.json()
-    const { status, notes } = body
+    const { status } = body
 
-    if (!status) {
-      return NextResponse.json(
-        { success: false, error: 'Status is required' },
-        { status: 400 }
-      )
-    }
+    const updates: any = { status }
 
-    const updateData: any = {
-      status,
-      updated_at: new Date().toISOString()
-    }
-
-    // Set timestamps based on status
-    if (status === 'in_progress' && !body.called_at) {
-      updateData.called_at = new Date().toISOString()
-    }
-    if (status === 'completed' && !body.seen_at) {
-      updateData.seen_at = new Date().toISOString()
-      updateData.completed_at = new Date().toISOString()
-    }
-    if (notes) {
-      updateData.notes = notes
+    // Update timestamps based on status
+    if (status === 'in_progress') {
+      updates.called_at = new Date().toISOString()
+    } else if (status === 'completed') {
+      updates.seen_at = new Date().toISOString()
     }
 
     const { data, error } = await supabaseAdmin
       .from('reception_queue')
-      .update(updateData)
+      .update(updates)
       .eq('id', params.id)
       .select()
       .single()
 
     if (error) throw error
 
-    return NextResponse.json({
-      success: true,
-      data
-    })
+    return NextResponse.json({ success: true, data })
   } catch (error: any) {
-    console.error('Error updating queue:', error)
+    console.error('Error updating queue item:', error)
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -59,15 +57,30 @@ export async function PUT(
   }
 }
 
-/**
- * DELETE /api/reception/queue/[id]
- * Remove from queue
- */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const cookieStore = req.cookies
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set(name: string, value: string, options: CookieOptions) {},
+          remove(name: string, options: CookieOptions) {},
+        },
+      }
+    )
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { error } = await supabaseAdmin
       .from('reception_queue')
       .delete()
@@ -75,10 +88,7 @@ export async function DELETE(
 
     if (error) throw error
 
-    return NextResponse.json({
-      success: true,
-      message: 'Removed from queue'
-    })
+    return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('Error deleting queue item:', error)
     return NextResponse.json(
@@ -87,4 +97,3 @@ export async function DELETE(
     )
   }
 }
-
