@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: formattedData
+      data: data
     })
   } catch (error: any) {
     console.error('Error fetching appointments:', error)
