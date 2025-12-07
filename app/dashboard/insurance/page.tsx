@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Shield, Search, Filter, FileText, CheckCircle, XCircle, Clock, DollarSign, TrendingUp, AlertCircle } from 'lucide-react'
+import { Shield, Search, Filter, FileText, CheckCircle, XCircle, Clock, DollarSign, TrendingUp, AlertCircle, Eye } from 'lucide-react'
 import Modal from '@/components/Modal'
 
 interface InsuranceClaim {
