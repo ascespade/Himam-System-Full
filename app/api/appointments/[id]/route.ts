@@ -7,22 +7,55 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const id = params.id
-  const { status, note } = await request.json()
-
-  if (!['confirmed', 'cancelled', 'completed'].includes(status)) {
-    return NextResponse.json({ success: false, error: 'Invalid status' }, { status: 400 })
-  }
+  const body = await request.json()
+  const { status, note, date, duration, session_type, color } = body
 
   try {
+    // Build update object
+    const updateData: any = {}
+    if (status && ['confirmed', 'cancelled', 'completed', 'pending'].includes(status)) {
+      updateData.status = status
+    }
+    if (note !== undefined) updateData.notes = note
+    if (date) updateData.date = date
+    if (duration) updateData.duration = duration
+    if (session_type) updateData.session_type = session_type
+    if (color) updateData.color = color
+    updateData.updated_at = new Date().toISOString()
+
     // 1. Update Appointment
     const { data: appointment, error } = await supabaseAdmin
       .from('appointments')
-      .update({ status, notes: note ? note : undefined })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()
 
     if (error) throw error
+
+    // If date changed, update appointment slot
+    if (date && appointment) {
+      const appointmentDate = new Date(date)
+      const slotDate = appointmentDate.toISOString().split('T')[0]
+      const slotStartTime = appointmentDate.toISOString().split('T')[1].split('.')[0]
+      const slotEndTime = new Date(appointmentDate.getTime() + (appointment.duration || 30) * 60000)
+        .toISOString().split('T')[1].split('.')[0]
+
+      // Update or create appointment slot
+      await supabaseAdmin
+        .from('appointment_slots')
+        .upsert({
+          doctor_id: appointment.doctor_id,
+          date: slotDate,
+          start_time: slotStartTime,
+          end_time: slotEndTime,
+          is_available: false,
+          is_booked: true,
+          appointment_id: appointment.id
+        }, {
+          onConflict: 'appointment_id'
+        })
+    }
 
     // 2. Send WhatsApp Notification
     if (appointment && appointment.phone) {
@@ -36,6 +69,45 @@ export async function PUT(
       if (message) {
         await sendTextMessage(appointment.phone, message)
       }
+    }
+
+    // 3. Create Notifications
+    try {
+      const { createNotification, createNotificationForRole, NotificationTemplates } = await import('@/lib/notifications')
+      
+      let template
+      if (status === 'confirmed') {
+        template = NotificationTemplates.appointmentConfirmed(
+          appointment.patient_name || 'مريض',
+          appointment.date
+        )
+      } else if (status === 'cancelled') {
+        template = NotificationTemplates.appointmentCancelled(
+          appointment.patient_name || 'مريض',
+          appointment.date
+        )
+      }
+
+      if (template) {
+        // Notify admin
+        await createNotificationForRole('admin', {
+          ...template,
+          entityType: 'appointment',
+          entityId: appointment.id
+        })
+
+        // Notify doctor if exists
+        if (appointment.doctor_id) {
+          await createNotification({
+            userId: appointment.doctor_id,
+            ...template,
+            entityType: 'appointment',
+            entityId: appointment.id
+          })
+        }
+      }
+    } catch (e) {
+      console.error('Failed to create notifications:', e)
     }
 
     // Audit Log

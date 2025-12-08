@@ -227,12 +227,43 @@ export async function POST(req: NextRequest) {
         const aiResponse = await generateWhatsAppResponse(from, text, formattedHistory, patientProfile?.name)
 
         // Save conversation to database
-        await supabaseAdmin.from('conversation_history').insert({
-          user_phone: from,
-          user_message: text,
-          ai_response: aiResponse.text,
-          session_id: messageId || undefined,
-        })
+        const { data: conversationRecord } = await supabaseAdmin
+          .from('conversation_history')
+          .insert({
+            user_phone: from,
+            user_message: text,
+            ai_response: aiResponse.text,
+            session_id: messageId || undefined,
+          })
+          .select()
+          .single()
+
+        // Create notification for new message (notify admin and reception)
+        // Only notify for non-booking messages to avoid spam
+        if (conversationRecord && !bookingDetails?.isComplete) {
+          try {
+            const { createNotificationForRole, NotificationTemplates } = await import('@/lib/notifications')
+            
+            const patientName = patientProfile?.name || from
+            const template = NotificationTemplates.newMessage(patientName)
+
+            // Notify admin
+            await createNotificationForRole('admin', {
+              ...template,
+              entityType: 'conversation',
+              entityId: from // Use phone number as entity ID for chat link
+            })
+
+            // Notify reception staff
+            await createNotificationForRole('reception', {
+              ...template,
+              entityType: 'conversation',
+              entityId: from // Use phone number as entity ID for chat link
+            })
+          } catch (e) {
+            console.error('Failed to create message notification:', e)
+          }
+        }
 
         // Check if AI extracted booking details
         const bookingDetails = parseBookingFromAI(aiResponse.text)

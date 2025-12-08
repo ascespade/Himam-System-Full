@@ -5,13 +5,10 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 /**
- * GET /api/billing/invoices/[id]
- * Get invoice details
+ * GET /api/doctor/treatment-plans
+ * Get doctor's treatment plans
  */
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -32,30 +29,26 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: invoice, error } = await supabaseAdmin
-      .from('invoices')
+    const { data, error } = await supabaseAdmin
+      .from('treatment_plans')
       .select(`
         *,
         patients (
-          id,
           name,
-          phone,
-          email,
-          address
-        ),
-        invoice_items (*)
+          phone
+        )
       `)
-      .eq('id', params.id)
-      .single()
+      .eq('doctor_id', user.id)
+      .order('created_at', { ascending: false })
 
     if (error) throw error
 
     return NextResponse.json({
       success: true,
-      data: invoice
+      data: data || []
     })
   } catch (error: any) {
-    console.error('Error fetching invoice:', error)
+    console.error('Error fetching treatment plans:', error)
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -64,13 +57,10 @@ export async function GET(
 }
 
 /**
- * PUT /api/billing/invoices/[id]
- * Update invoice status
+ * POST /api/doctor/treatment-plans
+ * Create new treatment plan
  */
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -92,77 +82,51 @@ export async function PUT(
     }
 
     const body = await req.json()
-    const { status } = body
+    const { patient_id, title, description, start_date, end_date, goals } = body
 
-    if (!status) {
-      return NextResponse.json(
-        { success: false, error: 'Status is required' },
-        { status: 400 }
-      )
+    // Validate
+    if (!patient_id || !title || !start_date || !goals || goals.length === 0) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 })
     }
 
-    const updateData: any = {
-      status,
-      updated_at: new Date().toISOString()
-    }
-
-    if (status === 'paid') {
-      updateData.paid_at = new Date().toISOString()
-      updateData.paid_amount = data?.total_amount || 0
-    }
+    // Calculate progress percentage
+    const completedGoals = goals.filter((g: any) => g.status === 'completed').length
+    const progressPercentage = Math.round((completedGoals / goals.length) * 100)
 
     const { data, error } = await supabaseAdmin
-      .from('invoices')
-      .update(updateData)
-      .eq('id', params.id)
+      .from('treatment_plans')
+      .insert({
+        doctor_id: user.id,
+        patient_id,
+        title,
+        description: description || null,
+        start_date,
+        end_date: end_date || null,
+        goals: goals,
+        status: 'active',
+        progress_percentage: progressPercentage
+      })
       .select(`
         *,
         patients (
-          id,
-          name
+          name,
+          phone
         )
       `)
       .single()
 
     if (error) throw error
 
-    // Create Notifications for payment
-    if (status === 'paid' && data) {
-      try {
-        const { createNotification, createNotificationForRole, NotificationTemplates } = await import('@/lib/notifications')
-        
-        const template = NotificationTemplates.paymentReceived(
-          data.patients?.name || 'مريض',
-          Number(data.total_amount) || 0
-        )
-
-        // Notify admin
-        await createNotificationForRole('admin', {
-          ...template,
-          entityType: 'invoice',
-          entityId: data.id
-        })
-
-        // Notify reception staff
-        await createNotificationForRole('reception', {
-          ...template,
-          entityType: 'invoice',
-          entityId: data.id
-        })
-      } catch (e) {
-        console.error('Failed to create payment notifications:', e)
-      }
-    }
-
     return NextResponse.json({
       success: true,
       data
     })
   } catch (error: any) {
-    console.error('Error updating invoice:', error)
+    console.error('Error creating treatment plan:', error)
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
     )
   }
 }
+

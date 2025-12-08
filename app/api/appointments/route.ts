@@ -127,6 +127,39 @@ export async function POST(req: NextRequest) {
       console.error('Failed to send Slack notification:', e)
     }
 
+    // Create Notifications
+    try {
+      const { data: patient } = await supabaseAdmin.from('patients').select('name').eq('id', patient_id).single()
+      const { data: doctor } = await supabaseAdmin.from('users').select('name').eq('id', doctor_id).single()
+      
+      const { createNotification, createNotificationForRole, NotificationTemplates } = await import('@/lib/notifications')
+      
+      const template = NotificationTemplates.appointmentCreated(
+        patient?.name || 'مريض',
+        doctor?.name || 'طبيب',
+        date
+      )
+
+      // Notify admin
+      await createNotificationForRole('admin', {
+        ...template,
+        entityType: 'appointment',
+        entityId: appointment.id
+      })
+
+      // Notify doctor
+      if (doctor_id) {
+        await createNotification({
+          userId: doctor_id,
+          ...template,
+          entityType: 'appointment',
+          entityId: appointment.id
+        })
+      }
+    } catch (e) {
+      console.error('Failed to create notifications:', e)
+    }
+
     // Audit Log
     try {
       const { logAudit } = await import('@/lib/audit')

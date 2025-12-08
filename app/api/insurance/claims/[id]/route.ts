@@ -37,10 +37,37 @@ export async function PUT(
       .from('insurance_claims')
       .update(updateData)
       .eq('id', params.id)
-      .select()
+      .select(`
+        *,
+        patients (
+          id,
+          name
+        )
+      `)
       .single()
 
     if (error) throw error
+
+    // Create Notifications for approval
+    if ((status === 'approved' || status === 'paid') && data) {
+      try {
+        const { createNotification, createNotificationForRole, NotificationTemplates } = await import('@/lib/notifications')
+        
+        const template = NotificationTemplates.insuranceClaimApproved(
+          data.patients?.name || 'مريض',
+          Number(data.total_amount) || 0
+        )
+
+        // Notify admin
+        await createNotificationForRole('admin', {
+          ...template,
+          entityType: 'insurance_claim',
+          entityId: data.id
+        })
+      } catch (e) {
+        console.error('Failed to create claim approval notifications:', e)
+      }
+    }
 
     return NextResponse.json({
       success: true,

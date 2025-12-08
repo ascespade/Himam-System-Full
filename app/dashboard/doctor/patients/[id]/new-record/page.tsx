@@ -73,73 +73,78 @@ export default function NewRecordPage({ params }: { params: { id: string } }) {
         <form onSubmit={handleSubmit} className="space-y-6">
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">نوع السجل</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">نوع الجلسة</label>
             <select
               value={formData.record_type}
               onChange={(e) => setFormData({ ...formData, record_type: e.target.value })}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
             >
-              <option value="visit">زيارة عيادة</option>
+              <option value="session">جلسة علاجية</option>
+              <option value="speech_therapy">جلسة نطق وتخاطب</option>
+              <option value="behavior_modification">جلسة تعديل سلوك</option>
+              <option value="occupational_therapy">جلسة علاج وظيفي</option>
+              <option value="sensory_integration">جلسة تكامل حسي</option>
+              <option value="early_intervention">جلسة تدخل مبكر</option>
+              <option value="autism_therapy">جلسة علاج توحد</option>
               <option value="consultation">استشارة</option>
               <option value="follow_up">متابعة</option>
-              <option value="emergency">طوارئ</option>
-              <option value="procedure">إجراء طبي</option>
+              <option value="evaluation">تقييم</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">الشكوى الرئيسية (Chief Complaint)</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">الهدف من الجلسة / الشكوى الرئيسية</label>
             <textarea
               required
               rows={2}
               value={formData.chief_complaint}
               onChange={(e) => setFormData({ ...formData, chief_complaint: e.target.value })}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="ما هي المشكلة الرئيسية؟"
+              placeholder="ما هو الهدف من هذه الجلسة؟ أو ما هي المشكلة التي سيتم العمل عليها؟"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">التاريخ المرضي (HPI)</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">ملاحظات الجلسة / الأنشطة المطبقة</label>
             <textarea
               rows={4}
               value={formData.history_of_present_illness}
               onChange={(e) => setFormData({ ...formData, history_of_present_illness: e.target.value })}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="تفاصيل الحالة المرضية..."
+              placeholder="ما هي الأنشطة والتمارين التي تم تطبيقها في الجلسة؟"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">الفحص السريري (Physical Exam)</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">ملاحظات السلوك والأداء</label>
             <textarea
               rows={4}
               value={formData.physical_examination}
               onChange={(e) => setFormData({ ...formData, physical_examination: e.target.value })}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="نتائج الفحص..."
+              placeholder="ملاحظات حول سلوك وأداء المريض خلال الجلسة..."
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">التقييم (Assessment)</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">تقييم الجلسة / التقدم المحرز</label>
               <textarea
                 rows={3}
                 value={formData.assessment}
                 onChange={(e) => setFormData({ ...formData, assessment: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="التشخيص المبدئي..."
+                placeholder="ما هو التقدم الذي تم إحرازه في هذه الجلسة؟"
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">الخطة العلاجية (Plan)</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">الخطة العلاجية / التوصيات</label>
               <textarea
                 rows={3}
                 value={formData.plan}
                 onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="الخطوات القادمة..."
+                placeholder="ما هي الخطوات القادمة؟ التوصيات للجلسات القادمة؟"
               />
             </div>
           </div>

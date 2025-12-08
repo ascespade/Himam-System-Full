@@ -29,15 +29,30 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    const today = new Date().toISOString().split('T')[0]
+    // Support date range query for calendar
+    const searchParams = req.nextUrl.searchParams
+    const start = searchParams.get('start')
+    const end = searchParams.get('end')
 
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('appointments')
       .select('*, patients(name, phone)')
       .eq('doctor_id', user.id)
-      .gte('date', `${today}T00:00:00`)
-      .lt('date', `${today}T23:59:59`)
-      .order('date', { ascending: true })
+
+    if (start && end) {
+      // Calendar view - get appointments in date range
+      query = query
+        .gte('date', start)
+        .lte('date', end)
+    } else {
+      // Default: today's appointments
+      const today = new Date().toISOString().split('T')[0]
+      query = query
+        .gte('date', `${today}T00:00:00`)
+        .lt('date', `${today}T23:59:59`)
+    }
+
+    const { data, error } = await query.order('date', { ascending: true })
 
     if (error) throw error
 

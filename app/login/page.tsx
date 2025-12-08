@@ -32,11 +32,11 @@ export default function LoginPage() {
 
       if (user) {
         // Fetch user role
-        const { data: userData, error: roleError } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single()
+          const { data: userData, error: roleError } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', user.id)
+            .single()
 
         if (roleError) {
           console.error('Error fetching role:', roleError)

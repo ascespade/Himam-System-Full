@@ -5,67 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 /**
- * GET /api/billing/invoices/[id]
- * Get invoice details
- */
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const cookieStore = req.cookies
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) { return cookieStore.get(name)?.value },
-          set(name: string, value: string, options: CookieOptions) {},
-          remove(name: string, options: CookieOptions) {},
-        },
-      }
-    )
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: invoice, error } = await supabaseAdmin
-      .from('invoices')
-      .select(`
-        *,
-        patients (
-          id,
-          name,
-          phone,
-          email,
-          address
-        ),
-        invoice_items (*)
-      `)
-      .eq('id', params.id)
-      .single()
-
-    if (error) throw error
-
-    return NextResponse.json({
-      success: true,
-      data: invoice
-    })
-  } catch (error: any) {
-    console.error('Error fetching invoice:', error)
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    )
-  }
-}
-
-/**
- * PUT /api/billing/invoices/[id]
- * Update invoice status
+ * PUT /api/doctor/schedule/[id]
+ * Update schedule
  */
 export async function PUT(
   req: NextRequest,
@@ -91,78 +32,107 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json()
-    const { status } = body
+    // Verify ownership
+    const { data: schedule } = await supabaseAdmin
+      .from('doctor_schedules')
+      .select('doctor_id')
+      .eq('id', params.id)
+      .single()
 
-    if (!status) {
-      return NextResponse.json(
-        { success: false, error: 'Status is required' },
-        { status: 400 }
-      )
+    if (!schedule || schedule.doctor_id !== user.id) {
+      return NextResponse.json({ success: false, error: 'Not found or unauthorized' }, { status: 404 })
     }
 
+    const body = await req.json()
     const updateData: any = {
-      status,
       updated_at: new Date().toISOString()
     }
 
-    if (status === 'paid') {
-      updateData.paid_at = new Date().toISOString()
-      updateData.paid_amount = data?.total_amount || 0
-    }
+    if (body.day_of_week !== undefined) updateData.day_of_week = body.day_of_week
+    if (body.start_time !== undefined) updateData.start_time = body.start_time
+    if (body.end_time !== undefined) updateData.end_time = body.end_time
+    if (body.break_start !== undefined) updateData.break_start = body.break_start || null
+    if (body.break_end !== undefined) updateData.break_end = body.break_end || null
+    if (body.slot_duration !== undefined) updateData.slot_duration = body.slot_duration
+    if (body.is_active !== undefined) updateData.is_active = body.is_active
 
     const { data, error } = await supabaseAdmin
-      .from('invoices')
+      .from('doctor_schedules')
       .update(updateData)
       .eq('id', params.id)
-      .select(`
-        *,
-        patients (
-          id,
-          name
-        )
-      `)
+      .select()
       .single()
 
     if (error) throw error
-
-    // Create Notifications for payment
-    if (status === 'paid' && data) {
-      try {
-        const { createNotification, createNotificationForRole, NotificationTemplates } = await import('@/lib/notifications')
-        
-        const template = NotificationTemplates.paymentReceived(
-          data.patients?.name || 'مريض',
-          Number(data.total_amount) || 0
-        )
-
-        // Notify admin
-        await createNotificationForRole('admin', {
-          ...template,
-          entityType: 'invoice',
-          entityId: data.id
-        })
-
-        // Notify reception staff
-        await createNotificationForRole('reception', {
-          ...template,
-          entityType: 'invoice',
-          entityId: data.id
-        })
-      } catch (e) {
-        console.error('Failed to create payment notifications:', e)
-      }
-    }
 
     return NextResponse.json({
       success: true,
       data
     })
   } catch (error: any) {
-    console.error('Error updating invoice:', error)
+    console.error('Error updating schedule:', error)
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
     )
   }
 }
+
+/**
+ * DELETE /api/doctor/schedule/[id]
+ * Delete schedule
+ */
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const cookieStore = req.cookies
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set(name: string, value: string, options: CookieOptions) {},
+          remove(name: string, options: CookieOptions) {},
+        },
+      }
+    )
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Verify ownership
+    const { data: schedule } = await supabaseAdmin
+      .from('doctor_schedules')
+      .select('doctor_id')
+      .eq('id', params.id)
+      .single()
+
+    if (!schedule || schedule.doctor_id !== user.id) {
+      return NextResponse.json({ success: false, error: 'Not found or unauthorized' }, { status: 404 })
+    }
+
+    const { error } = await supabaseAdmin
+      .from('doctor_schedules')
+      .delete()
+      .eq('id', params.id)
+
+    if (error) throw error
+
+    return NextResponse.json({
+      success: true
+    })
+  } catch (error: any) {
+    console.error('Error deleting schedule:', error)
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    )
+  }
+}
+

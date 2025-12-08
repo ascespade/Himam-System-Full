@@ -1,9 +1,9 @@
 'use client'
 
 import { createBrowserClient } from '@supabase/ssr'
-import { LogOut } from 'lucide-react'
+import { Bell, Calendar, DollarSign, LogOut, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 interface UserInfo {
   id: string
@@ -12,9 +12,33 @@ interface UserInfo {
   role: string
 }
 
+interface DashboardStats {
+  appointments: {
+    pending: number
+    today: number
+  }
+  notifications: {
+    unread: number
+  }
+  patients: {
+    total: number
+  }
+  doctors: {
+    total: number
+  }
+  invoices: {
+    pending: number
+  }
+  revenue: {
+    today: number
+  }
+}
+
 export default function UserHeader() {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
+  const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadingStats, setLoadingStats] = useState(false)
   const router = useRouter()
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,6 +48,17 @@ export default function UserHeader() {
   useEffect(() => {
     fetchUserInfo()
   }, [])
+
+  useEffect(() => {
+    if (userInfo?.role === 'admin') {
+      fetchStats()
+      // Refresh stats every 30 seconds
+      const interval = setInterval(() => {
+        fetchStats()
+      }, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [userInfo?.role, fetchStats])
 
   const fetchUserInfo = async () => {
     try {
@@ -66,6 +101,23 @@ export default function UserHeader() {
     }
   }
 
+  const fetchStats = useCallback(async () => {
+    if (!userInfo || userInfo.role !== 'admin') return
+    
+    try {
+      setLoadingStats(true)
+      const res = await fetch('/api/dashboard/stats')
+      const data = await res.json()
+      if (data.success) {
+        setStats(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    } finally {
+      setLoadingStats(false)
+    }
+  }, [userInfo])
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
@@ -105,8 +157,75 @@ export default function UserHeader() {
     return null
   }
 
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('ar-SA', {
+      style: 'currency',
+      currency: 'SAR',
+      minimumFractionDigits: 0
+    }).format(amount)
+  }
+
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-4">
+      {/* Admin Stats Indicators */}
+      {userInfo.role === 'admin' && stats && (
+        <div className="flex items-center gap-3 mr-4 pr-4 border-r border-gray-200">
+          {/* Pending Appointments */}
+          {stats.appointments.pending > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 rounded-lg border border-orange-200">
+              <Calendar size={16} className="text-orange-600" />
+              <span className="text-xs font-bold text-orange-700">{stats.appointments.pending}</span>
+              <span className="text-xs text-orange-600">مواعيد معلقة</span>
+            </div>
+          )}
+
+          {/* Today's Appointments */}
+          {stats.appointments.today > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
+              <Calendar size={16} className="text-blue-600" />
+              <span className="text-xs font-bold text-blue-700">{stats.appointments.today}</span>
+              <span className="text-xs text-blue-600">مواعيد اليوم</span>
+            </div>
+          )}
+
+          {/* Unread Notifications */}
+          {stats.notifications.unread > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200 relative">
+              <Bell size={16} className="text-red-600" />
+              <span className="text-xs font-bold text-red-700">{stats.notifications.unread}</span>
+              <span className="text-xs text-red-600">إشعارات</span>
+            </div>
+          )}
+
+          {/* Pending Invoices */}
+          {stats.invoices.pending > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 rounded-lg border border-yellow-200">
+              <DollarSign size={16} className="text-yellow-600" />
+              <span className="text-xs font-bold text-yellow-700">{stats.invoices.pending}</span>
+              <span className="text-xs text-yellow-600">فواتير معلقة</span>
+            </div>
+          )}
+
+          {/* Today's Revenue */}
+          {stats.revenue.today > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 rounded-lg border border-green-200">
+              <DollarSign size={16} className="text-green-600" />
+              <span className="text-xs font-bold text-green-700">{formatCurrency(stats.revenue.today)}</span>
+              <span className="text-xs text-green-600">إيرادات اليوم</span>
+            </div>
+          )}
+
+          {/* Quick Stats Summary (Compact) */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
+            <Users size={14} className="text-gray-500" />
+            <span className="text-xs text-gray-600">
+              {stats.patients.total} مريض • {stats.doctors.total} طبيب
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* User Info */}
       <div className="flex items-center gap-2">
         <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-sm">
           {getInitial(userInfo.name)}
@@ -116,6 +235,8 @@ export default function UserHeader() {
           <span className="text-xs text-gray-500">{roleLabels[userInfo.role] || userInfo.role}</span>
         </div>
       </div>
+
+      {/* Logout Button */}
       <button
         onClick={handleLogout}
         className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 font-medium transition-colors px-3 py-1.5 rounded-lg hover:bg-red-50"

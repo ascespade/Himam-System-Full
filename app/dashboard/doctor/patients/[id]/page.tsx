@@ -7,12 +7,81 @@ import {
     ChevronRight,
     FileText,
     Phone,
-    Pill,
     Plus,
+    Shield,
+    Target,
+    TrendingUp,
     User
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+
+// Insurance Info Component
+function InsuranceInfoCard({ patientId }: { patientId: string }) {
+  const [insurance, setInsurance] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchInsurance()
+  }, [patientId])
+
+  const fetchInsurance = async () => {
+    try {
+      const res = await fetch(`/api/patients/${patientId}/insurance`)
+      const data = await res.json()
+      if (data.success) {
+        setInsurance(data.data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching insurance:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div className="text-center text-gray-400 text-xs">جاري التحميل...</div>
+      </div>
+    )
+  }
+
+  if (insurance.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Shield size={18} className="text-blue-500" />
+          معلومات التأمين
+        </h3>
+        <p className="text-gray-400 text-xs text-center">لا توجد معلومات تأمين</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+      <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <Shield size={18} className="text-blue-500" />
+        معلومات التأمين
+      </h3>
+      {insurance.map((ins) => (
+        <div key={ins.id} className="mb-3 p-3 bg-blue-50 rounded-lg">
+          <div className="text-sm font-bold text-gray-900 mb-1">{ins.insurance_company}</div>
+          <div className="text-xs text-gray-600 space-y-1">
+            <div>رقم البوليصة: {ins.policy_number}</div>
+            {ins.member_id && <div>رقم العضوية: {ins.member_id}</div>}
+            <div>التغطية: {ins.coverage_percentage}%</div>
+            {ins.copay_amount > 0 && <div>الدفع المشترك: {ins.copay_amount} ريال</div>}
+            {ins.effective_date && (
+              <div>تاريخ السريان: {new Date(ins.effective_date).toLocaleDateString('ar-SA')}</div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function PatientDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -46,7 +115,7 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
     return <div className="p-8 text-center text-red-500">لم يتم العثور على المريض</div>
   }
 
-  const { patient, medical_records, diagnoses, prescriptions, lab_results, vital_signs } = patientData
+  const { patient, medical_records, diagnoses, vital_signs } = patientData
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -151,13 +220,16 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
               </div>
             </div>
           </div>
+
+          {/* Insurance Info */}
+          <InsuranceInfoCard patientId={params.id} />
         </div>
 
         {/* Main Tabs Area */}
         <div className="lg:col-span-3 space-y-6">
           {/* Tabs Navigation */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-1 flex overflow-x-auto">
-            {['overview', 'records', 'diagnoses', 'prescriptions', 'lab'].map((tab) => (
+            {['overview', 'records', 'diagnoses', 'sessions', 'progress'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -170,8 +242,8 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
                 {tab === 'overview' && 'نظرة عامة'}
                 {tab === 'records' && 'السجلات'}
                 {tab === 'diagnoses' && 'التشخيصات'}
-                {tab === 'prescriptions' && 'الوصفات'}
-                {tab === 'lab' && 'المختبر'}
+                {tab === 'sessions' && 'الجلسات'}
+                {tab === 'progress' && 'التقدم'}
               </button>
             ))}
           </div>
@@ -262,29 +334,82 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
               </div>
             )}
 
-            {activeTab === 'prescriptions' && (
+            {activeTab === 'sessions' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-lg">الوصفات الطبية</h3>
-                  <button className="text-sm text-primary font-bold hover:underline">+ وصفة جديدة</button>
+                  <h3 className="font-bold text-lg">الجلسات العلاجية</h3>
+                  <button 
+                    onClick={() => router.push(`/dashboard/doctor/patients/${params.id}/new-record`)}
+                    className="text-sm text-primary font-bold hover:underline"
+                  >
+                    + جلسة جديدة
+                  </button>
                 </div>
-                {prescriptions.map((script: any) => (
-                  <div key={script.id} className="p-4 border border-gray-100 rounded-xl">
-                    <div className="flex justify-between mb-2">
-                      <div className="font-bold text-gray-900 flex items-center gap-2">
-                        <Pill size={16} className="text-primary" />
-                        وصفة طبية
+                {medical_records && medical_records.length > 0 ? (
+                  medical_records
+                    .filter((record: any) => ['visit', 'session', 'therapy'].includes(record.record_type?.toLowerCase()))
+                    .map((session: any) => (
+                      <div key={session.id} className="p-4 border border-gray-100 rounded-xl hover:shadow-sm transition-shadow">
+                        <div className="flex justify-between mb-2">
+                          <div className="font-bold text-gray-900 flex items-center gap-2">
+                            <Calendar size={16} className="text-primary" />
+                            {session.record_type || 'جلسة علاجية'}
+                          </div>
+                          <span className="text-sm text-gray-500">{new Date(session.date).toLocaleDateString('ar-SA')}</span>
+                        </div>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          {session.chief_complaint && (
+                            <div><span className="font-bold">الهدف من الجلسة:</span> {session.chief_complaint}</div>
+                          )}
+                          {session.assessment && (
+                            <div><span className="font-bold">ملاحظات الجلسة:</span> {session.assessment}</div>
+                          )}
+                          {session.plan && (
+                            <div><span className="font-bold">الخطة:</span> {session.plan}</div>
+                          )}
+                        </div>
                       </div>
-                      <span className="text-sm text-gray-500">{new Date(script.prescribed_date).toLocaleDateString('ar-SA')}</span>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {script.notes || 'لا توجد ملاحظات'}
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end">
-                      <button className="text-sm text-primary hover:underline">عرض التفاصيل</button>
-                    </div>
+                    ))
+                ) : (
+                  <p className="text-center text-gray-400 py-8">لا توجد جلسات مسجلة</p>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'progress' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-lg">تتبع التقدم</h3>
+                  <button className="text-sm text-primary font-bold hover:underline">+ تحديث التقدم</button>
+                </div>
+                {medical_records && medical_records.length > 0 ? (
+                  <div className="space-y-4">
+                    {medical_records
+                      .filter((record: any) => record.plan)
+                      .map((record: any) => (
+                        <div key={record.id} className="p-4 border border-gray-100 rounded-xl">
+                          <div className="flex justify-between mb-2">
+                            <div className="font-bold text-gray-900 flex items-center gap-2">
+                              <Target size={16} className="text-primary" />
+                              خطة علاجية
+                            </div>
+                            <span className="text-sm text-gray-500">{new Date(record.date).toLocaleDateString('ar-SA')}</span>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            <div className="mb-2"><span className="font-bold">الخطة:</span> {record.plan}</div>
+                            {record.assessment && (
+                              <div className="text-green-600"><span className="font-bold">التقدم:</span> {record.assessment}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    {medical_records.filter((record: any) => record.plan).length === 0 && (
+                        <p className="text-center text-gray-400 py-8">لا توجد خطط علاجية مسجلة</p>
+                      )}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-center text-gray-400 py-8">لا توجد بيانات تقدم</p>
+                )}
               </div>
             )}
 

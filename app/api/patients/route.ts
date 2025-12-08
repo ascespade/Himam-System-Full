@@ -59,6 +59,29 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error
 
+    // Create Notification for new patient registration
+    try {
+      const { createNotificationForRole, NotificationTemplates } = await import('@/lib/notifications')
+      
+      const template = NotificationTemplates.patientRegistered(name)
+
+      // Notify admin
+      await createNotificationForRole('admin', {
+        ...template,
+        entityType: 'patient',
+        entityId: patient.id
+      })
+
+      // Notify reception staff
+      await createNotificationForRole('reception', {
+        ...template,
+        entityType: 'patient',
+        entityId: patient.id
+      })
+    } catch (e) {
+      console.error('Failed to create patient registration notification:', e)
+    }
+
     return NextResponse.json(successResponse(patient), { status: HTTP_STATUS.CREATED })
   } catch (error: unknown) {
     return handleApiError(error)

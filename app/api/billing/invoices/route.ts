@@ -159,6 +159,38 @@ export async function POST(req: NextRequest) {
 
     if (itemsError) throw itemsError
 
+    // Create Notifications
+    try {
+      const { data: patient } = await supabaseAdmin
+        .from('patients')
+        .select('name')
+        .eq('id', patient_id)
+        .single()
+
+      const { createNotification, createNotificationForRole, NotificationTemplates } = await import('@/lib/notifications')
+      
+      const template = NotificationTemplates.invoiceCreated(
+        patient?.name || 'مريض',
+        total
+      )
+
+      // Notify admin
+      await createNotificationForRole('admin', {
+        ...template,
+        entityType: 'invoice',
+        entityId: invoice.id
+      })
+
+      // Notify reception staff
+      await createNotificationForRole('reception', {
+        ...template,
+        entityType: 'invoice',
+        entityId: invoice.id
+      })
+    } catch (e) {
+      console.error('Failed to create notifications:', e)
+    }
+
     // Audit Log
     try {
       const { logAudit } = await import('@/lib/audit')
