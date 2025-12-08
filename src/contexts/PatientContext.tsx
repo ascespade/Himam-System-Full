@@ -54,7 +54,29 @@ export function PatientProvider({ children }: { children: ReactNode }) {
     }
     loadRecentPatients()
     loadActivePatients()
+    checkForPendingVisit() // Check if there's a patient waiting from reception
   }, [])
+
+  // Check for pending patient visit from reception
+  const checkForPendingVisit = async () => {
+    try {
+      const res = await fetch('/api/doctor/patient-visit')
+      const data = await res.json()
+      if (data.success && data.data?.should_auto_select && data.data.patient) {
+        // Auto-select patient from reception
+        setCurrentPatient(data.data.patient)
+        // Show notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('مريض جديد', {
+            body: `${data.data.patient.name} في انتظارك`,
+            icon: '/favicon.ico'
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for pending visit:', error)
+    }
+  }
 
   // Save to localStorage when patient changes
   useEffect(() => {

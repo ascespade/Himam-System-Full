@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
   // Public routes that don't need auth
   const publicRoutes = ['/login', '/sign', '/api/whatsapp']
   if (publicRoutes.some(route => request.nextUrl.pathname.startsWith(route))) {
-    // If user is logged in and tries to access login, redirect to dashboard
+    // If user is logged in and tries to access login, redirect to role-based dashboard
     if (user && request.nextUrl.pathname === '/login') {
        // Fetch role to redirect correctly
        const { data: userData } = await supabase
@@ -69,7 +69,8 @@ export async function middleware(request: NextRequest) {
         .eq('id', user.id)
         .single()
 
-       const role = userData?.role || 'admin' // Default to admin if not found (fallback)
+       const role = userData?.role || 'admin'
+       // Redirect to role-based dashboard
        return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
     }
     return response
@@ -99,24 +100,29 @@ export async function middleware(request: NextRequest) {
         const role = userData.role
         const path = request.nextUrl.pathname
 
+        // If accessing /dashboard without role, redirect to role-based dashboard
+        if (path === '/dashboard' || path === '/dashboard/') {
+          return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
+        }
+
         // Admin only routes
         if (path.startsWith('/dashboard/admin') && role !== 'admin') {
-           return NextResponse.redirect(new URL('/dashboard/unauthorized', request.url))
+           return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
         }
 
         // Doctor only routes
         if (path.startsWith('/dashboard/doctor') && role !== 'doctor' && role !== 'admin') {
-           return NextResponse.redirect(new URL('/dashboard/unauthorized', request.url))
+           return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
         }
 
         // Reception only routes
         if (path.startsWith('/dashboard/reception') && role !== 'reception' && role !== 'admin') {
-           return NextResponse.redirect(new URL('/dashboard/unauthorized', request.url))
+           return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
         }
 
         // Insurance only routes
         if (path.startsWith('/dashboard/insurance') && role !== 'insurance' && role !== 'admin') {
-           return NextResponse.redirect(new URL('/dashboard/unauthorized', request.url))
+           return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
         }
 
       } catch (e) {

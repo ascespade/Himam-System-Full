@@ -1,0 +1,121 @@
+import { supabaseAdmin } from '@/lib/supabase'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
+
+/**
+ * GET /api/dashboard/widget-data
+ * Get data for a specific widget
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const cookieStore = req.cookies
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set(name: string, value: string, options: CookieOptions) {},
+          remove(name: string, options: CookieOptions) {},
+        },
+      }
+    )
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const widgetId = searchParams.get('widget_id')
+
+    if (!widgetId) {
+      return NextResponse.json(
+        { success: false, error: 'Widget ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Get widget configuration
+    const { data: widget, error: widgetError } = await supabaseAdmin
+      .from('dashboard_configurations')
+      .select('*')
+      .eq('id', widgetId)
+      .single()
+
+    if (widgetError || !widget) {
+      return NextResponse.json(
+        { success: false, error: 'Widget not found' },
+        { status: 404 }
+      )
+    }
+
+    // Generate data based on widget type
+    let data: any = null
+
+    if (widget.widget_type === 'chart') {
+      data = await generateChartData(widget.widget_config, user.id)
+    } else if (widget.widget_type === 'table') {
+      data = await generateTableData(widget.widget_config, user.id)
+    } else if (widget.widget_type === 'list') {
+      data = await generateListData(widget.widget_config, user.id)
+    }
+
+    return NextResponse.json({
+      success: true,
+      data
+    })
+  } catch (error: any) {
+    console.error('Error fetching widget data:', error)
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+async function generateChartData(config: any, userId: string): Promise<any> {
+  // This would generate chart data based on config
+  // For now, return sample data
+  return {
+    labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
+    datasets: [{
+      label: config.metric || 'البيانات',
+      data: [12, 19, 15, 25, 22, 30]
+    }]
+  }
+}
+
+async function generateTableData(config: any, userId: string): Promise<any> {
+  const entity = config.entity || 'appointments'
+  const limit = config.limit || 10
+
+  // Get user role to filter data
+  const { data: userData } = await supabaseAdmin
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single()
+
+  let query = supabaseAdmin.from(entity).select('*').limit(limit)
+
+  // Filter by user role
+  if (userData?.role === 'doctor') {
+    query = query.eq('doctor_id', userId)
+  }
+
+  const { data, error } = await query
+
+  if (error) throw error
+
+  return data || []
+}
+
+async function generateListData(config: any, userId: string): Promise<any> {
+  // Similar to table data
+  return generateTableData(config, userId)
+}
+
