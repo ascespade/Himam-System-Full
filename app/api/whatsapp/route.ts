@@ -241,6 +241,23 @@ export async function POST(req: NextRequest) {
           .select()
           .single()
 
+        // Save inbound message to whatsapp_messages table
+        await supabaseAdmin
+          .from('whatsapp_messages')
+          .insert({
+            message_id: messageId,
+            from_phone: from,
+            to_phone: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+            message_type: message.type,
+            content: text,
+            status: 'sent',
+            direction: 'inbound',
+            session_id: messageId,
+            conversation_id: conversationRecord?.id,
+            patient_id: patient?.id || null,
+          })
+          .catch((err) => console.error('Error saving WhatsApp message:', err))
+
         // Create notification for new message (notify admin and reception)
         // Only notify for non-booking messages to avoid spam
         if (conversationRecord && !bookingDetails?.isComplete) {
@@ -383,17 +400,40 @@ export async function POST(req: NextRequest) {
         // Send AI response (clean version without [BOOKING_READY] marker)
         const cleanResponse = aiResponse.text.replace(/\[BOOKING_READY\][\s\S]*?}/g, '').trim()
         
+        let outboundMessageId: string | null = null
+        
         if (shouldReplyWithVoice) {
            await sendTextMessage(from, '✨ جاري تحويل الرد إلى رسالة صوتية...')
            // Generate Voice
            const audioId = await generateAndUploadVoice(cleanResponse)
            if (audioId) {
-              await sendAudioMessage(from, audioId)
+              const audioResponse = await sendAudioMessage(from, audioId)
+              outboundMessageId = audioResponse?.messages?.[0]?.id || null
            } else {
-              await sendTextMessage(from, cleanResponse)
+              const textResponse = await sendTextMessage(from, cleanResponse)
+              outboundMessageId = textResponse?.messages?.[0]?.id || null
            }
         } else {
-           await sendTextMessage(from, cleanResponse)
+           const textResponse = await sendTextMessage(from, cleanResponse)
+           outboundMessageId = textResponse?.messages?.[0]?.id || null
+        }
+
+        // Save outbound message to whatsapp_messages table
+        if (outboundMessageId) {
+          await supabaseAdmin
+            .from('whatsapp_messages')
+            .insert({
+              message_id: outboundMessageId,
+              from_phone: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+              to_phone: from,
+              message_type: shouldReplyWithVoice ? 'audio' : 'text',
+              content: cleanResponse,
+              status: 'sent',
+              direction: 'outbound',
+              conversation_id: conversationRecord?.id,
+              patient_id: patient?.id || null,
+            })
+            .catch((err) => console.error('Error saving outbound WhatsApp message:', err))
         }
 
         // If message has booking intent but details incomplete, offer help
