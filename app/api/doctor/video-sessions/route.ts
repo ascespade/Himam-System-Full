@@ -95,10 +95,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Patient ID and scheduled date are required' }, { status: 400 })
     }
 
-    // Generate meeting URL (using Zoom/Google Meet API or custom solution)
-    // For now, we'll generate a placeholder
-    const meetingId = `meeting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    const meetingUrl = `https://meet.himam.sa/${meetingId}`
+    // Use Slack Huddle for video sessions
+    // Get or create Slack conversation first
+    const { data: slackConv } = await supabaseAdmin
+      .from('slack_conversations')
+      .select('slack_channel_id')
+      .eq('doctor_id', user.id)
+      .eq('patient_id', patient_id)
+      .eq('is_active', true)
+      .single()
+
+    let slackChannelId = slackConv?.slack_channel_id
+
+    // Create Slack conversation if doesn't exist
+    if (!slackChannelId) {
+      const convRes = await fetch(`${req.nextUrl.origin}/api/doctor/slack`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patient_id }),
+      })
+      const convData = await convRes.json()
+      if (convData.success) {
+        slackChannelId = convData.data.slack_channel_id
+      }
+    }
+
+    // Get Slack Huddle link
+    const { getSlackHuddleLink } = await import('@/lib/slack-api')
+    const meetingUrl = slackChannelId ? getSlackHuddleLink(slackChannelId) : null
+    const meetingId = slackChannelId || `meeting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+    // Check recording configuration
+    const configRes = await fetch(`${req.nextUrl.origin}/api/system/config/video-recording?doctor_id=${user.id}&session_type=video_call`)
+    const configData = await configRes.json()
+    const recordingEnabled = configData.success && configData.data.recording_enabled
 
     // Create session first if not provided
     let finalSessionId = session_id
@@ -129,9 +159,12 @@ export async function POST(req: NextRequest) {
         appointment_id: appointment_id || null,
         doctor_id: user.id,
         patient_id,
-        meeting_url: meetingUrl,
+        meeting_url: meetingUrl || `https://slack.com/call/${slackChannelId}`,
         meeting_id: meetingId,
-        recording_status: 'pending'
+        recording_status: recordingEnabled ? 'enabled' : 'disabled',
+        recording_enabled: recordingEnabled,
+        slack_channel_id: slackChannelId || null,
+        provider: 'slack_huddle'
       })
       .select(`
         *,
@@ -150,8 +183,41 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error
 
-    // TODO: Send meeting link to patient via WhatsApp/SMS
-    // TODO: Integrate with actual video conferencing service (Zoom, Google Meet, etc.)
+    // Send meeting link to patient via WhatsApp
+    try {
+      const { data: patientData } = await supabaseAdmin
+        .from('patients')
+        .select('phone, name')
+        .eq('id', patient_id)
+        .single()
+
+      if (patientData?.phone && meetingUrl) {
+        const { sendTextMessage } = await import('@/lib/whatsapp-messaging')
+        await sendTextMessage(
+          patientData.phone,
+          `مرحباً ${patientData.name}!\n\nتم إنشاء جلسة فيديو عبر Slack.\n\nرابط الجلسة: ${meetingUrl}\n\nالتاريخ: ${new Date(scheduled_date).toLocaleDateString('ar-SA')}\nالوقت: ${new Date(scheduled_date).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}`
+        )
+      }
+    } catch (whatsappError) {
+      console.error('Error sending WhatsApp notification:', whatsappError)
+      // Don't fail the request if WhatsApp fails
+    }
+
+    // Start Slack Huddle if channel exists
+    if (slackChannelId) {
+      try {
+        const slackApi = await import('@/lib/slack-api')
+        // Slack Huddles are started by users in the channel, not via API
+        // We'll just send a notification message
+        await slackApi.sendSlackMessage(
+          slackChannelId,
+          `🎥 تم إنشاء جلسة فيديو\nالتاريخ: ${new Date(scheduled_date).toLocaleDateString('ar-SA')}\n${recordingEnabled ? '✅ التسجيل مفعّل' : '❌ التسجيل معطّل'}\n\nلبدء الجلسة، اضغط على زر Huddle في القناة.`
+        )
+      } catch (slackError) {
+        console.error('Error sending Slack notification:', slackError)
+        // Don't fail the request if Slack fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

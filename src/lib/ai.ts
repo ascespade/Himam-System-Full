@@ -14,6 +14,32 @@ export interface AIResponse {
 }
 
 import { sendTextMessage } from './whatsapp-messaging'
+import { supabaseAdmin } from './supabase'
+
+/**
+ * Get primary admin phone from database
+ */
+async function getAdminPhone(): Promise<string> {
+  try {
+    const { data } = await supabaseAdmin
+      .from('admin_contacts')
+      .select('phone')
+      .eq('is_primary', true)
+      .eq('is_active', true)
+      .single()
+
+    if (data?.phone) {
+      return data.phone
+    }
+
+    // Fallback to settings
+    const settings = await getSettings()
+    return settings.ADMIN_PHONE || process.env.ADMIN_PHONE || '966581421483'
+  } catch (error) {
+    console.error('Error fetching admin phone:', error)
+    return '966581421483' // Final fallback
+  }
+}
 
 /**
  * Ask AI a question with automatic fallback
@@ -28,7 +54,7 @@ export async function askAI(prompt: string, context?: string): Promise<AIRespons
   const GEMINI_KEY = settings.GEMINI_KEY || process.env.GEMINI_KEY
   const OPENAI_KEY = settings.OPENAI_KEY || process.env.OPENAI_KEY
 
-  const ADMIN_PHONE = '966581421483'
+  const ADMIN_PHONE = await getAdminPhone()
 
   // Validation Check
   if (!GEMINI_KEY && !OPENAI_KEY) {
@@ -76,7 +102,7 @@ export async function askAI(prompt: string, context?: string): Promise<AIRespons
           {
             role: 'system' as const,
             content:
-              'You are a medical assistant for مركز الهمم (Alhimam Center) in Jeddah, Saudi Arabia. Respond in Arabic and English as needed. Be professional, helpful, and empathetic.',
+              'أنت مساعد طبي لمركز الهمم في جدة، المملكة العربية السعودية. استخدم لهجة جدة الخفيفة والودودة والاحترافية. كن مهذباً ومتعاطفاً ومهتماً. رد بالعربية أو الإنجليزية حسب لغة المستخدم.',
           },
           ...(context
             ? [
@@ -132,55 +158,57 @@ export async function generateWhatsAppResponse(
   conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
   patientName?: string
 ): Promise<AIResponse> {
-  const systemPrompt = `أنت مساعد ذكي لمركز الهمم الطبي في جدة، المملكة العربية السعودية.
+    // Get prompt template from database
+    const { getAIPromptTemplate } = await import('./ai-prompts')
+    
+    // Fetch dynamic data from database
+    const [centerInfo, services, specialists, workingHours] = await Promise.all([
+      supabaseAdmin.from('center_info').select('*').single(),
+      supabaseAdmin.from('service_types').select('*').eq('is_active', true).order('order_index'),
+      supabaseAdmin.from('users').select('id, name, role').eq('role', 'doctor'),
+      supabaseAdmin.from('working_hours').select('*').eq('is_working_day', true).order('day_of_week'),
+    ])
 
-مهمتك الأساسية:
-- الرد على استفسارات المرضى بشكل مهني ومتعاطف
-- مساعدة المرضى في حجز المواعيد
-- تقديم معلومات عن الخدمات الطبية المتاحة
-- تقديم معلومات عن الخدمات الطبية المتاحة
-- الرد بنفس لغة المريض "تماماً" (إذا تحدث بالعربية رد بالعربية، وإذا تحدث بالإنجليزية رد بالإنجليزية)
-- Reply in the EXACT same language as the user (Arabic -> Arabic, English -> English)
+    const center = centerInfo.data
+    const servicesList = (services.data || [])
+      .map((s, i) => `${i + 1}. ${s.name_ar}${s.description_ar ? ` - ${s.description_ar}` : ''}`)
+      .join('\n')
+    
+    // Get doctor profiles for specialization
+    const doctorIds = (specialists.data || []).map(s => s.id)
+    const { data: profiles } = await supabaseAdmin
+      .from('doctor_profiles')
+      .select('user_id, specialization')
+      .in('user_id', doctorIds)
 
-معلومات المركز:
-📍 الموقع: جدة، المملكة العربية السعودية
-📞 الهاتف: +966 12 345 6789
-📧 البريد: info@al-himam.com
-⏰ أوقات العمل: الأحد-الخميس، 9 صباحاً - 5 مساءً
+    const profilesMap = new Map(profiles?.map(p => [p.user_id, p.specialization]) || [])
+    const specialistsList = (specialists.data || [])
+      .map((s) => {
+        const specialization = profilesMap.get(s.id)
+        return `- ${s.name}${specialization ? ` - ${specialization}` : ''}`
+      })
+      .join('\n')
 
-الخدمات المتاحة:
-1. 🗣️ علاج النطق (Speech Therapy) - جلسات تخاطب متخصصة
-2. 🧠 تعديل السلوك (Behavior Modification) - برامج سلوكية مخصصة
-3. 🤲 العلاج الوظيفي (Occupational Therapy) - تطوير المهارات الحياتية
-4. 🎯 التكامل الحسي (Sensory Integration)
-5. 👶 التدخل المبكر (Early Intervention)
+    const hours = workingHours.data || []
+    const workingHoursText = hours.length > 0
+      ? `${hours.map(h => {
+          const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+          return `${days[h.day_of_week]}: ${h.start_time} - ${h.end_time}`
+        }).join('، ')}`
+      : 'الأحد-الخميس، 9 صباحاً - 5 مساءً'
 
-الأخصائيون المتاحون:
-- د. سارة الزهراني - علاج النطق (Speech Therapy)
-- أ. عبدالله العتيبي - تعديل السلوك (Behavior Modification)
-- أ. ريم بخاش - العلاج الوظيفي (Occupational Therapy)
+    // Build variables for prompt template
+    const variables = {
+      center_phone: center?.phone || '+966 12 345 6789',
+      center_email: center?.email || 'info@al-himam.com',
+      center_address: center?.address_ar || 'جدة، المملكة العربية السعودية',
+      working_hours: workingHoursText,
+      services_list: servicesList || 'الخدمات متاحة حسب الجدول',
+      specialists_list: specialistsList || 'الأخصائيون متاحون حسب الجدول',
+    }
 
-عند طلب حجز موعد:
-1. اسأل عن: اسم المريض، رقم الجوال، نوع الخدمة المطلوبة، التاريخ والوقت المفضل
-2. تأكد من توفر الأخصائي في الوقت المطلوب
-3. عندما تكتمل جميع المعلومات، قل:
-
-[BOOKING_READY]
-{
-  "patient_name": "اسم المريض",
-  "phone": "رقم الجوال",
-  "specialist": "اسم الأخصائي",
-  "service": "نوع الخدمة",
-  "date": "YYYY-MM-DD",
-  "time": "HH:MM"
-}
-
-ملاحظات مهمة:
-- كن مهذباً ومتعاطفاً دائماً
-- إذا كانت المعلومات ناقصة، اسأل بلطف
-- قدم خيارات واضحة للمريض
-- أكد على سرية المعلومات الطبية
-- في حالة الطوارئ، انصح بالاتصال فوراً أو زيارة أقرب مستشفى`
+    // Get prompt template from database
+    let systemPrompt = await getAIPromptTemplate('whatsapp_assistant', variables)
 
   let prompt = systemPrompt
 

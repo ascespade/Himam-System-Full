@@ -170,15 +170,25 @@ export async function sendTextMessage(
  * Send welcome message with action buttons
  */
 export async function sendWelcomeMessage(to: string): Promise<void> {
+  // Fetch center info from database
+  const { supabaseAdmin } = await import('./supabase')
+  const { data: centerInfo } = await supabaseAdmin
+    .from('center_info')
+    .select('name_ar, description_ar')
+    .single()
+
+  const centerName = centerInfo?.name_ar || 'مركز الهمم'
+  const description = centerInfo?.description_ar || 'نحن متخصصون في العلاج الطبيعي والتأهيل'
+
   await sendButtonMessage(
     to,
-    'مرحباً بك في مركز الهمم! 🏥\n\nنحن متخصصون في العلاج الطبيعي والتأهيل. كيف يمكنني مساعدتك اليوم؟',
+    `مرحباً بك في ${centerName}! 🏥\n\n${description}. كيف يمكنني مساعدتك اليوم؟`,
     [
       { type: 'reply', reply: { id: 'book_appointment', title: '📅 حجز موعد' } },
       { type: 'reply', reply: { id: 'our_services', title: '🔍 الخدمات' } },
       { type: 'reply', reply: { id: 'contact_us', title: '📞 التواصل' } }
     ],
-    'مركز الهمم'
+    centerName
   )
 }
 
@@ -189,7 +199,7 @@ export async function sendSpecialistList(to: string, specialists: any[]): Promis
   const rows: WhatsAppListRow[] = specialists.map(sp => ({
     id: sp.id,
     title: sp.name,
-    description: sp.specialty
+    description: sp.specialty || sp.specialization || 'أخصائي'
   }))
 
   await sendListMessage(
@@ -284,6 +294,19 @@ export async function sendCenterLocation(to: string): Promise<void> {
     throw new Error('WhatsApp API not configured')
   }
 
+  // Fetch center location from database
+  const { supabaseAdmin } = await import('./supabase')
+  const { data: centerInfo } = await supabaseAdmin
+    .from('center_info')
+    .select('address_ar, city_ar')
+    .single()
+
+  // Default coordinates for Jeddah (can be stored in center_info if needed)
+  const latitude = 21.5433
+  const longitude = 39.1728
+  const address = centerInfo?.address_ar || 'جدة، المملكة العربية السعودية'
+  const name = 'مركز الهمم'
+
   const response = await fetch(
     `https://graph.facebook.com/v20.0/${settings.WHATSAPP_PHONE_NUMBER_ID}/messages`,
     {
@@ -297,10 +320,10 @@ export async function sendCenterLocation(to: string): Promise<void> {
         to,
         type: 'location',
         location: {
-          latitude: 21.5433,
-          longitude: 39.1728,
-          name: 'مركز الهمم',
-          address: 'شارع الأمير سلطان، جدة'
+          latitude,
+          longitude,
+          name,
+          address
         }
       }),
     }

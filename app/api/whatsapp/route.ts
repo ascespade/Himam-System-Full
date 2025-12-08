@@ -163,33 +163,68 @@ export async function POST(req: NextRequest) {
           const buttonId = interactiveResponse.button_reply.id
 
           if (buttonId === 'book_appointment') {
-            // Fetch specialists from database
-            const { data: specialists } = await supabaseAdmin
-              .from('specialists')
-              .select('*')
+            // Fetch doctors (specialists) from database
+            const { data: doctors } = await supabaseAdmin
+              .from('users')
+              .select('id, name, role')
+              .eq('role', 'doctor')
               .limit(10)
 
-            if (specialists && specialists.length > 0) {
-              await sendSpecialistList(from, specialists)
+            if (doctors && doctors.length > 0) {
+              // Get doctor profiles for specialization
+              const doctorIds = doctors.map(d => d.id)
+              const { data: profiles } = await supabaseAdmin
+                .from('doctor_profiles')
+                .select('user_id, specialization')
+                .in('user_id', doctorIds)
+
+              const profilesMap = new Map(profiles?.map(p => [p.user_id, p.specialization]) || [])
+              const specialistsWithProfiles = doctors.map(d => ({
+                id: d.id,
+                name: d.name,
+                specialty: profilesMap.get(d.id) || 'أخصائي'
+              }))
+
+              await sendSpecialistList(from, specialistsWithProfiles)
               return NextResponse.json(successResponse({ messageId, action: 'specialist_list_sent' }))
             }
           } else if (buttonId === 'our_services') {
-            const servicesText = `🏥 خدماتنا المتاحة:\n\n` +
-              `1. 🗣️ علاج النطق - جلسات تخاطب متخصصة\n` +
-              `2. 🧠 تعديل السلوك - برامج سلوكية مخصصة\n` +
-              `3. 🤲 العلاج الوظيفي - تطوير المهارات الحياتية\n` +
-              `4. 🎯 التكامل الحسي\n` +
-              `5. 👶 التدخل المبكر\n\n` +
-              `للحجز، اضغط على "حجز موعد" أو أرسل رسالة بالخدمة المطلوبة.`
+            // Fetch services from database
+            const { data: services } = await supabaseAdmin
+              .from('service_types')
+              .select('name_ar, description_ar, icon')
+              .eq('is_active', true)
+              .order('order_index', { ascending: true })
+
+            const servicesList = (services || [])
+              .map((s, i) => `${i + 1}. ${s.icon ? `${s.icon} ` : ''}${s.name_ar}${s.description_ar ? ` - ${s.description_ar}` : ''}`)
+              .join('\n')
+
+            const servicesText = `🏥 خدماتنا المتاحة:\n\n${servicesList || 'الخدمات متاحة حسب الجدول'}\n\nللحجز، اضغط على "حجز موعد" أو أرسل رسالة بالخدمة المطلوبة.`
 
             await sendTextMessage(from, servicesText)
             return NextResponse.json(successResponse({ messageId, action: 'services_sent' }))
           } else if (buttonId === 'contact_us') {
+            // Fetch center info and working hours from database
+            const [centerInfo, workingHours] = await Promise.all([
+              supabaseAdmin.from('center_info').select('*').single(),
+              supabaseAdmin.from('working_hours').select('*').eq('is_working_day', true).order('day_of_week'),
+            ])
+
+            const center = centerInfo.data
+            const hours = workingHours.data || []
+            const workingHoursText = hours.length > 0
+              ? hours.map(h => {
+                  const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+                  return `${days[h.day_of_week]}: ${h.start_time} - ${h.end_time}`
+                }).join('، ')
+              : 'الأحد-الخميس، 9 صباحاً - 5 مساءً'
+
             const contactText = `📞 معلومات التواصل:\n\n` +
-              `📍 الموقع: جدة، المملكة العربية السعودية\n` +
-              `📞 الهاتف: +966 12 345 6789\n` +
-              `📧 البريد: info@al-himam.com\n` +
-              `⏰ أوقات العمل: الأحد-الخميس، 9 صباحاً - 5 مساءً`
+              `📍 الموقع: ${center?.address_ar || 'جدة، المملكة العربية السعودية'}\n` +
+              `📞 الهاتف: ${center?.phone || '+966 12 345 6789'}\n` +
+              `📧 البريد: ${center?.email || 'info@al-himam.com'}\n` +
+              `⏰ أوقات العمل: ${workingHoursText}`
 
             await sendTextMessage(from, contactText)
             

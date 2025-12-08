@@ -167,7 +167,7 @@ export async function POST(
         userId: data.doctor_id,
         patientId: data.patient_id,
         ...NotificationTemplates.systemAlert(
-          `تم رفع تسجيل الجلسة عن بُعد للمريض ${data.patients?.name || 'مريض'}`
+          `تم رفع تسجيل الجلسة عن بُعد للمريض ${data.patients?.name || 'مريض'}. إن شاء الله يكون مفيد.`
         ),
         title: 'تسجيل جلسة جاهز',
         entityType: 'video_session',

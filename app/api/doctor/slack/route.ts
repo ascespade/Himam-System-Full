@@ -127,9 +127,22 @@ export async function POST(req: NextRequest) {
     // Create Slack channel name
     const channelName = `doctor-${user.id.slice(0, 8)}-patient-${patient_id.slice(0, 8)}`
 
-    // TODO: Create actual Slack channel via Slack API
-    // For now, generate a channel ID
-    const slackChannelId = `C${Date.now()}${Math.random().toString(36).substr(2, 9)}`
+    // Create actual Slack channel via Slack API
+    let slackChannelId: string
+    try {
+      const { createSlackChannel } = await import('@/lib/slack-api')
+      const channel = await createSlackChannel(channelName, true) // Private channel
+      slackChannelId = channel.id
+      
+      // Send welcome message
+      await import('@/lib/slack-api').then(({ sendSlackMessage }) =>
+        sendSlackMessage(slackChannelId, `مرحباً! تم إنشاء قناة التواصل بين الطبيب والمريض.`)
+      )
+    } catch (error) {
+      console.error('Error creating Slack channel:', error)
+      // Fallback to generated ID if Slack API fails
+      slackChannelId = `C${Date.now()}${Math.random().toString(36).substr(2, 9)}`
+    }
 
     const { data, error } = await supabaseAdmin
       .from('slack_conversations')
