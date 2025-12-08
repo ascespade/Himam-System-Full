@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
       session_type,
     } = body
 
-    const updates: Array<Promise<any>> = []
+    const updates: Array<PromiseLike<any>> = []
 
     // Update global or specific configuration
     if (doctor_id && userData.role === 'doctor' && doctor_id !== user.id) {
@@ -195,6 +195,11 @@ export async function POST(req: NextRequest) {
           }, {
             onConflict: 'category,key',
           })
+          .select()
+          .then(({ error }) => {
+            if (error) throw error
+            return { success: true }
+          })
       )
     }
 
@@ -213,6 +218,11 @@ export async function POST(req: NextRequest) {
           }, {
             onConflict: 'category,key',
           })
+          .select()
+          .then(({ error }) => {
+            if (error) throw error
+            return { success: true }
+          })
       )
     }
 
@@ -230,6 +240,11 @@ export async function POST(req: NextRequest) {
             updated_at: new Date().toISOString(),
           }, {
             onConflict: 'category,key',
+          })
+          .select()
+          .then(({ error }) => {
+            if (error) throw error
+            return { success: true }
           })
       )
     }

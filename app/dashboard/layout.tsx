@@ -1,6 +1,7 @@
 import NotificationsMenu from '@/components/NotificationsMenu'
 import Sidebar from '@/components/Sidebar'
 import UserHeader from '@/components/UserHeader'
+import { Toaster } from 'sonner'
 
 export default function DashboardLayout({
   children,
@@ -19,6 +20,7 @@ export default function DashboardLayout({
           </header>
           {children}
        </div>
+       <Toaster position="top-center" richColors />
     </div>
   )
 }
