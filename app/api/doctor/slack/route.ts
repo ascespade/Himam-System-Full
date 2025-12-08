@@ -156,8 +156,7 @@ export async function POST(req: NextRequest) {
     try {
       const { sendSlackNotification } = await import('@/lib/slack')
       await sendSlackNotification({
-        text: `تم إنشاء قناة تواصل جديدة بين الطبيب ${doctor?.name || 'طبيب'} والمريض ${patient.name}`,
-        channel: slackChannelId
+        text: `[Channel: ${slackChannelId}] تم إنشاء قناة تواصل جديدة بين الطبيب ${doctor?.name || 'طبيب'} والمريض ${patient.name}`
       })
     } catch (e) {
       console.error('Failed to send Slack notification:', e)
