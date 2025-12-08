@@ -21,25 +21,15 @@ import {
     Mic,
     Target,
     TrendingUp,
-    Bell,
     Search,
-    Zap,
     FileSearch,
     CalendarDays,
-    Timer,
     Building2,
     User,
     Plus,
-    PlayCircle,
-    Template,
     Bot,
-    Sliders,
     Activity,
-    AlertCircle,
-    FolderOpen,
-    Download,
-    Monitor,
-    Headphones
+    Monitor
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -142,7 +132,7 @@ export default function Sidebar() {
       { category: 'العلاج', name: 'تتبع التقدم', href: '/dashboard/doctor/progress', icon: TrendingUp, roles: ['admin', 'doctor'] },
       
       // 🤖 الأتمتة
-      { category: 'الأتمتة', name: 'قوالب الملاحظات', href: '/dashboard/doctor/templates', icon: Template, roles: ['admin', 'doctor'] },
+      { category: 'الأتمتة', name: 'قوالب الملاحظات', href: '/dashboard/doctor/templates', icon: FileText, roles: ['admin', 'doctor'] },
       { category: 'الأتمتة', name: 'التوثيق التلقائي', href: '/dashboard/doctor/auto-documentation', icon: Bot, roles: ['admin', 'doctor'] },
       
       // 📊 التقارير والتحليلات
@@ -223,11 +213,6 @@ export default function Sidebar() {
                   >
                     <item.icon size={18} />
                     <span className="flex-1">{item.name}</span>
-                    {item.badge && (
-                      <span className="px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
-                        {item.badge}
-                      </span>
-                    )}
                   </Link>
                 )
               })}
