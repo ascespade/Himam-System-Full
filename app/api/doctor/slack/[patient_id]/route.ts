@@ -157,8 +157,7 @@ export async function POST(
     try {
       const { sendSlackNotification } = await import('@/lib/slack')
       await sendSlackNotification({
-        text: message_text,
-        channel: conversation.slack_channel_id
+        text: `[Channel: ${conversation.slack_channel_id}] ${message_text}`
       })
     } catch (e) {
       console.error('Failed to send Slack message:', e)
