@@ -22,9 +22,15 @@ export async function GET(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value },
-          set(name: string, value: string, options: CookieOptions) {},
-          remove(name: string, options: CookieOptions) {},
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            // No-op in API routes
+          },
+          remove(name: string, options: CookieOptions) {
+            // No-op in API routes
+          },
         },
       }
     )
@@ -106,9 +112,15 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value },
-          set(name: string, value: string, options: CookieOptions) {},
-          remove(name: string, value: string, options: CookieOptions) {},
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            // No-op in API routes
+          },
+          remove(name: string, options: CookieOptions) {
+            // No-op in API routes
+          },
         },
       }
     )
@@ -182,7 +194,7 @@ export async function POST(req: NextRequest) {
         await createNotificationForRole('doctor', {
           title: 'تمت إعادة إرسال مطالبة تلقائياً',
           message: `تمت إعادة إرسال المطالبة ${claim.claim_number} مع تحسينات`,
-          type: 'insurance_claim_resubmitted',
+          type: 'payment' as const, // Use existing notification type
           entityType: 'insurance_claim',
           entityId: claim_id
         })
@@ -202,19 +214,17 @@ export async function POST(req: NextRequest) {
         await createNotificationForRole('doctor', {
           title: 'مطالبة تأمين تحتاج مراجعة عاجلة',
           message: `المطالبة ${claim.claim_number} تحتاج مراجعة يدوية`,
-          type: 'insurance_claim_escalation',
+          type: 'payment' as const, // Use existing notification type
           entityType: 'insurance_claim',
-          entityId: claim_id,
-          priority: 'high'
+          entityId: claim_id
         })
 
         await createNotificationForRole('admin', {
           title: 'مطالبة تأمين تحتاج مراجعة',
           message: `المطالبة ${claim.claim_number} تم تصعيدها للمراجعة`,
-          type: 'insurance_claim_escalation',
+          type: 'payment' as const, // Use existing notification type
           entityType: 'insurance_claim',
-          entityId: claim_id,
-          priority: 'high'
+          entityId: claim_id
         })
       } catch (e) {
         console.error('Failed to create notifications:', e)

@@ -120,10 +120,6 @@ export async function POST(req: NextRequest) {
       console.warn('Vector search for patterns not available:', e.message)
     }
 
-    if (successError) {
-      console.warn('Error finding similar patterns (might be first time):', successError)
-    }
-
     // Analyze results
     const warnings: string[] = []
     const recommendations: string[] = []
@@ -275,10 +271,6 @@ export async function PUT(req: NextRequest) {
       }
     } catch (e: any) {
       console.warn('Could not store embedding (pgvector extension might not be enabled):', e.message)
-    }
-
-    if (claimError) {
-      console.error('Error storing claim embedding:', claimError)
       // Continue even if embedding storage fails
     }
 

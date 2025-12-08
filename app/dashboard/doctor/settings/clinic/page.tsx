@@ -130,13 +130,23 @@ export default function ClinicSettingsPage() {
           </div>
           <button
             onClick={handleToggleClinic}
-            className={`px-8 py-4 rounded-xl font-bold text-lg transition-colors ${
+            className={`px-8 py-4 rounded-xl font-bold text-lg transition-colors flex items-center gap-2 ${
               settings.is_open
                 ? 'bg-red-600 hover:bg-red-700 text-white'
                 : 'bg-green-600 hover:bg-green-700 text-white'
             }`}
           >
-            {settings.is_open ? 'إغلاق العيادة' : 'فتح العيادة'}
+            {settings.is_open ? (
+              <>
+                <XCircle size={20} />
+                إغلاق العيادة
+              </>
+            ) : (
+              <>
+                <CheckCircle size={20} />
+                فتح العيادة
+              </>
+            )}
           </button>
         </div>
       </div>

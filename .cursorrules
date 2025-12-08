@@ -1,0 +1,116 @@
+# 🏗️ Project Architecture Rules (Cursor IDE)
+
+## 🚫 ABSOLUTE FORBIDDEN
+
+### 1. No Mock/Simulation Data
+- NEVER use MOCK_, FAKE_, TEST_, SIMULATE_ prefixes in production code
+- NEVER return fake/hardcoded data instead of real implementation
+- If feature not implemented, throw appropriate error
+
+### 2. No Data Loss
+- ALWAYS preserve full context in transformations
+- NEVER return partial data when full entity is available
+- Include relationships when querying
+
+### 3. No Code Duplication
+- Check shared/validations/ before creating new validation
+- Check shared/utils/ before creating new utility
+- Check shared/constants/ before creating new constant
+- Extract if used 2+ times
+
+### 4. No `any` Types
+- ALWAYS use explicit types
+- Use `unknown` + type guards if type truly unknown
+- NEVER use `any` as shortcut
+
+### 5. No Business Logic in API Routes
+- API routes are THIN layers
+- Delegate to use cases/services
+- Only: auth, validation, use case execution, response
+
+### 6. No Direct Database Calls
+- ALWAYS use repositories
+- NEVER use supabaseAdmin/supabase directly outside repositories
+
+## ✅ REQUIRED PATTERNS
+
+### Repository Pattern (Data Access)
+```typescript
+// Interface in core/interfaces/repositories/
+// Implementation in infrastructure/supabase/repositories/
+// Usage: Inject interface, never concrete class
+```
+
+### Use Case Pattern (Business Logic)
+```typescript
+// One use case = one business operation
+// Located in core/use-cases/[feature]/
+// Orchestrates domain and infrastructure
+```
+
+### Dependency Injection
+```typescript
+// Constructor injection only
+// Depend on interfaces, not implementations
+```
+
+## 📁 STRUCTURE RULES
+
+### Import Order (STRICT)
+1. External dependencies
+2. Core layer (domain, interfaces, use-cases)
+3. Infrastructure
+4. Features
+5. Shared
+6. Types
+7. Styles
+
+### File Naming
+- Services: `*.service.ts`
+- Repositories: `*.repository.ts`
+- Use Cases: `*.use-case.ts`
+- Components: `PascalCase.tsx`
+- Hooks: `use-*.hook.ts`
+
+### Layer Dependencies
+```
+Presentation → Application → Domain ← Infrastructure
+```
+Dependencies flow INWARD only.
+
+## 🎯 CENTRALIZATION
+
+### Single Source of Truth
+- Validations: `shared/validations/`
+- Constants: `shared/constants/`
+- Types: `shared/types/`
+- Utils: `shared/utils/`
+- Errors: `core/errors/`
+- Clients: `infrastructure/[service]/client.ts`
+
+## 🔒 CONTEXT PRESERVATION
+
+- ALWAYS return full entities
+- ALWAYS include relationships when needed
+- ALWAYS preserve all fields in transformations
+- NEVER lose data for convenience
+
+## 🚨 CODE QUALITY
+
+- Functions: Max 50 lines (ideal: 20-30)
+- Classes: Max 300 lines (ideal: 100-200)
+- Files: Max 500 lines (ideal: 200-300)
+- No `console.log` (use logger)
+- No hardcoded values (use env/constants)
+
+## ✅ BEFORE COMMIT
+
+- [ ] No `any` types
+- [ ] No console.log
+- [ ] No hardcoded values
+- [ ] No mock data
+- [ ] No duplication
+- [ ] Context preserved
+- [ ] TypeScript compiles
+- [ ] Linter passes
+

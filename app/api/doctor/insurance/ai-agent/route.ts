@@ -269,7 +269,7 @@ ${vectorAnalysis?.data?.similar_rejected_count > 0 ? `
         await createNotificationForRole('doctor', {
           title: 'مطالبة تأمين تحتاج مراجعة',
           message: `المطالبة تحتاج مراجعة يدوية. الثقة: ${validationResult.confidence}%`,
-          type: 'insurance_claim_review',
+          type: 'payment' as const, // Use existing notification type
           entityType: 'insurance_claim',
           entityId: 'pending'
         })

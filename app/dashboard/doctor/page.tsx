@@ -19,8 +19,9 @@ import {
   DollarSign,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'sonner'
+import { createBrowserClient } from '@supabase/ssr'
 
 interface DashboardStats {
   quickStats: {
@@ -70,19 +71,19 @@ export default function DoctorPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [todayAppointments, setTodayAppointments] = useState<TodayAppointment[]>([])
   const [loading, setLoading] = useState(true)
+  const [isUpdating, setIsUpdating] = useState(false) // Light indicator for real-time updates
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'queue'>('overview')
 
-  useEffect(() => {
-    fetchDashboardData()
-    // Refresh every 60 seconds
-    const interval = setInterval(fetchDashboardData, 60000)
-    return () => clearInterval(interval)
-  }, [])
+  // Create Supabase client for realtime
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
-  const fetchDashboardData = async () => {
+  // Fetch dashboard data function
+  const fetchDashboardData = useCallback(async () => {
     try {
-      setLoading(true)
       const [statsRes, appointmentsRes] = await Promise.all([
         fetch('/api/doctor/dashboard/stats'),
         fetch('/api/doctor/appointments'),
@@ -92,7 +93,13 @@ export default function DoctorPage() {
       const appointmentsJson = await appointmentsRes.json()
 
       if (statsJson.success) {
-        setStats(statsJson.data)
+        setStats(prevStats => {
+          // Only update if data changed (smooth transition)
+          if (JSON.stringify(prevStats) !== JSON.stringify(statsJson.data)) {
+            return statsJson.data
+          }
+          return prevStats
+        })
       }
 
       if (appointmentsJson.success) {
@@ -106,15 +113,107 @@ export default function DoctorPage() {
           status: apt.status || 'pending',
           notes: apt.notes,
         }))
-        setTodayAppointments(transformed)
+        
+        setTodayAppointments(prevApts => {
+          // Only update if data changed
+          if (JSON.stringify(prevApts) !== JSON.stringify(transformed)) {
+            return transformed
+          }
+          return prevApts
+        })
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
-      toast.error('حدث خطأ في تحميل البيانات')
+      // Don't show toast on every error (too noisy)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    // Initial fetch
+    fetchDashboardData()
+    
+    // Set up realtime subscriptions
+    let appointmentsSubscription: any = null
+    let queueSubscription: any = null
+    let clinicSettingsSubscription: any = null
+
+    const setupRealtime = async () => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Subscribe to appointments changes (for today's appointments)
+      appointmentsSubscription = supabase
+        .channel('doctor-appointments')
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // INSERT, UPDATE, DELETE
+            schema: 'public',
+            table: 'appointments',
+            filter: `doctor_id=eq.${user.id}`,
+          },
+          (payload) => {
+            // Real-time update when appointment changes (silent update, no full refresh)
+            fetchDashboardData(true) // silent = true (no loading spinner)
+          }
+        )
+        .subscribe()
+
+      // Subscribe to reception queue changes
+      queueSubscription = supabase
+        .channel('doctor-queue')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'reception_queue',
+          },
+          (payload) => {
+            // Real-time update when queue changes (silent update, no full refresh)
+            fetchDashboardData(true) // silent = true
+          }
+        )
+        .subscribe()
+
+      // Subscribe to clinic settings changes
+      clinicSettingsSubscription = supabase
+        .channel('doctor-clinic-settings')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'clinic_settings',
+            filter: `doctor_id=eq.${user.id}`,
+          },
+          (payload) => {
+            // Real-time update when clinic status changes (silent update, no full refresh)
+            fetchDashboardData(true) // silent = true
+          }
+        )
+        .subscribe()
+    }
+
+    setupRealtime()
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      if (appointmentsSubscription) {
+        supabase.removeChannel(appointmentsSubscription)
+      }
+      if (queueSubscription) {
+        supabase.removeChannel(queueSubscription)
+      }
+      if (clinicSettingsSubscription) {
+        supabase.removeChannel(clinicSettingsSubscription)
+      }
+    }
+  }, [fetchDashboardData, supabase])
+
 
   const handleToggleClinic = async () => {
     if (!stats) return
@@ -124,6 +223,7 @@ export default function DoctorPage() {
       const json = await res.json()
       if (json.success) {
         toast.success(json.message)
+        // Realtime subscription will auto-update the UI
         fetchDashboardData()
       }
     } catch (error) {
@@ -146,9 +246,18 @@ export default function DoctorPage() {
   return (
     <div className="p-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-2">لوحة التحكم</h1>
-        <p className="text-gray-500 text-lg">نظرة شاملة على عملك اليوم</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-2">لوحة التحكم</h1>
+          <p className="text-gray-500 text-lg">نظرة شاملة على عملك اليوم</p>
+        </div>
+        {/* Real-time indicator */}
+        {isUpdating && (
+          <div className="flex items-center gap-2 text-sm text-primary">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <span className="text-gray-500">جاري التحديث...</span>
+          </div>
+        )}
       </div>
 
       {/* Clinic Status Card */}
@@ -170,13 +279,23 @@ export default function DoctorPage() {
             </div>
             <button
               onClick={handleToggleClinic}
-              className={`px-8 py-4 rounded-xl font-bold text-lg transition-colors ${
+              className={`px-8 py-4 rounded-xl font-bold text-lg transition-colors flex items-center gap-2 ${
                 stats.clinic.isOpen
-                  ? 'bg-white/20 hover:bg-white/30 text-white'
-                  : 'bg-white text-primary hover:bg-white/90'
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-green-600 hover:bg-green-700 text-white'
               }`}
             >
-              {stats.clinic.isOpen ? 'إغلاق العيادة' : 'فتح العيادة'}
+              {stats.clinic.isOpen ? (
+                <>
+                  <XCircle size={20} />
+                  إغلاق العيادة
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={20} />
+                  فتح العيادة
+                </>
+              )}
             </button>
           </div>
         </div>

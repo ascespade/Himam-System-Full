@@ -27,10 +27,30 @@ export default function PatientsPage() {
 
   const fetchPatients = async () => {
     try {
-      const res = await fetch('/api/patients')
+      // Fetch only patients linked to the current doctor
+      const res = await fetch('/api/doctor/patients')
       const data = await res.json()
       if (data.success) {
-        setPatients(data.data || [])
+        // Transform the data structure from doctor_patient_relationships
+        // The API returns data with nested patients object or flat structure
+        const patientsList = (data.data || []).map((item: any) => {
+          // Handle both nested structure (patients) and flat structure
+          const patient = item.patients || item
+          return {
+            id: patient.id || item.patient_id,
+            name: patient.name,
+            phone: patient.phone,
+            nationality: patient.nationality,
+            date_of_birth: patient.date_of_birth,
+            gender: patient.gender,
+            status: 'active', // All linked patients are considered active
+            created_at: patient.created_at || item.created_at || new Date().toISOString(),
+            blood_type: patient.blood_type,
+            allergies: patient.allergies || [],
+            chronic_diseases: patient.chronic_diseases || [],
+          }
+        })
+        setPatients(patientsList)
       }
     } catch (error) {
       console.error('Error fetching patients:', error)
