@@ -137,12 +137,12 @@ export async function POST(req: NextRequest) {
     try {
       const { createNotification, NotificationTemplates } = await import('@/lib/notifications')
       const template = NotificationTemplates.systemAlert(
-        'جلسة جديدة',
         `تم إنشاء جلسة ${session_type} للمريض ${data.patients?.name || 'مريض'}`
       )
       await createNotification({
         userId: user.id,
         ...template,
+        title: 'جلسة جديدة',
         entityType: 'session',
         entityId: data.id
       })
