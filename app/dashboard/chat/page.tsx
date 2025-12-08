@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
+import { useState, useEffect, useRef } from 'react'
 
 interface Conversation {
   phone: string
@@ -20,6 +21,17 @@ export default function ChatPage() {
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  // Scroll to bottom function
+  const scrollToBottom = (smooth: boolean = true) => {
+    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' })
+  }
 
   useEffect(() => {
     fetchConversations()
@@ -28,8 +40,21 @@ export default function ChatPage() {
   useEffect(() => {
     if (selectedPhone) {
       fetchMessages(selectedPhone)
+    } else {
+      setMessages([])
     }
   }, [selectedPhone])
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      // Use instant scroll on initial load, smooth for new messages
+      const isInitialLoad = messagesContainerRef.current?.scrollTop === 0
+      setTimeout(() => {
+        scrollToBottom(!isInitialLoad)
+      }, 100)
+    }
+  }, [messages, selectedPhone])
 
   const fetchConversations = async () => {
     const res = await fetch('/api/chat/conversations')
@@ -47,6 +72,44 @@ export default function ChatPage() {
       setMessages(data.data)
     }
   }
+
+  // Set up real-time subscription for new messages
+  useEffect(() => {
+    if (!selectedPhone) return
+
+    // Subscribe to new messages for the selected phone
+    const channel = supabase
+      .channel(`conversation:${selectedPhone}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'conversation_history',
+          filter: `user_phone=eq.${selectedPhone}`
+        },
+        (payload) => {
+          const newMessage = payload.new as Message
+          setMessages((prev) => {
+            // Check if message already exists to avoid duplicates
+            if (prev.some(m => m.id === newMessage.id)) {
+              return prev
+            }
+            const updated = [...prev, newMessage]
+            // Scroll to bottom when new message arrives
+            setTimeout(() => {
+              scrollToBottom(true)
+            }, 50)
+            return updated
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedPhone, supabase])
 
   return (
     <div className="flex h-[calc(100vh-64px)] bg-white overflow-hidden">
@@ -81,22 +144,32 @@ export default function ChatPage() {
               <div className="p-4 bg-gray-100 border-b border-gray-200 shadow-sm flex items-center justify-between">
                  <h2 className="font-bold" dir="ltr">{selectedPhone}</h2>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                 {messages.map(m => (
-                    <div key={m.id} className="flex flex-col space-y-2">
-                       {/* User Bubble */}
-                       <div className="self-start max-w-[70%] bg-white rounded-lg rounded-tl-none p-3 shadow-sm">
-                          <p className="text-sm text-gray-800">{m.user_message}</p>
-                          <span className="text-[10px] text-gray-400 block mt-1 text-left">{new Date(m.created_at).toLocaleTimeString()}</span>
-                       </div>
+              <div 
+                ref={messagesContainerRef}
+                className="flex-1 overflow-y-auto p-4 space-y-4"
+              >
+                 {messages.length === 0 ? (
+                   <div className="flex items-center justify-center h-full text-gray-400">
+                     <p>لا توجد رسائل بعد</p>
+                   </div>
+                 ) : (
+                   messages.map(m => (
+                     <div key={m.id} className="flex flex-col space-y-2">
+                        {/* User Bubble */}
+                        <div className="self-start max-w-[70%] bg-white rounded-lg rounded-tl-none p-3 shadow-sm">
+                           <p className="text-sm text-gray-800">{m.user_message}</p>
+                           <span className="text-[10px] text-gray-400 block mt-1 text-left">{new Date(m.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
 
-                       {/* AI Bubble */}
-                       <div className="self-end max-w-[70%] bg-[#d9fdd3] rounded-lg rounded-tr-none p-3 shadow-sm">
-                          <p className="text-sm text-gray-800">{m.ai_response}</p>
-                          <span className="text-[10px] text-gray-500 block mt-1 text-right">{new Date(m.created_at).toLocaleTimeString()}</span>
-                       </div>
-                    </div>
-                 ))}
+                        {/* AI Bubble */}
+                        <div className="self-end max-w-[70%] bg-[#d9fdd3] rounded-lg rounded-tr-none p-3 shadow-sm">
+                           <p className="text-sm text-gray-800">{m.ai_response}</p>
+                           <span className="text-[10px] text-gray-500 block mt-1 text-right">{new Date(m.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                     </div>
+                   ))
+                 )}
+                 <div ref={messagesEndRef} />
               </div>
               
               {/* Input Area (Mock for now, could implement sending via WhatsApp API) */}
