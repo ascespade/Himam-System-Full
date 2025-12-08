@@ -101,6 +101,13 @@ export async function PUT(
       )
     }
 
+    // Get current invoice to access total_amount
+    const { data: currentInvoice } = await supabaseAdmin
+      .from('invoices')
+      .select('total_amount')
+      .eq('id', params.id)
+      .single()
+
     const updateData: any = {
       status,
       updated_at: new Date().toISOString()
@@ -108,7 +115,7 @@ export async function PUT(
 
     if (status === 'paid') {
       updateData.paid_at = new Date().toISOString()
-      updateData.paid_amount = data?.total_amount || 0
+      updateData.paid_amount = currentInvoice?.total_amount || 0
     }
 
     const { data, error } = await supabaseAdmin
