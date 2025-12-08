@@ -27,7 +27,8 @@
       "@/shared": ["./src/shared/index.ts"],
       "@/shared/*": ["./src/shared/*"],
       "@/components/*": ["./components/*"],
-      "@/app/*": ["./app/*"]
+      "@/app/*": ["./app/*"],
+      "@/contexts/*": ["./src/contexts/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

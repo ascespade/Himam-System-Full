@@ -2,6 +2,8 @@
 
 import { CheckCircle2, Circle, Plus, Target, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { usePatientContext } from '@/contexts/PatientContext'
+import PatientSelector from '@/components/PatientSelector'
 
 interface Goal {
   id: string
@@ -29,6 +31,7 @@ interface TreatmentPlan {
 }
 
 export default function TreatmentPlansPage() {
+  const { currentPatient } = usePatientContext()
   const [plans, setPlans] = useState<TreatmentPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -40,6 +43,13 @@ export default function TreatmentPlansPage() {
     end_date: '',
     goals: [] as Omit<Goal, 'id'>[]
   })
+
+  // Update patient_id when currentPatient changes
+  useEffect(() => {
+    if (currentPatient) {
+      setFormData(prev => ({ ...prev, patient_id: currentPatient.id }))
+    }
+  }, [currentPatient])
 
   useEffect(() => {
     fetchPlans()
@@ -80,8 +90,8 @@ export default function TreatmentPlansPage() {
 
   const handleSave = async () => {
     try {
-      if (!formData.patient_id || !formData.title || formData.goals.length === 0) {
-        alert('يرجى ملء جميع الحقول المطلوبة')
+      if (!currentPatient || !formData.patient_id || !formData.title || formData.goals.length === 0) {
+        alert('يرجى اختيار مريض وملء جميع الحقول المطلوبة')
         return
       }
 
@@ -170,14 +180,25 @@ export default function TreatmentPlansPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">إنشاء خطة علاجية جديدة</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">المريض</label>
-              <input
-                type="text"
-                placeholder="معرف المريض (UUID)"
-                value={formData.patient_id}
-                onChange={(e) => setFormData({ ...formData, patient_id: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
+              <label className="block text-sm font-bold text-gray-700 mb-2">المريض *</label>
+              {currentPatient ? (
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                      {currentPatient.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="font-bold text-gray-900">{currentPatient.name}</div>
+                      <div className="text-sm text-gray-600">{currentPatient.phone}</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <PatientSelector />
+                  <p className="text-xs text-gray-500">يرجى اختيار مريض لإنشاء خطة علاجية</p>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">عنوان الخطة</label>
