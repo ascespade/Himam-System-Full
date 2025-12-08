@@ -171,7 +171,7 @@ export default function UserHeader() {
       {userInfo.role === 'admin' && stats && (
         <div className="flex items-center gap-3 mr-4 pr-4 border-r border-gray-200">
           {/* Pending Appointments */}
-          {stats.appointments.pending > 0 && (
+          {stats.appointments?.pending > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 rounded-lg border border-orange-200">
               <Calendar size={16} className="text-orange-600" />
               <span className="text-xs font-bold text-orange-700">{stats.appointments.pending}</span>
@@ -180,7 +180,7 @@ export default function UserHeader() {
           )}
 
           {/* Today's Appointments */}
-          {stats.appointments.today > 0 && (
+          {stats.appointments?.today > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
               <Calendar size={16} className="text-blue-600" />
               <span className="text-xs font-bold text-blue-700">{stats.appointments.today}</span>
@@ -189,7 +189,7 @@ export default function UserHeader() {
           )}
 
           {/* Unread Notifications */}
-          {stats.notifications.unread > 0 && (
+          {stats.notifications?.unread > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200 relative">
               <Bell size={16} className="text-red-600" />
               <span className="text-xs font-bold text-red-700">{stats.notifications.unread}</span>
@@ -198,7 +198,7 @@ export default function UserHeader() {
           )}
 
           {/* Pending Invoices */}
-          {stats.invoices.pending > 0 && (
+          {stats.invoices?.pending > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 rounded-lg border border-yellow-200">
               <DollarSign size={16} className="text-yellow-600" />
               <span className="text-xs font-bold text-yellow-700">{stats.invoices.pending}</span>
@@ -207,7 +207,7 @@ export default function UserHeader() {
           )}
 
           {/* Today's Revenue */}
-          {stats.revenue.today > 0 && (
+          {stats.revenue?.today > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 rounded-lg border border-green-200">
               <DollarSign size={16} className="text-green-600" />
               <span className="text-xs font-bold text-green-700">{formatCurrency(stats.revenue.today)}</span>
@@ -216,12 +216,14 @@ export default function UserHeader() {
           )}
 
           {/* Quick Stats Summary (Compact) */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
-            <Users size={14} className="text-gray-500" />
-            <span className="text-xs text-gray-600">
-              {stats.patients.total} مريض • {stats.doctors.total} طبيب
-            </span>
-          </div>
+          {stats.patients && stats.doctors && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
+              <Users size={14} className="text-gray-500" />
+              <span className="text-xs text-gray-600">
+                {stats.patients.total || 0} مريض • {stats.doctors.total || 0} طبيب
+              </span>
+            </div>
+          )}
         </div>
       )}
 
