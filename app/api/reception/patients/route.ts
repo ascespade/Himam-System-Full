@@ -176,8 +176,6 @@ export async function POST(req: NextRequest) {
     if (chronic_diseases) patientData.chronic_diseases = Array.isArray(chronic_diseases) ? chronic_diseases : [chronic_diseases]
     if (emergency_contact_name) patientData.emergency_contact_name = emergency_contact_name
     if (emergency_contact_phone) patientData.emergency_contact_phone = emergency_contact_phone
-    if (insurance_provider) patientData.insurance_provider = insurance_provider
-    if (insurance_number) patientData.insurance_number = insurance_number
     if (notes) patientData.notes = notes
 
     const { data: patient, error } = await supabaseAdmin

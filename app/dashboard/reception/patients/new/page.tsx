@@ -1,6 +1,6 @@
 'use client'
 
-import { Save, Search, User, Phone, Calendar, Mail, MapPin, FileText, AlertCircle, CheckCircle } from 'lucide-react'
+import { Save, Search, User, Phone, Calendar, Mail, MapPin, FileText, AlertCircle, CheckCircle, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -146,6 +146,14 @@ export default function NewPatientPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       {/* Header */}
+      <div className="mb-8 flex items-center gap-2 text-sm text-gray-500">
+        <span className="cursor-pointer hover:text-primary" onClick={() => router.push('/dashboard/reception')}>الاستقبال</span>
+        <ArrowRight size={14} />
+        <span className="cursor-pointer hover:text-primary" onClick={() => router.push('/dashboard/reception/patients')}>المرضى</span>
+        <ArrowRight size={14} />
+        <span className="font-bold text-gray-900">تسجيل مريض جديد</span>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-2">تسجيل مريض جديد</h1>
         <p className="text-gray-500 text-lg">إضافة مريض جديد للنظام</p>

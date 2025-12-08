@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, UserPlus, Edit, Trash2, Eye, Phone, Calendar, Filter } from 'lucide-react'
+import { Search, UserPlus, Edit, Trash2, Eye, Phone, Calendar, Filter, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -86,6 +86,11 @@ export default function PatientsListPage() {
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
+          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span className="cursor-pointer hover:text-primary" onClick={() => router.push('/dashboard/reception')}>الاستقبال</span>
+            <ArrowRight size={14} />
+            <span className="font-bold text-gray-900">قائمة المرضى</span>
+          </div>
           <h1 className="text-4xl font-extrabold text-gray-900 mb-2">قائمة المرضى</h1>
           <p className="text-gray-500 text-lg">إدارة جميع المرضى المسجلين</p>
         </div>
