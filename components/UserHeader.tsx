@@ -45,6 +45,23 @@ export default function UserHeader() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
+  const fetchStats = useCallback(async () => {
+    if (!userInfo || userInfo.role !== 'admin') return
+    
+    try {
+      setLoadingStats(true)
+      const res = await fetch('/api/dashboard/stats')
+      const data = await res.json()
+      if (data.success) {
+        setStats(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    } finally {
+      setLoadingStats(false)
+    }
+  }, [userInfo])
+
   useEffect(() => {
     fetchUserInfo()
   }, [])
@@ -100,23 +117,6 @@ export default function UserHeader() {
       setLoading(false)
     }
   }
-
-  const fetchStats = useCallback(async () => {
-    if (!userInfo || userInfo.role !== 'admin') return
-    
-    try {
-      setLoadingStats(true)
-      const res = await fetch('/api/dashboard/stats')
-      const data = await res.json()
-      if (data.success) {
-        setStats(data.data)
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    } finally {
-      setLoadingStats(false)
-    }
-  }, [userInfo])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
