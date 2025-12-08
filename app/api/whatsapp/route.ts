@@ -226,6 +226,9 @@ export async function POST(req: NextRequest) {
         // Generate AI response with Patient Context
         const aiResponse = await generateWhatsAppResponse(from, text, formattedHistory, patientProfile?.name)
 
+        // Check if AI extracted booking details (before saving conversation)
+        const bookingDetails = parseBookingFromAI(aiResponse.text)
+
         // Save conversation to database
         const { data: conversationRecord } = await supabaseAdmin
           .from('conversation_history')
@@ -264,9 +267,6 @@ export async function POST(req: NextRequest) {
             console.error('Failed to create message notification:', e)
           }
         }
-
-        // Check if AI extracted booking details
-        const bookingDetails = parseBookingFromAI(aiResponse.text)
 
         if (bookingDetails && bookingDetails.isComplete) {
           try {
