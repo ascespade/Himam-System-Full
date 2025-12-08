@@ -57,15 +57,35 @@ export default function DoctorPage() {
         fetch('/api/doctor/medical-records')
       ])
 
-      const appointmentsData = await appointmentsRes.json()
-      const patientsData = await patientsRes.json()
-      const recordsData = await recordsRes.json()
+      const appointmentsJson = await appointmentsRes.json()
+      const patientsJson = await patientsRes.json()
+      const recordsJson = await recordsRes.json()
 
-      setTodayAppointments(appointmentsData || [])
-      setMyPatients(patientsData || [])
-      setMedicalRecords(recordsData || [])
+      // Extract data from API responses (APIs return { success: true, data: [...] })
+      const appointmentsRaw = appointmentsJson?.data || appointmentsJson || []
+      const patientsRaw = patientsJson?.data || patientsJson || []
+      const recordsRaw = recordsJson?.data || recordsJson || []
+
+      // Transform appointments to match expected format
+      const transformedAppointments: TodayAppointment[] = appointmentsRaw.map((apt: any) => ({
+        id: apt.id,
+        patient_id: apt.patient_id,
+        patient_name: apt.patients?.name || apt.patient_name || 'غير معروف',
+        patient_phone: apt.patients?.phone || apt.patient_phone || '',
+        date: apt.date,
+        status: apt.status || 'pending',
+        notes: apt.notes
+      }))
+
+      setTodayAppointments(transformedAppointments)
+      setMyPatients(Array.isArray(patientsRaw) ? patientsRaw : [])
+      setMedicalRecords(Array.isArray(recordsRaw) ? recordsRaw : [])
     } catch (error) {
       console.error('Error fetching data:', error)
+      // Set empty arrays on error to prevent filter errors
+      setTodayAppointments([])
+      setMyPatients([])
+      setMedicalRecords([])
     } finally {
       setLoading(false)
     }

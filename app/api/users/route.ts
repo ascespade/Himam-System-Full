@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
 /**
  * POST /api/users
  * Create a new user
+ * Creates both auth user and public.users record
  */
 export async function POST(req: NextRequest) {
   try {
@@ -75,7 +76,26 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check if user exists
+    // Password is required for authentication
+    if (!password) {
+      return NextResponse.json(
+        { success: false, error: 'Password is required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if user exists in auth.users
+    const { data: existingAuthUser } = await supabaseAdmin.auth.admin.listUsers()
+    const authUserExists = existingAuthUser?.users?.some(u => u.email === email)
+
+    if (authUserExists) {
+      return NextResponse.json(
+        { success: false, error: 'User with this email already exists' },
+        { status: 409 }
+      )
+    }
+
+    // Check if user exists in public.users
     const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('id')
@@ -89,33 +109,98 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create user (if password provided, hash it)
-    const userData: any = {
-      name,
+    // Create auth user first (this will trigger handle_new_user() to create public.users entry)
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      phone,
-      role,
-      created_at: new Date().toISOString()
+      password,
+      email_confirm: true, // Auto-confirm email
+      user_metadata: {
+        name,
+        phone,
+        role
+      }
+    })
+
+    if (authError) {
+      console.error('Error creating auth user:', authError)
+      console.error('Auth error details:', JSON.stringify(authError, null, 2))
+      return NextResponse.json(
+        { success: false, error: `Failed to create authentication user: ${authError.message}` },
+        { status: 500 }
+      )
     }
 
-    // If password provided, you might want to hash it or use Supabase Auth
-    // For now, we'll just store basic info
-    if (password) {
-      // In production, use Supabase Auth to create user with password
-      // This is a simplified version
+    if (!authUser?.user?.id) {
+      console.error('No user ID returned from auth creation')
+      console.error('Auth user response:', JSON.stringify(authUser, null, 2))
+      return NextResponse.json(
+        { success: false, error: 'Failed to create user: No user ID returned' },
+        { status: 500 }
+      )
     }
 
-    const { data, error } = await supabaseAdmin
+    // Verify the auth user was created and can be retrieved
+    const { data: verifyUser, error: verifyError } = await supabaseAdmin.auth.admin.getUserById(authUser.user.id)
+    if (verifyError || !verifyUser?.user) {
+      console.error('Failed to verify created auth user:', verifyError)
+      return NextResponse.json(
+        { success: false, error: 'User created but verification failed' },
+        { status: 500 }
+      )
+    }
+
+    // Wait a moment for trigger to create public.users entry
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Update the public.users record with correct role and details
+    // The trigger might have created a basic entry, so we update it
+    const { data: updatedUser, error: updateError } = await supabaseAdmin
       .from('users')
-      .insert(userData)
+      .update({
+        name,
+        phone,
+        role,
+        email
+      })
+      .eq('id', authUser.user.id)
       .select()
       .single()
 
-    if (error) throw error
+    if (updateError) {
+      // If update fails, the trigger might not have created the entry yet
+      // Try to insert directly
+      const { data: insertedUser, error: insertError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          id: authUser.user.id,
+          name,
+          email,
+          phone,
+          role,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (insertError) {
+        console.error('Error creating/updating public.users:', insertError)
+        // Clean up auth user if we can't create public.users entry
+        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+        return NextResponse.json(
+          { success: false, error: `Failed to create user record: ${insertError.message}` },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: insertedUser
+      }, { status: 201 })
+    }
 
     return NextResponse.json({
       success: true,
-      data
+      data: updatedUser
     }, { status: 201 })
   } catch (error: any) {
     console.error('Error creating user:', error)
