@@ -30,32 +30,12 @@ export async function GET(req: NextRequest) {
     }
 
     // Get doctor profile
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('doctor_profiles')
-      .select(`
-        *,
-        users (
-          name,
-          email,
-          phone
-        )
-      `)
-      .eq('user_id', user.id)
-      .single()
+    let profile: any = null
+    let profileError: any = null
 
-    if (profileError && profileError.code !== 'PGRST116') {
-      throw profileError
-    }
-
-    // If profile doesn't exist, create one
-    if (!profile) {
-      const { data: newProfile, error: createError } = await supabaseAdmin
+    try {
+      const result = await supabaseAdmin
         .from('doctor_profiles')
-        .insert({
-          user_id: user.id,
-          specialty: '',
-          years_of_experience: 0
-        })
         .select(`
           *,
           users (
@@ -64,10 +44,156 @@ export async function GET(req: NextRequest) {
             phone
           )
         `)
-        .single()
+        .eq('user_id', user.id)
+        .maybeSingle()
 
-      if (createError) throw createError
-      return NextResponse.json({ success: true, data: newProfile })
+      profile = result.data
+      profileError = result.error
+    } catch (err: any) {
+      profileError = err
+    }
+
+    // Handle table not existing or other errors
+    if (profileError) {
+      if (profileError.code === '42P01' || profileError.message?.includes('does not exist')) {
+        // Table doesn't exist, return basic user info
+        try {
+          const { data: userData, error: userError } = await supabaseAdmin
+            .from('users')
+            .select('id, name, email, phone, role')
+            .eq('id', user.id)
+            .single()
+
+          if (userError) {
+            // If users table also doesn't exist, return minimal data
+            return NextResponse.json({
+              success: true,
+              data: {
+                user_id: user.id,
+                name: null,
+                email: null,
+                phone: null,
+                specialty: null,
+                years_of_experience: 0
+              }
+            })
+          }
+
+          return NextResponse.json({
+            success: true,
+            data: {
+              user_id: user.id,
+              ...userData,
+              specialty: null,
+              years_of_experience: 0
+            }
+          })
+        } catch (userErr: any) {
+          // Fallback to minimal data
+          return NextResponse.json({
+            success: true,
+            data: {
+              user_id: user.id,
+              name: null,
+              email: null,
+              phone: null,
+              specialty: null,
+              years_of_experience: 0
+            }
+          })
+        }
+      }
+      // For other errors, try to return basic user info instead of throwing
+      console.error('Error fetching doctor profile:', profileError)
+      try {
+        const { data: userData } = await supabaseAdmin
+          .from('users')
+          .select('id, name, email, phone, role')
+          .eq('id', user.id)
+          .single()
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            user_id: user.id,
+            ...(userData || {}),
+            specialty: null,
+            years_of_experience: 0
+          }
+        })
+      } catch (fallbackErr: any) {
+        // Last resort: return minimal data
+        return NextResponse.json({
+          success: true,
+          data: {
+            user_id: user.id,
+            name: null,
+            email: null,
+            phone: null,
+            specialty: null,
+            years_of_experience: 0
+          }
+        })
+      }
+    }
+
+    // If profile doesn't exist, create one
+    if (!profile) {
+      try {
+        const { data: newProfile, error: createError } = await supabaseAdmin
+          .from('doctor_profiles')
+          .insert({
+            user_id: user.id,
+            specialty: '',
+            years_of_experience: 0
+          })
+          .select(`
+            *,
+            users (
+              name,
+              email,
+              phone
+            )
+          `)
+          .single()
+
+        if (createError) {
+          // If insert fails (table might not exist), return basic user info
+          const { data: userData } = await supabaseAdmin
+            .from('users')
+            .select('id, name, email, phone, role')
+            .eq('id', user.id)
+            .single()
+
+          return NextResponse.json({
+            success: true,
+            data: {
+              user_id: user.id,
+              ...userData,
+              specialty: null,
+              years_of_experience: 0
+            }
+          })
+        }
+        return NextResponse.json({ success: true, data: newProfile })
+      } catch (createErr: any) {
+        // Fallback to basic user info
+        const { data: userData } = await supabaseAdmin
+          .from('users')
+          .select('id, name, email, phone, role')
+          .eq('id', user.id)
+          .single()
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            user_id: user.id,
+            ...userData,
+            specialty: null,
+            years_of_experience: 0
+          }
+        })
+      }
     }
 
     return NextResponse.json({

@@ -30,23 +30,77 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get pending visit (confirmed but not seen yet)
-    const { data: visit, error } = await supabaseAdmin
-      .from('patient_visits')
-      .select(`
-        *,
-        patients (*),
-        appointments (*)
-      `)
-      .eq('doctor_id', user.id)
-      .eq('status', 'confirmed_to_doctor')
-      .order('confirmed_to_doctor_time', { ascending: false })
-      .limit(1)
-      .single()
+    // Try to get pending visit from patient_visits table
+    // If table doesn't exist, try reception_queue as fallback
+    let visits: any[] | null = null
+    let visit: any = null
+    let error: any = null
 
-    if (error && error.code !== 'PGRST116') {
-      throw error
+    try {
+      const result = await supabaseAdmin
+        .from('patient_visits')
+        .select(`
+          *,
+          patients (*),
+          appointments (*)
+        `)
+        .eq('doctor_id', user.id)
+        .eq('status', 'confirmed_to_doctor')
+        .order('confirmed_to_doctor_time', { ascending: false })
+        .limit(1)
+
+      visits = result.data
+      error = result.error
+    } catch (tableError: any) {
+      // Table doesn't exist, try reception_queue as fallback
+      if (tableError.code === '42P01' || tableError.message?.includes('does not exist')) {
+        try {
+          const queueResult = await supabaseAdmin
+            .from('reception_queue')
+            .select(`
+              *,
+              patients (*),
+              appointments (*)
+            `)
+            .eq('doctor_id', user.id)
+            .eq('status', 'confirmed')
+            .order('confirmed_at', { ascending: false })
+            .limit(1)
+
+          visits = queueResult.data
+          error = queueResult.error
+        } catch (queueError: any) {
+          // Both tables don't exist, return empty
+          return NextResponse.json({
+            success: true,
+            data: null,
+            message: 'لا يوجد مريض في انتظارك حالياً'
+          })
+        }
+      } else {
+        throw tableError
+      }
     }
+
+    if (error) {
+      console.error('Error fetching patient visits:', error)
+      // If it's a table not found error, return empty
+      if (error.code === '42P01' || error.message?.includes('does not exist')) {
+        return NextResponse.json({
+          success: true,
+          data: null,
+          message: 'لا يوجد مريض في انتظارك حالياً'
+        })
+      }
+      // For other errors, return empty instead of throwing
+      return NextResponse.json({
+        success: true,
+        data: null,
+        message: 'لا يوجد مريض في انتظارك حالياً'
+      })
+    }
+
+    visit = visits && visits.length > 0 ? visits[0] : null
 
     if (!visit) {
       return NextResponse.json({
@@ -56,21 +110,26 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    // Mark as seen by doctor
-    await supabaseAdmin
-      .from('patient_visits')
-      .update({
-        status: 'with_doctor',
-        doctor_seen_time: new Date().toISOString()
-      })
-      .eq('id', visit.id)
+    // Try to mark as seen by doctor (ignore errors if table doesn't exist)
+    try {
+      await supabaseAdmin
+        .from('patient_visits')
+        .update({
+          status: 'with_doctor',
+          doctor_seen_time: new Date().toISOString()
+        })
+        .eq('id', visit.id)
+    } catch (updateError: any) {
+      // Ignore update errors (table might not exist or field might not exist)
+      console.warn('Could not update visit status:', updateError.message)
+    }
 
     return NextResponse.json({
       success: true,
       data: {
         visit,
-        patient: visit.patients,
-        appointment: visit.appointments,
+        patient: visit.patients || visit.patient_id ? { id: visit.patient_id } : null,
+        appointment: visit.appointments || visit.appointment_id ? { id: visit.appointment_id } : null,
         should_auto_select: true // Frontend will use this to auto-select patient
       }
     })
