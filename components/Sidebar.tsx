@@ -14,7 +14,8 @@ import {
     Shield,
     Stethoscope,
     UserCheck,
-    Users
+    Users,
+    ClipboardList
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -73,23 +74,30 @@ export default function Sidebar() {
   // Define all menu items with their allowed roles
   // Roles: admin, doctor, staff, patient, reception, insurance
   const allMenuItems = [
+    // Admin only pages
     { name: 'الرئيسية', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['admin'] },
-    { name: 'الاستقبال', href: '/dashboard/reception', icon: UserCheck, roles: ['admin', 'staff', 'reception'] },
-    { name: 'شاشة الطبيب', href: '/dashboard/doctor', icon: Stethoscope, roles: ['admin', 'doctor'] },
-    { name: 'الجلسات', href: '/dashboard/doctor/sessions', icon: Calendar, roles: ['admin', 'doctor'] },
-    { name: 'خطط العلاج', href: '/dashboard/doctor/treatment-plans', icon: FileText, roles: ['admin', 'doctor'] },
-    { name: 'الجدول الزمني', href: '/dashboard/doctor/schedule', icon: Calendar, roles: ['admin', 'doctor'] },
-    { name: 'إعداداتي', href: '/dashboard/doctor/settings', icon: Settings, roles: ['admin', 'doctor'] },
-    { name: 'التأمينات', href: '/dashboard/insurance', icon: Shield, roles: ['admin', 'staff', 'insurance'] },
-    { name: 'الفواتير', href: '/dashboard/billing', icon: DollarSign, roles: ['admin', 'staff', 'reception'] },
     { name: 'التقارير', href: '/dashboard/reports', icon: BarChart, roles: ['admin'] },
     { name: 'الأطباء', href: '/dashboard/doctors', icon: Users, roles: ['admin'] },
-    { name: 'التقويم', href: '/dashboard/calendar', icon: Calendar, roles: ['admin', 'doctor', 'staff', 'reception'] },
-    { name: 'المحادثات', href: '/dashboard/chat', icon: MessageSquare, roles: ['admin', 'doctor'] },
     { name: 'المستخدمين', href: '/dashboard/users', icon: Users, roles: ['admin'] },
     { name: 'المحتوى', href: '/dashboard/content', icon: FileText, roles: ['admin'] },
     { name: 'الذكاء الاصطناعي', href: '/dashboard/knowledge', icon: BrainCircuit, roles: ['admin'] },
     { name: 'الإعدادات', href: '/dashboard/admin/settings', icon: Settings, roles: ['admin'] },
+    
+    // Reception & Staff pages
+    { name: 'الاستقبال', href: '/dashboard/reception', icon: UserCheck, roles: ['admin', 'staff', 'reception'] },
+    { name: 'التأمينات', href: '/dashboard/insurance', icon: Shield, roles: ['admin', 'staff', 'insurance'] },
+    { name: 'الفواتير', href: '/dashboard/billing', icon: DollarSign, roles: ['admin', 'staff', 'reception'] },
+    
+    // Doctor pages (organized for doctor role)
+    { name: 'شاشة الطبيب', href: '/dashboard/doctor', icon: Stethoscope, roles: ['admin', 'doctor'] },
+    { name: 'الجلسات', href: '/dashboard/doctor/sessions', icon: ClipboardList, roles: ['admin', 'doctor'] },
+    { name: 'خطط العلاج', href: '/dashboard/doctor/treatment-plans', icon: FileText, roles: ['admin', 'doctor'] },
+    { name: 'الجدول الزمني', href: '/dashboard/doctor/schedule', icon: Calendar, roles: ['admin', 'doctor'] },
+    { name: 'إعداداتي', href: '/dashboard/doctor/settings', icon: Settings, roles: ['admin', 'doctor'] },
+    
+    // Shared pages
+    { name: 'التقويم', href: '/dashboard/calendar', icon: Calendar, roles: ['admin', 'doctor', 'staff', 'reception'] },
+    { name: 'المحادثات', href: '/dashboard/chat', icon: MessageSquare, roles: ['admin', 'doctor'] },
   ]
 
   // Filter menu items based on user role
