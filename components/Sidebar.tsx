@@ -29,7 +29,10 @@ import {
     Plus,
     Bot,
     Activity,
-    Monitor
+    Monitor,
+    Workflow,
+    MessageCircle,
+    Zap
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -88,22 +91,46 @@ export default function Sidebar() {
   // Define menu structure with categories
   // Structure: { category, name, href, icon, roles, badge? }
   const menuStructure = {
-    // Admin only
+    // Admin Module - Organized by modules
     admin: [
+      // 🏠 الرئيسية
       { category: 'الرئيسية', name: 'لوحة التحكم', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['admin'] },
+      { category: 'الرئيسية', name: 'المراقبة', href: '/dashboard/admin/monitor', icon: Monitor, roles: ['admin'] },
+      
+      // 📱 الواتساب
+      { category: 'الواتساب', name: 'بروفايل الأعمال', href: '/dashboard/admin/whatsapp/profile', icon: Building2, roles: ['admin'] },
+      { category: 'الواتساب', name: 'قوالب الرسائل', href: '/dashboard/admin/whatsapp/templates', icon: FileText, roles: ['admin'] },
+      { category: 'الواتساب', name: 'المحادثات المباشرة', href: '/dashboard/admin/whatsapp/live', icon: MessageSquare, roles: ['admin'] },
+      { category: 'الواتساب', name: 'التحليلات', href: '/dashboard/admin/whatsapp/analytics', icon: BarChart, roles: ['admin'] },
+      
+      // 🔄 الأتمتة
+      { category: 'الأتمتة', name: 'التدفقات', href: '/dashboard/admin/workflows', icon: Bot, roles: ['admin'] },
+      
+      // ⚙️ القواعد والإعدادات
+      { category: 'القواعد', name: 'قواعد العمل', href: '/dashboard/admin/business-rules', icon: Shield, roles: ['admin'] },
+      { category: 'القواعد', name: 'الإعدادات', href: '/dashboard/admin/settings', icon: Settings, roles: ['admin'] },
+      
+      // 📊 التقارير
       { category: 'التقارير', name: 'التقارير', href: '/dashboard/reports', icon: BarChart, roles: ['admin'] },
-      { category: 'الإدارة', name: 'الأطباء', href: '/dashboard/doctors', icon: Users, roles: ['admin'] },
-      { category: 'الإدارة', name: 'المستخدمين', href: '/dashboard/users', icon: Users, roles: ['admin'] },
-      { category: 'الإدارة', name: 'المحتوى', href: '/dashboard/content', icon: FileText, roles: ['admin'] },
-      { category: 'الإدارة', name: 'الذكاء الاصطناعي', href: '/dashboard/knowledge', icon: BrainCircuit, roles: ['admin'] },
-      { category: 'الإدارة', name: 'الإعدادات', href: '/dashboard/admin/settings', icon: Settings, roles: ['admin'] },
     ],
     
-    // Reception & Staff
+    // Reception Module - Organized by categories
     reception: [
-      { category: 'الاستقبال', name: 'الاستقبال', href: '/dashboard/reception', icon: UserCheck, roles: ['admin', 'staff', 'reception'] },
-      { category: 'التأمين', name: 'التأمينات', href: '/dashboard/insurance', icon: Shield, roles: ['admin', 'staff', 'insurance'] },
-      { category: 'المالية', name: 'الفواتير', href: '/dashboard/billing', icon: DollarSign, roles: ['admin', 'staff', 'reception'] },
+      // 🏠 الرئيسية
+      { category: 'الرئيسية', name: 'لوحة التحكم', href: '/dashboard/reception', icon: LayoutDashboard, roles: ['admin', 'reception'] },
+      
+      // 👥 المرضى
+      { category: 'المرضى', name: 'قائمة المرضى', href: '/dashboard/reception/patients', icon: Users, roles: ['admin', 'reception'] },
+      { category: 'المرضى', name: 'تسجيل مريض جديد', href: '/dashboard/reception/patients/new', icon: Plus, roles: ['admin', 'reception'] },
+      
+      // 📋 الطابور
+      { category: 'الطابور', name: 'إدارة الطابور', href: '/dashboard/reception/queue', icon: UserCheck, roles: ['admin', 'reception'] },
+      
+      // 📅 المواعيد
+      { category: 'المواعيد', name: 'حجز موعد', href: '/dashboard/reception/book-appointment', icon: Calendar, roles: ['admin', 'reception'] },
+      
+      // 💰 المالية
+      { category: 'المالية', name: 'الفواتير', href: '/dashboard/billing', icon: DollarSign, roles: ['admin', 'reception'] },
     ],
 
     // Doctor Module - Organized by categories
