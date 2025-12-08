@@ -1,78 +1,84 @@
 # Database Migrations
 
-هذا المجلد يحتوي على ملفات SQL migrations لإنشاء وتحديث جداول قاعدة البيانات.
+هذا المجلد يحتوي على ملفات الـ migrations لتطوير قاعدة البيانات.
 
-## الملفات المتوفرة
+## 📋 قواعد Migration
 
-### 1. `001_create_users_table.sql`
-ينشئ جدول `users` لإدارة المستخدمين في لوحة التحكم:
-- الحقول: id, name, email, phone, role, password_hash, last_login, created_at, updated_at
-- Indexes على email, role, phone
-- Trigger لتحديث updated_at تلقائياً
+1. **لا تكرار**: لا ننشئ schema جديد، بل نطور الموجود
+2. **IF NOT EXISTS**: نستخدم `IF NOT EXISTS` و `DO $$` لتجنب الأخطاء
+3. **حذف بعد التنفيذ**: بعد تشغيل migration بنجاح، يتم حذف الملف تلقائياً
 
-### 2. `002_create_knowledge_base_table.sql`
-ينشئ جدول `knowledge_base` لإدارة قاعدة المعرفة:
-- الحقول: id, title, content, category, tags, views, created_at, updated_at
-- Indexes على category, created_at, tags (GIN index)
-- Trigger لتحديث updated_at تلقائياً
+## 🚀 تشغيل Migration
 
-### 3. `003_update_content_items_table.sql`
-يحدث جدول `content_items` لإضافة الحقول المطلوبة:
-- إضافة: description, author, views, updated_at
-- Indexes على type, status, category, created_at
-- Trigger لتحديث updated_at تلقائياً
+### الطريقة 1: استخدام Script
 
-## كيفية التطبيق
+```bash
+./scripts/run-migration.sh [migration_file]
+```
 
-### الطريقة 1: استخدام Supabase SQL Editor (موصى بها)
+مثال:
+```bash
+./scripts/run-migration.sh supabase/migrations/20250117000000_enhance_reception_module.sql
+```
+
+### الطريقة 2: استخدام psql مباشرة
+
+```bash
+psql "$DATABASE_URL" -f supabase/migrations/20250117000000_enhance_reception_module.sql
+```
+
+### الطريقة 3: من Supabase Dashboard
 
 1. افتح Supabase Dashboard
 2. اذهب إلى SQL Editor
-3. انسخ محتوى الملفات واحداً تلو الآخر
-4. نفذ كل ملف على حدة
+3. انسخ محتوى ملف الـ migration
+4. شغّل الـ query
 
-### الطريقة 2: استخدام ملف complete_schema.sql
+## ⚠️ تحذيرات
 
-الملف `../complete_schema.sql` يحتوي على جميع الجداول في ملف واحد:
-- يشمل جميع الجداول المطلوبة
-- يشمل Indexes و Triggers
-- يشمل RLS Policies
-- يشمل Seed Data
+- **احتفظ بنسخة احتياطية** قبل تشغيل migration
+- **اختبر على بيئة التطوير** أولاً
+- **تحقق من النتائج** بعد التنفيذ
 
-**ملاحظة:** إذا كان لديك بيانات موجودة، استخدم الملفات الفردية بدلاً من complete_schema.sql
+## 📝 Migration Files
 
-## التحقق من التطبيق
+### `20250117000000_enhance_reception_module.sql`
+- تطوير جدول `patients` - إضافة حقول جديدة
+- تطوير جدول `appointments` - ربط مع patients و doctors
+- إنشاء/تطوير `reception_queue` - طابور الاستقبال
+- إنشاء/تطوير `patient_visits` - زيارات المرضى
+- إنشاء `patient_insurance` - تأمين المرضى
+- تفعيل Realtime
+- إنشاء Indexes محسّنة
 
-بعد تطبيق الـ migrations، تحقق من:
+## ✅ Checklist بعد Migration
+
+- [ ] التحقق من إنشاء/تحديث جميع الجداول
+- [ ] التحقق من الـ Foreign Keys
+- [ ] التحقق من الـ Indexes
+- [ ] التحقق من الـ RLS Policies
+- [ ] التحقق من Realtime
+- [ ] اختبار الـ Functions
+- [ ] حذف ملف الـ migration (يتم تلقائياً)
+
+## 🔍 التحقق من Migration
 
 ```sql
--- التحقق من وجود الجداول
-SELECT table_name FROM information_schema.tables 
+-- التحقق من الجداول
+SELECT table_name 
+FROM information_schema.tables 
 WHERE table_schema = 'public' 
-AND table_name IN ('users', 'knowledge_base', 'content_items')
 ORDER BY table_name;
+
+-- التحقق من الحقول المضافة
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'patients' 
+ORDER BY ordinal_position;
 
 -- التحقق من Indexes
 SELECT indexname, tablename 
 FROM pg_indexes 
-WHERE tablename IN ('users', 'knowledge_base', 'content_items');
-
--- التحقق من Triggers
-SELECT trigger_name, event_object_table 
-FROM information_schema.triggers 
-WHERE event_object_table IN ('users', 'knowledge_base', 'content_items');
+WHERE schemaname = 'public' 
+ORDER BY tablename, indexname;
 ```
-
-## الترتيب الموصى به
-
-1. `001_create_users_table.sql`
-2. `002_create_knowledge_base_table.sql`
-3. `003_update_content_items_table.sql`
-
-## ملاحظات مهمة
-
-- جميع الجداول تستخدم `IF NOT EXISTS` لتجنب الأخطاء
-- Indexes تستخدم `IF NOT EXISTS` لتجنب التكرار
-- Triggers تستخدم `CREATE OR REPLACE` للتحديث الآمن
-- RLS (Row Level Security) مفعل على جميع الجداول
-
