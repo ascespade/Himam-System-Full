@@ -136,8 +136,33 @@ export async function GET(req: NextRequest) {
     const revenue = invoices?.reduce((sum, inv) => sum + (Number(inv.paid_amount) || 0), 0) || 0
 
     // 5. Patient Satisfaction (if available)
-    // This would require a feedback/rating system
-    const patientSatisfactionScore = null // TODO: Implement feedback system
+    // Calculate average rating from session feedback if exists
+    let patientSatisfactionScore: number | null = null
+    try {
+      const { data: feedbackData } = await supabaseAdmin
+        .from('sessions')
+        .select('patient_satisfaction_rating')
+        .eq('doctor_id', doctorId)
+        .gte('date', startDate.toISOString())
+        .lte('date', endDate.toISOString())
+        .not('patient_satisfaction_rating', 'is', null)
+
+      if (feedbackData && feedbackData.length > 0) {
+        const ratings = feedbackData
+          .map(s => s.patient_satisfaction_rating)
+          .filter(r => r !== null && r !== undefined)
+          .map(Number)
+
+        if (ratings.length > 0) {
+          patientSatisfactionScore = Math.round(
+            (ratings.reduce((sum, r) => sum + r, 0) / ratings.length) * 10
+          ) / 10
+        }
+      }
+    } catch (feedbackError) {
+      // Ignore if feedback column doesn't exist yet
+      console.warn('Patient satisfaction feedback not available:', feedbackError)
+    }
 
     // Build metrics object
     const metrics = {

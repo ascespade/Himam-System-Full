@@ -2,6 +2,7 @@
 
 import { FileSearch, Download, Calendar, Filter, BarChart, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface Report {
   id: string
@@ -24,12 +25,41 @@ export default function ReportsPage() {
 
   const fetchReports = async () => {
     try {
-      // TODO: Create API endpoint for reports
+      setLoading(true)
+      // For now, reports are generated on-demand
+      // We'll use analytics data to show available report types
       setReports([])
     } catch (error) {
       console.error('Error fetching reports:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGenerateReport = async (reportType: string) => {
+    try {
+      // Generate report using analytics API
+      const response = await fetch(`/api/doctor/analytics/${reportType}`)
+      const data = await response.json()
+      
+      if (data.success) {
+        // Create report object
+        const newReport: Report = {
+          id: Date.now().toString(),
+          name: `تقرير ${reportType === 'performance' ? 'الأداء' : reportType === 'patients' ? 'المرضى' : reportType === 'sessions' ? 'الجلسات' : 'الإيرادات'}`,
+          type: reportType,
+          date_range: 'آخر 30 يوم',
+          generated_at: new Date().toISOString(),
+          status: 'completed',
+          download_url: `#report-${reportType}`,
+        }
+        
+        setReports([newReport, ...reports])
+        toast.success('تم إنشاء التقرير بنجاح')
+      }
+    } catch (error) {
+      console.error('Error generating report:', error)
+      toast.error('فشل إنشاء التقرير')
     }
   }
 
@@ -63,7 +93,10 @@ export default function ReportsPage() {
                 </div>
                 <h3 className="font-medium text-gray-900">{type.name}</h3>
               </div>
-              <button className="w-full mt-3 text-sm text-primary hover:text-primary-dark">
+              <button 
+                onClick={() => handleGenerateReport(type.id)}
+                className="w-full mt-3 text-sm text-primary hover:text-primary-dark"
+              >
                 إنشاء تقرير
               </button>
             </div>

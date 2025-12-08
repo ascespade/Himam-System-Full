@@ -131,21 +131,69 @@ export async function POST(req: NextRequest) {
 
     // Format based on requested format
     if (format === 'pdf') {
-      // TODO: Generate PDF using a library like pdfkit or puppeteer
-      // For now, return JSON
-      return NextResponse.json({
-        success: true,
-        data: exportData,
-        format: 'json', // Fallback to JSON
-        message: 'PDF export not yet implemented, returning JSON',
+      // Generate simple PDF as text/plain for now (can be enhanced with pdfkit later)
+      const pdfContent = `
+تقرير ملف طبي
+${'='.repeat(50)}
+المريض: ${exportData.patient.name}
+الهاتف: ${exportData.patient.phone}
+تاريخ الميلاد: ${exportData.patient.date_of_birth || 'غير متوفر'}
+الجنس: ${exportData.patient.gender || 'غير متوفر'}
+${'='.repeat(50)}
+
+${exportData.sessions ? `\nالجلسات (${exportData.sessions.length}):\n${exportData.sessions.map((s: any, i: number) => `${i + 1}. ${new Date(s.date).toLocaleDateString('ar-SA')} - ${s.session_type || 'جلسة'}`).join('\n')}` : ''}
+
+${exportData.medical_records ? `\nالسجلات الطبية (${exportData.medical_records.length}):\n${exportData.medical_records.map((r: any, i: number) => `${i + 1}. ${r.record_type || 'سجل'} - ${new Date(r.created_at).toLocaleDateString('ar-SA')}`).join('\n')}` : ''}
+
+${exportData.treatment_plans ? `\nخطط العلاج (${exportData.treatment_plans.length}):\n${exportData.treatment_plans.map((p: any, i: number) => `${i + 1}. ${p.title || 'خطة علاج'}`).join('\n')}` : ''}
+
+${exportData.progress_tracking ? `\nتتبع التقدم (${exportData.progress_tracking.length}):\n${exportData.progress_tracking.map((p: any, i: number) => `${i + 1}. ${p.title || 'تقدم'}`).join('\n')}` : ''}
+
+${'='.repeat(50)}
+تاريخ التصدير: ${new Date(exportData.exported_at).toLocaleString('ar-SA')}
+      `.trim()
+
+      return new NextResponse(pdfContent, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Content-Disposition': `attachment; filename="patient-${exportData.patient.id}-report.txt"`,
+        },
       })
     } else if (format === 'csv') {
-      // TODO: Convert to CSV
-      return NextResponse.json({
-        success: true,
-        data: exportData,
-        format: 'json', // Fallback to JSON
-        message: 'CSV export not yet implemented, returning JSON',
+      // Generate CSV
+      const csvRows: string[] = []
+      
+      // CSV Header
+      csvRows.push('النوع,التاريخ,الوصف')
+      
+      // Sessions
+      if (exportData.sessions) {
+        exportData.sessions.forEach((s: any) => {
+          csvRows.push(`جلسة,"${new Date(s.date).toLocaleDateString('ar-SA')}","${(s.session_type || 'جلسة').replace(/"/g, '""')}"`)
+        })
+      }
+      
+      // Medical Records
+      if (exportData.medical_records) {
+        exportData.medical_records.forEach((r: any) => {
+          csvRows.push(`سجل طبي,"${new Date(r.created_at).toLocaleDateString('ar-SA')}","${(r.record_type || 'سجل').replace(/"/g, '""')}"`)
+        })
+      }
+      
+      // Treatment Plans
+      if (exportData.treatment_plans) {
+        exportData.treatment_plans.forEach((p: any) => {
+          csvRows.push(`خطة علاج,"${new Date(p.created_at).toLocaleDateString('ar-SA')}","${(p.title || 'خطة').replace(/"/g, '""')}"`)
+        })
+      }
+      
+      const csvContent = csvRows.join('\n')
+      
+      return new NextResponse(csvContent, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="patient-${exportData.patient.id}-export.csv"`,
+        },
       })
     } else {
       // JSON format (default)

@@ -112,6 +112,7 @@ export default function Sidebar() {
       { category: 'الرئيسية', name: 'لوحة التحكم', href: '/dashboard/doctor', icon: LayoutDashboard, roles: ['admin', 'doctor'] },
       
       // 👥 المرضى
+      { category: 'المرضى', name: 'المريض الحالي', href: '/dashboard/doctor/current-patient', icon: User, roles: ['admin', 'doctor'] },
       { category: 'المرضى', name: 'قائمة المرضى', href: '/dashboard/doctor/patients', icon: Users, roles: ['admin', 'doctor'] },
       
       // 📅 الجدولة
@@ -132,6 +133,7 @@ export default function Sidebar() {
       { category: 'العلاج', name: 'تتبع التقدم', href: '/dashboard/doctor/progress', icon: TrendingUp, roles: ['admin', 'doctor'] },
       
       // 🤖 الأتمتة
+      { category: 'الأتمتة', name: 'المساعد الذكي', href: '/dashboard/doctor/ai-assistant', icon: Bot, roles: ['admin', 'doctor'] },
       { category: 'الأتمتة', name: 'قوالب الملاحظات', href: '/dashboard/doctor/templates', icon: FileText, roles: ['admin', 'doctor'] },
       { category: 'الأتمتة', name: 'التوثيق التلقائي', href: '/dashboard/doctor/auto-documentation', icon: Bot, roles: ['admin', 'doctor'] },
       
@@ -139,6 +141,10 @@ export default function Sidebar() {
       { category: 'التقارير', name: 'الأداء', href: '/dashboard/doctor/analytics', icon: Activity, roles: ['admin', 'doctor'] },
       { category: 'التقارير', name: 'التقارير', href: '/dashboard/doctor/reports', icon: FileSearch, roles: ['admin', 'doctor'] },
       { category: 'التقارير', name: 'البحث المتقدم', href: '/dashboard/doctor/search', icon: Search, roles: ['admin', 'doctor'] },
+      
+      // 🛡️ التأمين
+      { category: 'التأمين', name: 'المساعد الذكي للتأمين', href: '/dashboard/doctor/insurance/ai-agent', icon: Bot, roles: ['admin', 'doctor'] },
+      { category: 'التأمين', name: 'مطالبات التأمين', href: '/dashboard/doctor/insurance/claims', icon: Shield, roles: ['admin', 'doctor'] },
       
       // ⚙️ الإعدادات
       { category: 'الإعدادات', name: 'بروفايلي', href: '/dashboard/doctor/settings', icon: User, roles: ['admin', 'doctor'] },

@@ -2,6 +2,7 @@
 
 import { Bot, FileText, Calendar, Search, Settings, Play, CheckCircle, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface DocumentationLog {
   id: string
@@ -15,6 +16,7 @@ interface DocumentationLog {
 }
 
 export default function AutoDocumentationPage() {
+  const router = useRouter()
   const [logs, setLogs] = useState<DocumentationLog[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -26,10 +28,19 @@ export default function AutoDocumentationPage() {
 
   const fetchLogs = async () => {
     try {
-      // TODO: Create API endpoint for auto documentation logs
-      setLogs([])
+      setLoading(true)
+      const response = await fetch('/api/doctor/auto-documentation')
+      const data = await response.json()
+      
+      if (data.success) {
+        setLogs(data.data || [])
+      } else {
+        console.error('Error fetching documentation logs:', data.error)
+        setLogs([])
+      }
     } catch (error) {
       console.error('Error fetching documentation logs:', error)
+      setLogs([])
     } finally {
       setLoading(false)
     }
@@ -180,7 +191,10 @@ export default function AutoDocumentationPage() {
               </div>
               <div className="flex items-center justify-between text-xs text-gray-400">
                 <span>{new Date(log.created_at).toLocaleDateString('ar-SA')}</span>
-                <button className="flex items-center gap-1 text-primary hover:text-primary-dark">
+                <button 
+                  onClick={() => router.push(`/dashboard/doctor/auto-documentation/${log.id}`)}
+                  className="flex items-center gap-1 text-primary hover:text-primary-dark"
+                >
                   <FileText size={14} />
                   عرض كامل
                 </button>

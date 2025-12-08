@@ -28,11 +28,74 @@ export default function SearchPage() {
 
     setLoading(true)
     try {
-      // TODO: Create API endpoint for advanced search
-      // For now, using mock structure
-      setResults([])
+      const searchType = typeFilter === 'all' ? '' : typeFilter
+      const url = `/api/doctor/search?q=${encodeURIComponent(searchQuery)}${searchType ? `&entity_type=${searchType}` : ''}`
+      
+      const response = await fetch(url)
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        const allResults: SearchResult[] = []
+        
+        // Transform patients
+        if (data.data.patients && data.data.patients.length > 0) {
+          data.data.patients.forEach((patient: any) => {
+            allResults.push({
+              type: 'patient',
+              id: patient.id,
+              title: patient.name || 'غير معروف',
+              description: `هاتف: ${patient.phone || 'غير متوفر'}`,
+              date: patient.created_at,
+            })
+          })
+        }
+        
+        // Transform sessions
+        if (data.data.sessions && data.data.sessions.length > 0) {
+          data.data.sessions.forEach((session: any) => {
+            allResults.push({
+              type: 'session',
+              id: session.id,
+              title: `${session.session_type || 'جلسة'} - ${new Date(session.date).toLocaleDateString('ar-SA')}`,
+              description: session.notes || 'لا توجد ملاحظات',
+              date: session.date,
+            })
+          })
+        }
+        
+        // Transform medical records
+        if (data.data.medical_records && data.data.medical_records.length > 0) {
+          data.data.medical_records.forEach((record: any) => {
+            allResults.push({
+              type: 'record',
+              id: record.id,
+              title: `${record.record_type || 'سجل'} - ${record.title || 'بدون عنوان'}`,
+              description: record.description || record.notes || 'لا يوجد وصف',
+              date: record.created_at || record.date,
+            })
+          })
+        }
+        
+        // Transform treatment plans
+        if (data.data.treatment_plans && data.data.treatment_plans.length > 0) {
+          data.data.treatment_plans.forEach((plan: any) => {
+            allResults.push({
+              type: 'treatment_plan',
+              id: plan.id,
+              title: plan.title || 'خطة علاج',
+              description: plan.description || plan.goals || 'لا يوجد وصف',
+              date: plan.created_at || plan.start_date,
+            })
+          })
+        }
+        
+        setResults(allResults)
+      } else {
+        setResults([])
+      }
     } catch (error) {
       console.error('Error searching:', error)
+      setResults([])
     } finally {
       setLoading(false)
     }
@@ -45,7 +108,7 @@ export default function SearchPage() {
     } else {
       setResults([])
     }
-  }, [searchQuery])
+  }, [searchQuery, typeFilter])
 
   const getResultIcon = (type: string) => {
     switch (type) {

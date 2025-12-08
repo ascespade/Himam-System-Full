@@ -2,6 +2,7 @@
 
 import { FileText, Plus, Search, Edit, Trash2, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface Template {
   id: string
@@ -18,17 +19,33 @@ export default function TemplatesPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   useEffect(() => {
     fetchTemplates()
   }, [])
 
+  useEffect(() => {
+    if (categoryFilter !== 'all') {
+      fetchTemplates()
+    }
+  }, [categoryFilter])
+
   const fetchTemplates = async () => {
     try {
-      // TODO: Create API endpoint for templates
-      setTemplates([])
+      setLoading(true)
+      const response = await fetch('/api/doctor/notes-templates')
+      const data = await response.json()
+      
+      if (data.success) {
+        setTemplates(data.data || [])
+      } else {
+        console.error('Error fetching templates:', data.error)
+        setTemplates([])
+      }
     } catch (error) {
       console.error('Error fetching templates:', error)
+      setTemplates([])
     } finally {
       setLoading(false)
     }
@@ -46,6 +63,56 @@ export default function TemplatesPage() {
     return categories[category] || category
   }
 
+  const handleEdit = async (template: Template) => {
+    // Open edit modal or navigate to edit page
+    // For now, show alert - can be enhanced with modal later
+    alert(`تعديل القالب: ${template.name}\n\nسيتم إضافة نافذة التعديل قريباً`)
+  }
+
+  const handleCopy = async (template: Template) => {
+    try {
+      const response = await fetch('/api/doctor/notes-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `${template.name} (نسخة)`,
+          category: template.category,
+          template_content: template.template_content,
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        toast.success('تم نسخ القالب بنجاح')
+        await fetchTemplates()
+      } else {
+        toast.error('فشل نسخ القالب: ' + (data.error || 'خطأ غير معروف'))
+      }
+    } catch (error) {
+      console.error('Error copying template:', error)
+      toast.error('حدث خطأ أثناء نسخ القالب')
+    }
+  }
+
+  const handleDelete = async (templateId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا القالب؟')) return
+    
+    try {
+      const response = await fetch(`/api/doctor/notes-templates/${templateId}`, {
+        method: 'DELETE',
+      })
+      const data = await response.json()
+      if (data.success) {
+        toast.success('تم حذف القالب بنجاح')
+        await fetchTemplates()
+      } else {
+        toast.error('فشل حذف القالب: ' + (data.error || 'خطأ غير معروف'))
+      }
+    } catch (error) {
+      console.error('Error deleting template:', error)
+      toast.error('حدث خطأ أثناء حذف القالب')
+    }
+  }
+
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === 'all' || template.category === categoryFilter
@@ -60,7 +127,10 @@ export default function TemplatesPage() {
           <h1 className="text-2xl font-bold text-gray-900">قوالب الملاحظات</h1>
           <p className="text-sm text-gray-500 mt-1">إدارة قوالب الملاحظات والوثائق</p>
         </div>
-        <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors">
+        <button 
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors"
+        >
           <Plus size={18} />
           قالب جديد
         </button>
@@ -167,13 +237,25 @@ export default function TemplatesPage() {
               </div>
               <div className="flex items-center justify-between mt-4">
                 <div className="flex gap-2">
-                  <button className="p-2 text-gray-400 hover:text-primary transition-colors">
+                  <button 
+                    onClick={() => handleEdit(template)}
+                    className="p-2 text-gray-400 hover:text-primary transition-colors"
+                    title="تعديل"
+                  >
                     <Edit size={16} />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                  <button 
+                    onClick={() => handleCopy(template)}
+                    className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                    title="نسخ"
+                  >
                     <Copy size={16} />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-red-600 transition-colors">
+                  <button 
+                    onClick={() => handleDelete(template.id)}
+                    className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                    title="حذف"
+                  >
                     <Trash2 size={16} />
                   </button>
                 </div>

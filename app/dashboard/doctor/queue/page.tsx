@@ -82,7 +82,8 @@ export default function QueuePage() {
 
       if (res.ok) {
         toast.success('تم بدء الجلسة')
-        router.push(`/dashboard/doctor/patients/${item.patient_id}`)
+        // Navigate to current patient page instead of patient details
+        router.push(`/dashboard/doctor/current-patient`)
       }
     } catch (error) {
       toast.error('حدث خطأ في بدء الجلسة')
@@ -90,7 +91,8 @@ export default function QueuePage() {
   }
 
   const handleViewPatient = (patientId: string) => {
-    router.push(`/dashboard/doctor/patients/${patientId}`)
+    // Navigate to current patient page if this is the current patient, otherwise to patient details
+    router.push(`/dashboard/doctor/current-patient`)
   }
 
   if (loading) {

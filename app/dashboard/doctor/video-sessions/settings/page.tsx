@@ -33,10 +33,16 @@ export default function VideoSessionsSettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      // TODO: Create API endpoint for video settings
-      setLoading(false)
+      setLoading(true)
+      const response = await fetch('/api/doctor/video-settings')
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        setSettings(data.data)
+      }
     } catch (error) {
       console.error('Error fetching video settings:', error)
+    } finally {
       setLoading(false)
     }
   }
@@ -44,10 +50,21 @@ export default function VideoSessionsSettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      // TODO: Create API endpoint to save video settings
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      toast.success('تم حفظ الإعدادات بنجاح')
+      const response = await fetch('/api/doctor/video-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        toast.success('تم حفظ الإعدادات بنجاح')
+      } else {
+        toast.error('فشل حفظ الإعدادات: ' + (data.error || 'خطأ غير معروف'))
+      }
     } catch (error) {
+      console.error('Error saving video settings:', error)
       toast.error('فشل حفظ الإعدادات')
     } finally {
       setSaving(false)

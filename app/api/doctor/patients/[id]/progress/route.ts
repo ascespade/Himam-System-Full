@@ -1,0 +1,103 @@
+/**
+ * GET /api/doctor/patients/[id]/progress
+ * Get patient progress tracking data
+ */
+
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+
+export const dynamic = 'force-dynamic'
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const cookieStore = req.cookies
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set(name: string, value: string, options: CookieOptions) {},
+          remove(name: string, options: CookieOptions) {},
+        },
+      }
+    )
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Get treatment plans with progress
+    const { data: treatmentPlans } = await supabaseAdmin
+      .from('treatment_plans')
+      .select('*')
+      .eq('patient_id', params.id)
+      .eq('doctor_id', user.id)
+      .order('start_date', { ascending: false })
+
+    // Get sessions for progress tracking
+    const { data: sessions } = await supabaseAdmin
+      .from('sessions')
+      .select('*')
+      .eq('patient_id', params.id)
+      .eq('doctor_id', user.id)
+      .order('date', { ascending: false })
+      .limit(50)
+
+    // Get progress entries if table exists
+    let progressEntries: any[] = []
+    try {
+      const { data: progress } = await supabaseAdmin
+        .from('progress_tracking')
+        .select('*')
+        .eq('patient_id', params.id)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      progressEntries = progress || []
+    } catch (e) {
+      // Table might not exist
+    }
+
+    // Calculate overall progress
+    const activePlans = treatmentPlans?.filter(p => p.status === 'active') || []
+    const totalGoals = activePlans.reduce((sum, plan) => {
+      const goals = Array.isArray(plan.goals) ? plan.goals : []
+      return sum + goals.length
+    }, 0)
+    const completedGoals = activePlans.reduce((sum, plan) => {
+      const goals = Array.isArray(plan.goals) ? plan.goals : []
+      return sum + goals.filter((g: any) => g.status === 'completed').length
+    }, 0)
+    const overallProgress = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        treatmentPlans: treatmentPlans || [],
+        sessions: sessions || [],
+        progressEntries: progressEntries,
+        statistics: {
+          totalPlans: treatmentPlans?.length || 0,
+          activePlans: activePlans.length,
+          totalGoals,
+          completedGoals,
+          overallProgress,
+          totalSessions: sessions?.length || 0
+        }
+      }
+    })
+  } catch (error: any) {
+    console.error('Error fetching patient progress:', error)
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    )
+  }
+}
+

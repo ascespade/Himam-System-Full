@@ -29,10 +29,31 @@ export default function MedicalRecordsPage() {
 
   const fetchRecords = async () => {
     try {
-      // TODO: Create API endpoint for medical records
-      setRecords([])
+      setLoading(true)
+      const response = await fetch('/api/doctor/medical-records')
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        // Transform the data to include patient names
+        const recordsWithPatients = await Promise.all(
+          data.data.map(async (record: any) => {
+            if (record.patients) {
+              return {
+                ...record,
+                patient_name: record.patients.name || 'غير معروف',
+              }
+            }
+            return record
+          })
+        )
+        setRecords(recordsWithPatients)
+      } else {
+        console.error('Error fetching medical records:', data.error)
+        setRecords([])
+      }
     } catch (error) {
       console.error('Error fetching medical records:', error)
+      setRecords([])
     } finally {
       setLoading(false)
     }
@@ -69,8 +90,10 @@ export default function MedicalRecordsPage() {
   }
 
   const filteredRecords = records.filter(record => {
-    const matchesSearch = record.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.title?.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = !searchQuery.trim() || 
+      record.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      record.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      record.description?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesType = typeFilter === 'all' || record.record_type === typeFilter
     return matchesSearch && matchesType
   })

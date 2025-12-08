@@ -24,11 +24,31 @@ export default function RecordingsPage() {
 
   const fetchRecordings = async () => {
     try {
-      // TODO: Create API endpoint for recordings
-      // For now, using mock data structure
-      setRecordings([])
+      setLoading(true)
+      const response = await fetch('/api/doctor/recordings')
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        // Transform the data to match the interface
+        const transformedRecordings = data.data
+          .filter((rec: any) => rec.recording_url || rec.recording_status) // Only show recordings with URLs
+          .map((rec: any) => ({
+            id: rec.id,
+            session_id: rec.session_id,
+            patient_name: rec.patients?.name || 'غير معروف',
+            recording_url: rec.recording_url || '',
+            duration: rec.duration || rec.recording_duration || 0,
+            created_at: rec.created_at || rec.recorded_at || new Date().toISOString(),
+            status: rec.recording_status || 'completed',
+          }))
+        setRecordings(transformedRecordings)
+      } else {
+        console.error('Error fetching recordings:', data.error)
+        setRecordings([])
+      }
     } catch (error) {
       console.error('Error fetching recordings:', error)
+      setRecordings([])
     } finally {
       setLoading(false)
     }
@@ -108,7 +128,10 @@ export default function RecordingsPage() {
         <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
           <div className="text-gray-400">جاري التحميل...</div>
         </div>
-      ) : recordings.length === 0 ? (
+      ) : recordings.filter(r => 
+        !searchQuery.trim() || 
+        r.patient_name?.toLowerCase().includes(searchQuery.toLowerCase())
+      ).length === 0 ? (
         <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
           <Mic className="mx-auto text-gray-300 mb-4" size={48} />
           <p className="text-gray-500">لا توجد تسجيلات</p>
@@ -116,7 +139,10 @@ export default function RecordingsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {recordings.map((recording) => (
+          {recordings.filter(r => 
+            !searchQuery.trim() || 
+            r.patient_name?.toLowerCase().includes(searchQuery.toLowerCase())
+          ).map((recording) => (
             <div key={recording.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -138,13 +164,28 @@ export default function RecordingsPage() {
                 </span>
               </div>
               <div className="flex gap-2">
-                <button className="flex-1 flex items-center justify-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors">
-                  <Play size={16} />
-                  تشغيل
-                </button>
-                <button className="flex items-center justify-center gap-2 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Download size={16} />
-                </button>
+                {recording.recording_url && (
+                  <button 
+                    onClick={() => window.open(recording.recording_url, '_blank')}
+                    className="flex-1 flex items-center justify-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors"
+                  >
+                    <Play size={16} />
+                    تشغيل
+                  </button>
+                )}
+                {recording.recording_url && (
+                  <button 
+                    onClick={() => {
+                      const link = document.createElement('a')
+                      link.href = recording.recording_url
+                      link.download = `recording-${recording.id}.mp4`
+                      link.click()
+                    }}
+                    className="flex items-center justify-center gap-2 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Download size={16} />
+                  </button>
+                )}
               </div>
             </div>
           ))}

@@ -25,12 +25,49 @@ export default function ProgressPage() {
     fetchProgress()
   }, [])
 
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      // Filter locally when search query changes
+    }
+  }, [searchQuery])
+
   const fetchProgress = async () => {
     try {
-      // TODO: Create API endpoint for progress tracking
-      setProgressEntries([])
+      setLoading(true)
+      // Get all patients for this doctor first
+      const patientsRes = await fetch('/api/doctor/patients')
+      const patientsData = await patientsRes.json()
+      
+      if (!patientsData.success || !patientsData.data || patientsData.data.length === 0) {
+        setProgressEntries([])
+        return
+      }
+
+      // Fetch progress for all patients
+      const progressPromises = patientsData.data.map((patient: any) =>
+        fetch(`/api/doctor/progress-tracking?patient_id=${patient.id}`)
+      )
+      
+      const progressResponses = await Promise.all(progressPromises)
+      const allProgress: ProgressEntry[] = []
+      
+      for (let i = 0; i < progressResponses.length; i++) {
+        const progressData = await progressResponses[i].json()
+        if (progressData.success && progressData.data) {
+          const patient = patientsData.data[i]
+          progressData.data.forEach((entry: any) => {
+            allProgress.push({
+              ...entry,
+              patient_name: patient.name || 'غير معروف',
+            })
+          })
+        }
+      }
+      
+      setProgressEntries(allProgress)
     } catch (error) {
       console.error('Error fetching progress:', error)
+      setProgressEntries([])
     } finally {
       setLoading(false)
     }
@@ -133,7 +170,11 @@ export default function ProgressPage() {
         <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
           <div className="text-gray-400">جاري التحميل...</div>
         </div>
-      ) : progressEntries.length === 0 ? (
+      ) : progressEntries.filter(entry => 
+        !searchQuery.trim() || 
+        entry.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        entry.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      ).length === 0 ? (
         <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
           <TrendingUp className="mx-auto text-gray-300 mb-4" size={48} />
           <p className="text-gray-500">لا توجد سجلات تقدم</p>
@@ -141,7 +182,11 @@ export default function ProgressPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {progressEntries.map((entry) => (
+          {progressEntries.filter(entry => 
+            !searchQuery.trim() || 
+            entry.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            entry.title?.toLowerCase().includes(searchQuery.toLowerCase())
+          ).map((entry) => (
             <div key={entry.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
