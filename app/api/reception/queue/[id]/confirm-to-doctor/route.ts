@@ -72,6 +72,31 @@ export async function POST(
       )
     }
 
+    // ============================================
+    // BUSINESS RULES: Payment & Insurance Verification
+    // ============================================
+    try {
+      const { paymentVerificationService } = await import('@/core/business-rules/payment-verification')
+      
+      const paymentCheck = await paymentVerificationService.verifyPayment(
+        queueItem.patient_id,
+        queueItem.appointments?.service_type || 'consultation',
+        queueItem.appointments?.service_type
+      )
+
+      if (!paymentCheck.canProceed) {
+        return NextResponse.json({
+          success: false,
+          error: paymentCheck.reason,
+          requiredActions: paymentCheck.requiredActions,
+          paymentStatus: paymentCheck.paymentStatus
+        }, { status: 403 })
+      }
+    } catch (error) {
+      console.error('Payment verification error:', error)
+      // Continue if verification service fails (graceful degradation)
+    }
+
     // Update queue status
     await supabaseAdmin
       .from('reception_queue')

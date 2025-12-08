@@ -38,6 +38,9 @@ export default function QueuePage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const [doctors, setDoctors] = useState<Doctor[]>([])
   const [confirmingToDoctor, setConfirmingToDoctor] = useState<string | null>(null)
+  const [paymentCheck, setPaymentCheck] = useState<any>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [selectedQueueItem, setSelectedQueueItem] = useState<QueueItem | null>(null)
 
   // Create Supabase client for realtime
   const supabase = createBrowserClient(
@@ -125,6 +128,41 @@ export default function QueuePage() {
     }
   }
 
+  const checkPaymentBeforeConfirm = async (queueItem: QueueItem, doctorId: string) => {
+    try {
+      // Check payment status
+      const res = await fetch('/api/reception/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patient_id: queueItem.patient_id,
+          session_type: queueItem.appointments?.service_type || 'consultation',
+          service_type: queueItem.appointments?.service_type
+        })
+      })
+      const data = await res.json()
+      
+      if (data.success) {
+        const verification = data.data
+        
+        if (!verification.canProceed) {
+          // Show payment modal
+          setPaymentCheck(verification)
+          setSelectedQueueItem(queueItem)
+          setShowPaymentModal(true)
+          return
+        }
+        
+        // Proceed with confirmation
+        await confirmToDoctor(queueItem.id, doctorId)
+      }
+    } catch (error) {
+      console.error('Error checking payment:', error)
+      // Continue anyway (graceful degradation)
+      await confirmToDoctor(queueItem.id, doctorId)
+    }
+  }
+
   const confirmToDoctor = async (queueId: string, doctorId: string) => {
     try {
       setConfirmingToDoctor(queueId)
@@ -137,8 +175,18 @@ export default function QueuePage() {
       if (data.success) {
         toast.success('تم تأكيد المريض للطبيب بنجاح')
         fetchQueue()
+        setShowPaymentModal(false)
+        setPaymentCheck(null)
+        setSelectedQueueItem(null)
       } else {
-        toast.error(data.error || 'فشل التأكيد')
+        if (data.requiredActions && data.requiredActions.length > 0) {
+          // Show payment modal with required actions
+          setPaymentCheck(data)
+          setSelectedQueueItem(queue.find(q => q.id === queueId) || null)
+          setShowPaymentModal(true)
+        } else {
+          toast.error(data.error || 'فشل التأكيد')
+        }
       }
     } catch (error) {
       console.error('Error confirming to doctor:', error)
@@ -352,9 +400,10 @@ export default function QueuePage() {
                       </button>
                       {doctors.length > 0 && (
                         <select
+                          data-queue-id={item.id}
                           onChange={(e) => {
                             if (e.target.value) {
-                              confirmToDoctor(item.id, e.target.value)
+                              checkPaymentBeforeConfirm(item, e.target.value)
                             }
                           }}
                           disabled={confirmingToDoctor === item.id}
@@ -395,6 +444,136 @@ export default function QueuePage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Payment Verification Modal */}
+      {showPaymentModal && selectedQueueItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">التحقق من الدفع</h2>
+            </div>
+            <div className="p-6">
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <User size={24} className="text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">{selectedQueueItem.patient_name}</h3>
+                    <p className="text-sm text-gray-500">{selectedQueueItem.patient_phone}</p>
+                  </div>
+                </div>
+              </div>
+
+              {paymentCheck && (
+                <div className="space-y-4">
+                  <div className={`p-4 rounded-xl ${
+                    paymentCheck.canProceed 
+                      ? 'bg-green-50 border border-green-200' 
+                      : 'bg-yellow-50 border border-yellow-200'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      {paymentCheck.canProceed ? (
+                        <CheckCircle className="text-green-600 mt-1" size={20} />
+                      ) : (
+                        <AlertCircle className="text-yellow-600 mt-1" size={20} />
+                      )}
+                      <div>
+                        <p className="font-bold text-gray-900 mb-1">
+                          {paymentCheck.canProceed ? 'يمكن المتابعة' : 'لا يمكن المتابعة'}
+                        </p>
+                        <p className="text-sm text-gray-700">{paymentCheck.reason}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {!paymentCheck.canProceed && paymentCheck.requiredActions && (
+                    <div className="space-y-2">
+                      <p className="font-bold text-gray-900">الإجراءات المطلوبة:</p>
+                      {paymentCheck.requiredActions.includes('payment') && (
+                        <button
+                          onClick={() => {
+                            router.push(`/dashboard/reception/billing?patient_id=${selectedQueueItem.patient_id}`)
+                          }}
+                          className="w-full bg-primary hover:bg-primary-dark text-white px-4 py-3 rounded-lg font-bold transition-colors"
+                        >
+                          دفع الرسوم
+                        </button>
+                      )}
+                      {paymentCheck.requiredActions.includes('insurance_approval') && (
+                        <button
+                          onClick={() => {
+                            router.push(`/dashboard/reception/insurance/request?patient_id=${selectedQueueItem.patient_id}`)
+                          }}
+                          className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg font-bold transition-colors"
+                        >
+                          طلب موافقة التأمين
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {paymentCheck.paymentStatus && (
+                    <div className="p-4 bg-gray-50 rounded-xl">
+                      <p className="text-sm font-bold text-gray-700 mb-2">حالة الدفع:</p>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">تم الدفع:</span>
+                          <span className={paymentCheck.paymentStatus.paid ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                            {paymentCheck.paymentStatus.paid ? 'نعم' : 'لا'}
+                          </span>
+                        </div>
+                        {paymentCheck.paymentStatus.amount > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">المبلغ:</span>
+                            <span className="font-bold">{paymentCheck.paymentStatus.amount} ريال</span>
+                          </div>
+                        )}
+                        {paymentCheck.paymentStatus.insuranceApproved !== undefined && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">موافقة التأمين:</span>
+                            <span className={paymentCheck.paymentStatus.insuranceApproved ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                              {paymentCheck.paymentStatus.insuranceApproved ? 'موجودة' : 'غير موجودة'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-4 mt-6 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowPaymentModal(false)
+                    setPaymentCheck(null)
+                    setSelectedQueueItem(null)
+                  }}
+                  className="flex-1 px-4 py-3 border border-gray-200 text-gray-600 font-bold rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  إلغاء
+                </button>
+                {paymentCheck?.canProceed && (
+                  <button
+                    onClick={() => {
+                      if (selectedQueueItem && doctors.length > 0) {
+                        const doctorSelect = document.querySelector(`select[data-queue-id="${selectedQueueItem.id}"]`) as HTMLSelectElement
+                        if (doctorSelect && doctorSelect.value) {
+                          confirmToDoctor(selectedQueueItem.id, doctorSelect.value)
+                        }
+                      }
+                    }}
+                    className="flex-1 bg-primary hover:bg-primary-dark text-white px-4 py-3 rounded-lg font-bold transition-colors"
+                  >
+                    المتابعة
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
