@@ -157,7 +157,7 @@ export default function DoctorPage() {
           },
           (payload) => {
             // Real-time update when appointment changes (silent update, no full refresh)
-            fetchDashboardData(true) // silent = true (no loading spinner)
+            fetchDashboardData() // silent = true (no loading spinner)
           }
         )
         .subscribe()
@@ -174,7 +174,7 @@ export default function DoctorPage() {
           },
           (payload) => {
             // Real-time update when queue changes (silent update, no full refresh)
-            fetchDashboardData(true) // silent = true
+            fetchDashboardData() // silent = true
           }
         )
         .subscribe()
@@ -192,7 +192,7 @@ export default function DoctorPage() {
           },
           (payload) => {
             // Real-time update when clinic status changes (silent update, no full refresh)
-            fetchDashboardData(true) // silent = true
+            fetchDashboardData() // silent = true
           }
         )
         .subscribe()

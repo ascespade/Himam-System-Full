@@ -64,6 +64,10 @@ interface Insurance {
   insurance_company?: string
   insurance_number?: string
   policy_number?: string
+  member_id?: string
+  coverage_percentage?: number
+  effective_date?: string
+  expiry_date?: string
   insurance_expiry?: string
 }
 
