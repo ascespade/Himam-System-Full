@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Circle, Plus, Target, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 // import { usePatientContext } from '@/contexts/PatientContext' // TODO: Re-implement
 // import PatientSelector from '@/components/PatientSelector' // TODO: Re-implement
 
@@ -31,12 +32,15 @@ interface TreatmentPlan {
 }
 
 export default function TreatmentPlansPage() {
-  const { currentPatient } = usePatientContext()
+  const searchParams = useSearchParams()
+  const patientId = searchParams.get('patient_id')
+  // const { currentPatient } = usePatientContext() // TODO: Re-implement
+  const [currentPatient, setCurrentPatient] = useState<{ id: string; name: string; phone: string } | null>(null)
   const [plans, setPlans] = useState<TreatmentPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState({
-    patient_id: '',
+    patient_id: patientId || '',
     title: '',
     description: '',
     start_date: new Date().toISOString().split('T')[0],
@@ -44,12 +48,20 @@ export default function TreatmentPlansPage() {
     goals: [] as Omit<Goal, 'id'>[]
   })
 
-  // Update patient_id when currentPatient changes
+  // Fetch patient if patient_id is provided
   useEffect(() => {
-    if (currentPatient) {
-      setFormData(prev => ({ ...prev, patient_id: currentPatient.id }))
+    if (patientId) {
+      fetch(`/api/patients/${patientId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setCurrentPatient(data.data)
+            setFormData(prev => ({ ...prev, patient_id: patientId }))
+          }
+        })
+        .catch(err => console.error('Error fetching patient:', err))
     }
-  }, [currentPatient])
+  }, [patientId])
 
   useEffect(() => {
     fetchPlans()
@@ -195,7 +207,28 @@ export default function TreatmentPlansPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <PatientSelector />
+                  {/* <PatientSelector /> TODO: Re-implement */}
+                  <input
+                    type="text"
+                    placeholder="أدخل معرف المريض أو ابحث..."
+                    value={formData.patient_id}
+                    onChange={(e) => {
+                      setFormData({ ...formData, patient_id: e.target.value })
+                      if (e.target.value) {
+                        fetch(`/api/patients/${e.target.value}`)
+                          .then(res => res.json())
+                          .then(data => {
+                            if (data.success) {
+                              setCurrentPatient(data.data)
+                            }
+                          })
+                          .catch(() => setCurrentPatient(null))
+                      } else {
+                        setCurrentPatient(null)
+                      }
+                    }}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
                   <p className="text-xs text-gray-500">يرجى اختيار مريض لإنشاء خطة علاجية</p>
                 </div>
               )}
