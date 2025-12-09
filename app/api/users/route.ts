@@ -4,7 +4,7 @@ import { successResponse, paginatedResponse, errorResponse } from '@/shared/util
 import { HTTP_STATUS } from '@/shared/constants'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createUserSchema } from '@/core/validations/schemas'
-import { userService } from '@/core/services/user.service'
+import { userService } from '@/core/services'
 
 export const dynamic = 'force-dynamic'
 
