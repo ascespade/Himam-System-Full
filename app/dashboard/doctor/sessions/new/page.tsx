@@ -3,13 +3,13 @@
 /**
  * New Session Page
  * صفحة إنشاء جلسة جديدة
- * تلقائياً تربط الجلسة بالمريض المختار في PatientContext
+ * TODO: Re-implement PatientContext integration
  */
 
 import { Calendar, Clock, FileText, Save, X } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { usePatientContext } from '@/contexts/PatientContext'
+// import { usePatientContext } from '@/contexts/PatientContext' // TODO: Re-implement
 
 const SESSION_TYPES = [
   { value: 'session', label: 'جلسة علاجية' },
@@ -27,10 +27,13 @@ const SESSION_TYPES = [
 
 export default function NewSessionPage() {
   const router = useRouter()
-  const { currentPatient } = usePatientContext()
+  const searchParams = useSearchParams()
+  const patientId = searchParams.get('patient_id')
+  // const { currentPatient } = usePatientContext() // TODO: Re-implement
+  const [currentPatient, setCurrentPatient] = useState<{ id: string; name: string; phone: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    patient_id: currentPatient?.id || '',
+    patient_id: patientId || '',
     appointment_id: '',
     date: new Date().toISOString().slice(0, 16),
     duration: 30,
@@ -41,19 +44,20 @@ export default function NewSessionPage() {
     notes: ''
   })
 
-  // Update patient_id when currentPatient changes
+  // Fetch patient if patient_id is provided
   useEffect(() => {
-    if (currentPatient) {
-      setFormData(prev => ({ ...prev, patient_id: currentPatient.id }))
+    if (patientId) {
+      fetch(`/api/patients/${patientId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setCurrentPatient(data.data)
+            setFormData(prev => ({ ...prev, patient_id: patientId }))
+          }
+        })
+        .catch(err => console.error('Error fetching patient:', err))
     }
-  }, [currentPatient])
-
-  // If no patient selected, redirect to doctor page
-  useEffect(() => {
-    if (!currentPatient) {
-      router.push('/dashboard/doctor')
-    }
-  }, [currentPatient, router])
+  }, [patientId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

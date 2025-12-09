@@ -3,12 +3,8 @@
 /**
  * Doctor Dashboard Layout
  * Layout خاص بالطبيب مع Patient Context Provider
+ * TODO: Re-implement PatientContext, PatientContextPanel, PatientSelector, AIAssistant
  */
-
-import { PatientProvider } from '@/contexts/PatientContext'
-import PatientContextPanel from '@/components/PatientContextPanel'
-import PatientSelector from '@/components/PatientSelector'
-import AIAssistant from '@/components/AIAssistant'
 
 export default function DoctorLayout({
   children,
@@ -16,23 +12,21 @@ export default function DoctorLayout({
   children: React.ReactNode
 }) {
   return (
-    <PatientProvider>
-      <div className="p-8">
-        {/* Patient Selector - Always visible */}
-        <div className="mb-6">
-          <PatientSelector />
-        </div>
+    <div className="p-8">
+      {/* TODO: Patient Selector - Always visible */}
+      {/* <div className="mb-6">
+        <PatientSelector />
+      </div> */}
 
-        {/* Patient Context Panel - Shows when patient is selected */}
-        <PatientContextPanel />
+      {/* TODO: Patient Context Panel - Shows when patient is selected */}
+      {/* <PatientContextPanel /> */}
 
-        {/* Page Content */}
-        {children}
+      {/* Page Content */}
+      {children}
 
-        {/* AI Assistant - Floating button */}
-        <AIAssistant />
-      </div>
-    </PatientProvider>
+      {/* TODO: AI Assistant - Floating button */}
+      {/* <AIAssistant /> */}
+    </div>
   )
 }
 

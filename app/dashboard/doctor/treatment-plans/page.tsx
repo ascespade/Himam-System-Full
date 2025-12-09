@@ -2,8 +2,8 @@
 
 import { CheckCircle2, Circle, Plus, Target, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { usePatientContext } from '@/contexts/PatientContext'
-import PatientSelector from '@/components/PatientSelector'
+// import { usePatientContext } from '@/contexts/PatientContext' // TODO: Re-implement
+// import PatientSelector from '@/components/PatientSelector' // TODO: Re-implement
 
 interface Goal {
   id: string
