@@ -132,6 +132,7 @@ export function validateRequestBody<T extends Record<string, unknown>>(
 
 /**
  * Safely parses JSON request body
+ * @deprecated Use parseRequestBody from @/core/api/middleware instead
  */
 export async function parseRequestBody<T = unknown>(request: Request): Promise<T> {
   try {
