@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { withAuth, getQueryParams, getPaginationParams, parseRequestBody } from '@/core/api/middleware'
+import { successResponse, paginatedResponse, errorResponse } from '@/shared/utils/api'
+import { HTTP_STATUS } from '@/shared/constants'
 import { supabaseAdmin } from '@/lib/supabase'
+import { createUserSchema } from '@/core/validations/schemas'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,84 +11,61 @@ export const dynamic = 'force-dynamic'
  * GET /api/users
  * Get all users with optional filtering
  */
-export async function GET(req: NextRequest) {
-  try {
-    const searchParams = req.nextUrl.searchParams
-    const role = searchParams.get('role')
-    const search = searchParams.get('search')
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = (page - 1) * limit
+export const GET = withAuth(async (context) => {
+  const { request } = context
+  const searchParams = getQueryParams(request)
+  const { page, limit, offset } = getPaginationParams(request)
 
-    let query = supabaseAdmin
-      .from('users')
-      .select('*', { count: 'exact' })
+  const role = searchParams.get('role')
+  const search = searchParams.get('search')
 
-    // Filter by role
-    if (role && role !== 'all') {
-      query = query.eq('role', role)
-    }
+  let query = supabaseAdmin
+    .from('users')
+    .select('*', { count: 'exact' })
 
-    // Search filter
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`)
-    }
-
-    // Pagination
-    query = query
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    const { data, error, count } = await query
-
-    if (error) throw error
-
-    return NextResponse.json({
-      success: true,
-      data: data || [],
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit)
-      }
-    })
-  } catch (error: any) {
-    console.error('Error fetching users:', error)
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    )
+  // Filter by role
+  if (role && role !== 'all') {
+    query = query.eq('role', role)
   }
-}
+
+  // Search filter
+  if (search) {
+    query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`)
+  }
+
+  // Pagination
+  const { data, error, count } = await query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error) throw error
+
+  return NextResponse.json(
+    paginatedResponse(data || [], page, limit, count || 0)
+  )
+}, {
+  requireRoles: ['admin'], // Only admins can list all users
+})
+
+import { createUserSchema } from '@/core/validations/schemas'
+import { parseRequestBody } from '@/core/api/middleware'
+import { HTTP_STATUS } from '@/shared/constants'
+import { errorResponse } from '@/shared/utils/api'
 
 /**
  * POST /api/users
  * Create a new user
  * Creates both auth user and public.users record
  */
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json()
-    const { name, email, phone, role, password } = body
+export const POST = withAuth(async (context) => {
+  const { request } = context
 
-    // Validation
-    if (!name || !email || !phone || !role) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
+  // Parse and validate request body
+  const body = await parseRequestBody(request)
+  const validated = createUserSchema.parse(body)
+  const { name, email, phone, role, password } = validated
 
-    // Password is required for authentication
-    if (!password) {
-      return NextResponse.json(
-        { success: false, error: 'Password is required' },
-        { status: 400 }
-      )
-    }
-
-    // Check if user exists in auth.users
+  // Check if user exists in auth.users
     const { data: existingAuthUser } = await supabaseAdmin.auth.admin.listUsers()
     const authUserExists = existingAuthUser?.users?.some(u => u.email === email)
 
@@ -198,16 +179,13 @@ export async function POST(req: NextRequest) {
       }, { status: 201 })
     }
 
-    return NextResponse.json({
-      success: true,
-      data: updatedUser
-    }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating user:', error)
     return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
+      successResponse(updatedUser),
+      { status: HTTP_STATUS.CREATED }
     )
+  },
+  {
+    requireRoles: ['admin'], // Only admins can create users
   }
-}
+)
 
