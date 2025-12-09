@@ -251,7 +251,7 @@ export default function Sidebar() {
   }, {} as Record<string, typeof menuItems>)
 
   return (
-    <aside className="w-64 bg-white border-l border-gray-100 h-screen fixed right-0 top-0 flex flex-col shadow-sm z-30 hidden md:flex">
+    <aside className="w-64 bg-white border-l border-gray-100 h-screen fixed right-0 top-0 flex flex-col shadow-sm z-50 hidden md:flex">
       <div className="p-6 flex items-center gap-3 mb-6">
         <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold text-xl">
           H
