@@ -107,11 +107,18 @@ export default function Sidebar() {
       { category: 'الإدارة', name: 'الإعدادات', href: '/dashboard/admin/settings', icon: Settings, roles: ['admin'] },
     ],
     
-    // Reception & Staff
+    // Reception & Staff Module
     reception: [
-      { category: 'الاستقبال', name: 'الاستقبال', href: '/dashboard/reception', icon: UserCheck, roles: ['admin', 'staff', 'reception'] },
-      { category: 'التأمين', name: 'التأمينات', href: '/dashboard/insurance', icon: Shield, roles: ['admin', 'staff', 'insurance'] },
-      { category: 'المالية', name: 'الفواتير', href: '/dashboard/billing', icon: DollarSign, roles: ['admin', 'staff', 'reception'] },
+      { category: 'الرئيسية', name: 'لوحة التحكم', href: '/dashboard/reception', icon: LayoutDashboard, roles: ['admin', 'staff', 'reception'] },
+      { category: 'الطابور', name: 'طابور الاستقبال', href: '/dashboard/reception/queue', icon: UserCheck, roles: ['admin', 'staff', 'reception'] },
+      { category: 'المرضى', name: 'إدارة المرضى', href: '/dashboard/reception/patients', icon: Users, roles: ['admin', 'staff', 'reception'] },
+      { category: 'المرضى', name: 'إضافة مريض جديد', href: '/dashboard/reception/patients/new', icon: Plus, roles: ['admin', 'staff', 'reception'] },
+      { category: 'المواعيد', name: 'إدارة المواعيد', href: '/dashboard/reception/appointments', icon: Calendar, roles: ['admin', 'staff', 'reception'] },
+      { category: 'المواعيد', name: 'حجز موعد', href: '/dashboard/reception/book-appointment', icon: Calendar, roles: ['admin', 'staff', 'reception'] },
+      { category: 'المالية', name: 'الفواتير والمدفوعات', href: '/dashboard/reception/billing', icon: DollarSign, roles: ['admin', 'staff', 'reception'] },
+      { category: 'التأمين', name: 'إدارة التأمين', href: '/dashboard/reception/insurance', icon: Shield, roles: ['admin', 'staff', 'reception'] },
+      { category: 'التقارير', name: 'التقارير', href: '/dashboard/reception/reports', icon: BarChart, roles: ['admin', 'staff', 'reception'] },
+      { category: 'الإعدادات', name: 'إعدادات الاستقبال', href: '/dashboard/reception/settings', icon: Settings, roles: ['admin', 'staff', 'reception'] },
     ],
 
     // Doctor Module - Organized by categories
