@@ -11,6 +11,8 @@ export type NotificationType =
   | 'invoice'
   | 'payment'
   | 'insurance_claim'
+  | 'insurance_claim_submitted'
+  | 'insurance_claim_approved'
   | 'lab_result'
   | 'prescription'
   | 'message'
