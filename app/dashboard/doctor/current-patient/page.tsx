@@ -61,7 +61,9 @@ interface Appointment {
 
 interface Insurance {
   insurance_provider?: string
+  insurance_company?: string
   insurance_number?: string
+  policy_number?: string
   insurance_expiry?: string
 }
 
