@@ -2,14 +2,8 @@
 
 import { CheckCircle2, Circle, Plus, Target, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
-<<<<<<< HEAD
 import { usePatientContext } from '@/contexts/PatientContext'
 import PatientSelector from '@/components/PatientSelector'
-=======
-import { useSearchParams } from 'next/navigation'
-// import { usePatientContext } from '@/contexts/PatientContext' // TODO: Re-implement
-// import PatientSelector from '@/components/PatientSelector' // TODO: Re-implement
->>>>>>> cursor/fix-code-errors-and-warnings-8041
 
 interface Goal {
   id: string
@@ -37,23 +31,12 @@ interface TreatmentPlan {
 }
 
 export default function TreatmentPlansPage() {
-<<<<<<< HEAD
   const { currentPatient } = usePatientContext()
-=======
-  const searchParams = useSearchParams()
-  const patientId = searchParams.get('patient_id')
-  // const { currentPatient } = usePatientContext() // TODO: Re-implement
-  const [currentPatient, setCurrentPatient] = useState<{ id: string; name: string; phone: string } | null>(null)
->>>>>>> cursor/fix-code-errors-and-warnings-8041
   const [plans, setPlans] = useState<TreatmentPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState({
-<<<<<<< HEAD
     patient_id: '',
-=======
-    patient_id: patientId || '',
->>>>>>> cursor/fix-code-errors-and-warnings-8041
     title: '',
     description: '',
     start_date: new Date().toISOString().split('T')[0],
@@ -61,29 +44,12 @@ export default function TreatmentPlansPage() {
     goals: [] as Omit<Goal, 'id'>[]
   })
 
-<<<<<<< HEAD
   // Update patient_id when currentPatient changes
   useEffect(() => {
     if (currentPatient) {
       setFormData(prev => ({ ...prev, patient_id: currentPatient.id }))
     }
   }, [currentPatient])
-=======
-  // Fetch patient if patient_id is provided
-  useEffect(() => {
-    if (patientId) {
-      fetch(`/api/patients/${patientId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            setCurrentPatient(data.data)
-            setFormData(prev => ({ ...prev, patient_id: patientId }))
-          }
-        })
-        .catch(err => console.error('Error fetching patient:', err))
-    }
-  }, [patientId])
->>>>>>> cursor/fix-code-errors-and-warnings-8041
 
   useEffect(() => {
     fetchPlans()
@@ -229,32 +195,7 @@ export default function TreatmentPlansPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-<<<<<<< HEAD
                   <PatientSelector />
-=======
-                  {/* <PatientSelector /> TODO: Re-implement */}
-                  <input
-                    type="text"
-                    placeholder="أدخل معرف المريض أو ابحث..."
-                    value={formData.patient_id}
-                    onChange={(e) => {
-                      setFormData({ ...formData, patient_id: e.target.value })
-                      if (e.target.value) {
-                        fetch(`/api/patients/${e.target.value}`)
-                          .then(res => res.json())
-                          .then(data => {
-                            if (data.success) {
-                              setCurrentPatient(data.data)
-                            }
-                          })
-                          .catch(() => setCurrentPatient(null))
-                      } else {
-                        setCurrentPatient(null)
-                      }
-                    }}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
->>>>>>> cursor/fix-code-errors-and-warnings-8041
                   <p className="text-xs text-gray-500">يرجى اختيار مريض لإنشاء خطة علاجية</p>
                 </div>
               )}

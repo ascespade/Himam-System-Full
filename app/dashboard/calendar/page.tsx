@@ -3,11 +3,6 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { useEffect, useState } from 'react'
 import AdminCalendar from '@/components/AdminCalendar'
-<<<<<<< HEAD
-import DoctorCalendar from '@/components/DoctorCalendar'
-=======
-// import DoctorCalendar from '@/components/DoctorCalendar' // TODO: Create DoctorCalendar component
->>>>>>> cursor/fix-code-errors-and-warnings-8041
 
 export default function CalendarPage() {
   const [userRole, setUserRole] = useState<string | null>(null)
@@ -61,18 +56,6 @@ export default function CalendarPage() {
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6">جدول المواعيد</h1>
-<<<<<<< HEAD
-      {userRole === 'doctor' ? <DoctorCalendar /> : <AdminCalendar />}
-=======
-      {userRole === 'doctor' ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">تقويم الطبيب</h2>
-          <p className="text-gray-500">تقويم الطبيب قريباً...</p>
-        </div>
-      ) : (
-        <AdminCalendar />
-      )}
->>>>>>> cursor/fix-code-errors-and-warnings-8041
     </div>
   )
 }
