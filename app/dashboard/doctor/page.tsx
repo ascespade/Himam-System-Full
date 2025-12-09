@@ -82,7 +82,7 @@ export default function DoctorPage() {
   )
 
   // Fetch dashboard data function
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (silent: boolean = false) => {
     try {
       const [statsRes, appointmentsRes] = await Promise.all([
         fetch('/api/doctor/dashboard/stats'),

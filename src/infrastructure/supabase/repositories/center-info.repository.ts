@@ -1,4 +1,4 @@
-import { supabase } from '@/lib'
+import { supabaseAdmin } from '@/lib'
 
 export interface CenterInfo {
   id: string
@@ -29,7 +29,7 @@ export interface CenterInfo {
 
 export class CenterInfoRepository {
   async getCenterInfo(): Promise<CenterInfo | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('center_info')
       .select('*')
       .single()
@@ -43,7 +43,7 @@ export class CenterInfoRepository {
   }
 
   async updateCenterInfo(id: string, updates: Partial<CenterInfo>): Promise<CenterInfo | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('center_info')
       .update(updates)
       .eq('id', id)

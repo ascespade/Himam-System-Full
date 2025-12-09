@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Log validation
-      await supabaseAdmin
+      const { error: logError } = await supabaseAdmin
         .from('session_validation_logs')
         .insert({
           session_id: null, // Will be updated after session creation
@@ -166,7 +166,10 @@ export async function POST(req: NextRequest) {
           ai_confidence: validation.aiConfidence,
           validated_by: user.id
         })
-        .catch(err => console.error('Failed to log validation:', err))
+        
+      if (logError) {
+        console.error('Failed to log validation:', logError)
+      }
     } catch (error) {
       console.error('Session validation error:', error)
       // Continue if validation service fails (graceful degradation)
@@ -203,14 +206,17 @@ export async function POST(req: NextRequest) {
 
     // Update validation log with session ID
     if (data.id) {
-      await supabaseAdmin
+      const { error: updateError } = await supabaseAdmin
         .from('session_validation_logs')
         .update({ session_id: data.id })
         .is('session_id', null)
         .eq('validated_by', user.id)
         .order('validated_at', { ascending: false })
         .limit(1)
-        .catch(err => console.error('Failed to update validation log:', err))
+        
+      if (updateError) {
+        console.error('Failed to update validation log:', updateError)
+      }
     }
 
     // Learn from successful session creation (if insurance claim exists)

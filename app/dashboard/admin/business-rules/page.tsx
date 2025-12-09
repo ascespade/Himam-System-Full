@@ -268,8 +268,6 @@ function RuleForm({
       is_active: formData.is_active !== undefined ? formData.is_active : true,
       applies_to: formData.applies_to || ['all'],
       error_message: formData.error_message,
-      created_at: rule?.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString()
     })
   }
 

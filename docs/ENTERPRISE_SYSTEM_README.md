@@ -430,15 +430,9 @@ npx tsc --noEmit
 npm run lint
 ```
 
-### Testing Edge Functions Locally
+### Testing Edge Functions
 
-```bash
-# Start Supabase locally
-supabase start
-
-# Serve function locally
-supabase functions serve whatsapp --no-verify-jwt
-```
+Edge functions are deployed to Supabase Cloud and can be tested via the Supabase Dashboard or by calling the function endpoints directly.
 
 ---
 

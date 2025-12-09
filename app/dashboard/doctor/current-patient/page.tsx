@@ -62,6 +62,11 @@ interface Appointment {
 interface Insurance {
   insurance_provider?: string
   insurance_number?: string
+  policy_number?: string
+  member_id?: string
+  coverage_percentage?: number
+  effective_date?: string
+  expiry_date?: string
   insurance_expiry?: string
 }
 
@@ -548,11 +553,11 @@ export default function CurrentPatientPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 bg-gray-50 rounded-lg">
                       <span className="text-sm text-gray-500">شركة التأمين</span>
-                      <p className="font-medium mt-1">{insurance.insurance_company || insurance.insurance_provider || 'غير محدد'}</p>
+                      <p className="font-medium mt-1">{insurance.insurance_provider || 'غير محدد'}</p>
                     </div>
                     <div className="p-4 bg-gray-50 rounded-lg">
                       <span className="text-sm text-gray-500">رقم البوليصة</span>
-                      <p className="font-medium mt-1">{insurance.policy_number || 'غير محدد'}</p>
+                      <p className="font-medium mt-1">{insurance.policy_number || insurance.insurance_number || 'غير محدد'}</p>
                     </div>
                     {insurance.member_id && (
                       <div className="p-4 bg-gray-50 rounded-lg">

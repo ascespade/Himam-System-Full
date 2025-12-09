@@ -24,6 +24,7 @@
       "@/lib": ["./src/lib/index.ts"],
       "@/lib/*": ["./src/lib/*"],
       "@/infrastructure/*": ["./src/infrastructure/*"],
+      "@/core/*": ["./src/core/*"],
       "@/shared": ["./src/shared/index.ts"],
       "@/shared/*": ["./src/shared/*"],
       "@/components/*": ["./components/*"],

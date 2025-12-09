@@ -27,6 +27,8 @@ const nextConfig = {
       '@/lib': path.resolve(__dirname, 'src/lib'),
       '@/shared': path.resolve(__dirname, 'src/shared'),
       '@/infrastructure': path.resolve(__dirname, 'src/infrastructure'),
+      '@/core': path.resolve(__dirname, 'src/core'),
+      '@/contexts': path.resolve(__dirname, 'src/contexts'),
       '@/components': path.resolve(__dirname, 'components'),
       '@/app': path.resolve(__dirname, 'app'),
     }

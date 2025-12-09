@@ -1,4 +1,4 @@
-import { supabase } from '@/lib'
+import { supabaseAdmin } from '@/lib'
 
 export type ContentItemType = 'service' | 'testimonial' | 'statistic' | 'value' | 'feature' | 'social_media'
 
@@ -32,7 +32,7 @@ export class ContentItemsRepository {
     featured?: boolean
     limit?: number
   }): Promise<ContentItem[]> {
-    let query = supabase
+    let query = supabaseAdmin
       .from('content_items')
       .select('*')
       .eq('type', type)
@@ -61,7 +61,7 @@ export class ContentItemsRepository {
    * Get single content item by ID
    */
   async getById(id: string): Promise<ContentItem | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('content_items')
       .select('*')
       .eq('id', id)
