@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSettings, updateSettings } from '@/lib/config'
 import { supabaseAdmin } from '@/lib'
-import { successResponse, errorResponse, parseRequestBody } from '@/shared/utils/api'
+import { successResponse, errorResponse, parseRequestBody.*from '@/core/api/middleware'
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '@/shared/constants'
 import type { SystemSetting } from '@/shared/types'
 
