@@ -1,65 +1,152 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
-import { sendTextMessage } from '@/lib/whatsapp'
+/**
+ * Appointment API Route - Individual Appointment Operations
+ * GET, PUT, DELETE operations for specific appointment
+ */
 
-export async function PUT(
-  request: NextRequest,
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib'
+import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
+import { HTTP_STATUS } from '@/shared/constants'
+
+/**
+ * GET /api/appointments/:id
+ * Get appointment by ID
+ */
+export async function GET(
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id
-  const { status, note } = await request.json()
-
-  if (!['confirmed', 'cancelled', 'completed'].includes(status)) {
-    return NextResponse.json({ success: false, error: 'Invalid status' }, { status: 400 })
-  }
-
   try {
-    // 1. Update Appointment
+    const { id } = params
+
+    if (!id) {
+      return NextResponse.json(
+        errorResponse('Appointment ID is required'),
+        { status: HTTP_STATUS.BAD_REQUEST }
+      )
+    }
+
     const { data: appointment, error } = await supabaseAdmin
       .from('appointments')
-      .update({ status, notes: note ? note : undefined })
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          errorResponse('Appointment not found'),
+          { status: HTTP_STATUS.NOT_FOUND }
+        )
+      }
+      throw error
+    }
+
+    return NextResponse.json(successResponse(appointment))
+  } catch (error: unknown) {
+    return handleApiError(error)
+  }
+}
+
+/**
+ * PUT /api/appointments/:id
+ * Update appointment
+ */
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params
+    const body = await req.json()
+
+    if (!id) {
+      return NextResponse.json(
+        errorResponse('Appointment ID is required'),
+        { status: HTTP_STATUS.BAD_REQUEST }
+      )
+    }
+
+    // Remove id from body if present
+    const { id: _, ...updateData } = body
+
+    // Validate date if provided
+    if (updateData.date && updateData.time) {
+      const appointmentDate = new Date(`${updateData.date}T${updateData.time}`)
+      const now = new Date()
+      if (appointmentDate < now) {
+        return NextResponse.json(
+          errorResponse('Cannot update appointment to past date'),
+          { status: HTTP_STATUS.BAD_REQUEST }
+        )
+      }
+    }
+
+    const { data: appointment, error } = await supabaseAdmin
+      .from('appointments')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', id)
       .select()
       .single()
 
-    if (error) throw error
-
-    // 2. Send WhatsApp Notification
-    if (appointment && appointment.phone) {
-      let message = ''
-      if (status === 'confirmed') {
-        message = `✅ *تم تأكيد موعدك!*\n\nعزيزي/تي ${appointment.patient_name}،\nتم تأكيد موعدك مع ${appointment.specialist} بتاريخ ${new Date(appointment.date).toLocaleString('ar-SA')}.\n\nننتظر زيارتكم في مركز الهمم.`
-      } else if (status === 'cancelled') {
-        message = `❌ *تحديث بخصوص موعدك*\n\nعزيزي/تي ${appointment.patient_name}،\nنأسف لإبلاغكم بأنه تم إلغاء الموعد المحدد بتاريخ ${new Date(appointment.date).toLocaleString('ar-SA')}.\nيرجى التواصل معنا لتحديد موعد جديد.`
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          errorResponse('Appointment not found'),
+          { status: HTTP_STATUS.NOT_FOUND }
+        )
       }
-
-      if (message) {
-        await sendTextMessage(appointment.phone, message)
-      }
+      throw error
     }
 
-    return NextResponse.json({ success: true, data: appointment })
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json(successResponse(appointment))
+  } catch (error: unknown) {
+    return handleApiError(error)
   }
 }
 
+/**
+ * DELETE /api/appointments/:id
+ * Cancel appointment (soft delete by setting status to cancelled)
+ */
 export async function DELETE(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id
-
   try {
+    const { id } = params
+
+    if (!id) {
+      return NextResponse.json(
+        errorResponse('Appointment ID is required'),
+        { status: HTTP_STATUS.BAD_REQUEST }
+      )
+    }
+
+    // Soft delete by setting status to cancelled
     const { error } = await supabaseAdmin
       .from('appointments')
-      .delete()
+      .update({
+        status: 'cancelled',
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', id)
 
-    if (error) throw error
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          errorResponse('Appointment not found'),
+          { status: HTTP_STATUS.NOT_FOUND }
+        )
+      }
+      throw error
+    }
 
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json(successResponse({ id, cancelled: true }))
+  } catch (error: unknown) {
+    return handleApiError(error)
   }
 }
