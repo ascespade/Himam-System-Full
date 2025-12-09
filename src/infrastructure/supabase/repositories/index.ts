@@ -16,6 +16,6 @@ export { guardianRepository } from './guardian.repository'
 export { patientRepository } from './patient.repository'
 export { appointmentRepository } from './appointment.repository'
 export { medicalRecordRepository } from './medical-record.repository'
-export { billingRepository } from './billing.repository'
+// export { billingRepository } from './billing.repository' // TODO: Create billing repository
 
 
