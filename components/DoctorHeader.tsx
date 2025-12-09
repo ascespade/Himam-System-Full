@@ -105,7 +105,7 @@ export default function DoctorHeader() {
           setActiveSession({
             id: sessionData.id,
             patient_id: sessionData.patient_id,
-            patient_name: sessionData.patients?.name || 'مريض',
+            patient_name: (Array.isArray(sessionData.patients) && sessionData.patients[0]?.name) || 'مريض',
             started_at: sessionData.date,
             duration_minutes: Math.floor(durationSeconds / 60),
           })
