@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Calendar, CheckCircle, Clock, Phone, Search, User } from 'lucide-react'
+import { Bell, Calendar, CheckCircle, Clock, Phone, Search, User, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -131,29 +131,69 @@ export default function ReceptionPage() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-2">شاشة الاستقبال</h1>
-        <p className="text-gray-500 text-lg">إدارة طابور المرضى والمواعيد</p>
+        <h1 className="text-4xl font-extrabold text-gray-900 mb-2">لوحة تحكم الاستقبال</h1>
+        <p className="text-gray-500 text-lg">نظرة شاملة على طابور المرضى والمواعيد</p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div
+          onClick={() => router.push('/dashboard/reception/queue')}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl bg-blue-100 text-blue-600">
+              <User size={24} />
+            </div>
+          </div>
           <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
           <div className="text-sm text-gray-500 mt-1">إجمالي اليوم</div>
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div
+          onClick={() => router.push('/dashboard/reception/queue')}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl bg-yellow-100 text-yellow-600">
+              <Clock size={24} />
+            </div>
+          </div>
           <div className="text-3xl font-bold text-yellow-600">{stats.waiting}</div>
           <div className="text-sm text-gray-500 mt-1">في الانتظار</div>
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div
+          onClick={() => router.push('/dashboard/reception/queue')}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl bg-primary/10 text-primary">
+              <CheckCircle size={24} />
+            </div>
+          </div>
           <div className="text-3xl font-bold text-primary">{stats.in_progress}</div>
           <div className="text-sm text-gray-500 mt-1">قيد المعالجة</div>
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div
+          onClick={() => router.push('/dashboard/reception/queue')}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl bg-green-100 text-green-600">
+              <CheckCircle size={24} />
+            </div>
+          </div>
           <div className="text-3xl font-bold text-green-600">{stats.completed}</div>
           <div className="text-sm text-gray-500 mt-1">مكتمل</div>
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div
+          onClick={() => router.push('/dashboard/reception/queue')}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl bg-red-100 text-red-600">
+              <XCircle size={24} />
+            </div>
+          </div>
           <div className="text-3xl font-bold text-red-600">{stats.cancelled}</div>
           <div className="text-sm text-gray-500 mt-1">ملغي/لم يحضر</div>
         </div>
