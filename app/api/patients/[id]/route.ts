@@ -1,57 +1,140 @@
+/**
+ * Patient API Route - Individual Patient Operations
+ * GET, PUT, DELETE operations for specific patient
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
+import { HTTP_STATUS } from '@/shared/constants'
 
 /**
- * PUT /api/patients/[id] - Update a patient
+ * GET /api/patients/:id
+ * Get patient by ID
  */
-export async function PUT(
-  request: NextRequest,
+export async function GET(
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await request.json()
     const { id } = params
 
-    const { data, error } = await supabaseAdmin
+    if (!id) {
+      return NextResponse.json(
+        errorResponse('Patient ID is required'),
+        { status: HTTP_STATUS.BAD_REQUEST }
+      )
+    }
+
+    const { data: patient, error } = await supabaseAdmin
       .from('patients')
-      .update({
-        name: body.name,
-        phone: body.phone,
-        nationality: body.nationality,
-        status: body.status,
-      })
+      .select('*')
       .eq('id', id)
-      .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          errorResponse('Patient not found'),
+          { status: HTTP_STATUS.NOT_FOUND }
+        )
+      }
+      throw error
+    }
 
-    return NextResponse.json(successResponse(data, 'تم تحديث المريض بنجاح'))
-  } catch (error: any) {
+    return NextResponse.json(successResponse(patient))
+  } catch (error: unknown) {
     return handleApiError(error)
   }
 }
 
 /**
- * DELETE /api/patients/[id] - Delete a patient
+ * PUT /api/patients/:id
+ * Update patient
+ */
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params
+    const body = await req.json()
+
+    if (!id) {
+      return NextResponse.json(
+        errorResponse('Patient ID is required'),
+        { status: HTTP_STATUS.BAD_REQUEST }
+      )
+    }
+
+    // Remove id from body if present
+    const { id: _, ...updateData } = body
+
+    const { data: patient, error } = await supabaseAdmin
+      .from('patients')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          errorResponse('Patient not found'),
+          { status: HTTP_STATUS.NOT_FOUND }
+        )
+      }
+      throw error
+    }
+
+    return NextResponse.json(successResponse(patient))
+  } catch (error: unknown) {
+    return handleApiError(error)
+  }
+}
+
+/**
+ * DELETE /api/patients/:id
+ * Delete patient (soft delete by setting status to inactive)
  */
 export async function DELETE(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const { id } = params
 
+    if (!id) {
+      return NextResponse.json(
+        errorResponse('Patient ID is required'),
+        { status: HTTP_STATUS.BAD_REQUEST }
+      )
+    }
+
+    // Soft delete by setting status to inactive
     const { error } = await supabaseAdmin
       .from('patients')
-      .delete()
+      .update({
+        status: 'inactive',
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', id)
 
-    if (error) throw error
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          errorResponse('Patient not found'),
+          { status: HTTP_STATUS.NOT_FOUND }
+        )
+      }
+      throw error
+    }
 
-    return NextResponse.json(successResponse(null, 'تم حذف المريض بنجاح'))
-  } catch (error: any) {
+    return NextResponse.json(successResponse({ id, deleted: true }))
+  } catch (error: unknown) {
     return handleApiError(error)
   }
 }

@@ -12,6 +12,9 @@ export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams
     const search = searchParams.get('search')
+    const user_id = searchParams.get('user_id')
+    const email = searchParams.get('email')
+    const phone = searchParams.get('phone')
     const limit = parseInt(searchParams.get('limit') || '100')
 
     let query = supabaseAdmin
@@ -20,7 +23,28 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(limit)
 
-    if (search) {
+    // If user_id is provided, try to find patient by matching user email/phone
+    if (user_id) {
+      // Get user info first
+      const { data: userData } = await supabaseAdmin
+        .from('users')
+        .select('email, phone')
+        .eq('id', user_id)
+        .single()
+
+      if (userData) {
+        // Try to find patient by email or phone
+        if (userData.email) {
+          query = query.or(`email.eq.${userData.email},phone.eq.${userData.phone || ''}`)
+        } else if (userData.phone) {
+          query = query.eq('phone', userData.phone)
+        }
+      }
+    } else if (email) {
+      query = query.eq('email', email)
+    } else if (phone) {
+      query = query.eq('phone', phone)
+    } else if (search) {
       query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`)
     }
 

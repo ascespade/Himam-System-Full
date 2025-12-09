@@ -9,8 +9,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
+<<<<<<< HEAD
 import DashboardWidget from '@/components/DashboardWidget'
 import { Activity, TrendingUp, Users, Calendar, DollarSign, AlertCircle } from 'lucide-react'
+=======
+// import DashboardWidget from '@/components/DashboardWidget' // TODO: Create DashboardWidget component
+import { Activity, TrendingUp, Users, Calendar, DollarSign, AlertCircle, FileText, UserCheck, CheckCircle } from 'lucide-react'
+>>>>>>> cursor/fix-code-errors-and-warnings-8041
 
 interface DashboardStats {
   [key: string]: number | string
@@ -137,6 +142,7 @@ export default function RoleDashboard() {
       </div>
 
       {/* Dashboard Widgets */}
+<<<<<<< HEAD
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {sortedWidgets.filter(w => w.is_visible).map((widget) => (
           <DashboardWidget
@@ -146,6 +152,16 @@ export default function RoleDashboard() {
           />
         ))}
       </div>
+=======
+      {/* TODO: Implement DashboardWidget component */}
+      {sortedWidgets.filter(w => w.is_visible).length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p className="text-gray-500 text-sm">Widgets coming soon...</p>
+          </div>
+        </div>
+      )}
+>>>>>>> cursor/fix-code-errors-and-warnings-8041
 
       {/* Real-time Activity Feed */}
       <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -166,6 +182,11 @@ function getDashboardTitle(role: string): string {
     reception: 'لوحة تحكم الاستقبال',
     insurance: 'لوحة تحكم التأمين',
     patient: 'لوحة تحكم المريض',
+<<<<<<< HEAD
+=======
+    guardian: 'لوحة تحكم ولي الأمر',
+    supervisor: 'لوحة تحكم المشرف الطبي',
+>>>>>>> cursor/fix-code-errors-and-warnings-8041
     staff: 'لوحة تحكم الموظف'
   }
   return titles[role] || 'لوحة التحكم'
@@ -195,6 +216,25 @@ function getQuickStats(role: string, stats: DashboardStats) {
       { label: 'موافق عليها اليوم', value: stats.approved_today || 0, icon: <TrendingUp size={24} />, iconBg: 'bg-green-100 text-green-600', trend: '+8', trendBg: 'bg-green-100 text-green-700' },
       { label: 'مرفوضة اليوم', value: stats.rejected_today || 0, icon: <AlertCircle size={24} />, iconBg: 'bg-red-100 text-red-600', trend: '-2', trendBg: 'bg-green-100 text-green-700' },
       { label: 'المبلغ المعلق', value: `₺${stats.total_amount_pending || 0}`, icon: <DollarSign size={24} />, iconBg: 'bg-purple-100 text-purple-600', trend: '+5%', trendBg: 'bg-orange-100 text-orange-700' }
+<<<<<<< HEAD
+=======
+    ],
+    patient: [
+      { label: 'المواعيد القادمة', value: stats.upcoming_appointments || 0, icon: <Calendar size={24} />, iconBg: 'bg-blue-100 text-blue-600', trend: 'قريباً', trendBg: 'bg-blue-100 text-blue-700' },
+      { label: 'السجلات الطبية', value: stats.total_records || 0, icon: <FileText size={24} />, iconBg: 'bg-green-100 text-green-600', trend: 'محدث', trendBg: 'bg-green-100 text-green-700' },
+      { label: 'الجلسات المكتملة', value: stats.completed_sessions || 0, icon: <Activity size={24} />, iconBg: 'bg-purple-100 text-purple-600', trend: '+2', trendBg: 'bg-green-100 text-green-700' }
+    ],
+    guardian: [
+      { label: 'المرضى المرتبطين', value: stats.total_patients || 0, icon: <Users size={24} />, iconBg: 'bg-blue-100 text-blue-600', trend: 'محدث', trendBg: 'bg-blue-100 text-blue-700' },
+      { label: 'الموافقات المعلقة', value: stats.pending_approvals || 0, icon: <UserCheck size={24} />, iconBg: 'bg-orange-100 text-orange-600', trend: 'يحتاج مراجعة', trendBg: 'bg-orange-100 text-orange-700' },
+      { label: 'المواعيد القادمة', value: stats.upcoming_appointments || 0, icon: <Calendar size={24} />, iconBg: 'bg-green-100 text-green-600', trend: 'قريباً', trendBg: 'bg-green-100 text-green-700' }
+    ],
+    supervisor: [
+      { label: 'المراجعات المعلقة', value: stats.pending_reviews || 0, icon: <FileText size={24} />, iconBg: 'bg-blue-100 text-blue-600', trend: 'يحتاج مراجعة', trendBg: 'bg-blue-100 text-blue-700' },
+      { label: 'الحالات الحرجة', value: stats.critical_cases || 0, icon: <AlertCircle size={24} />, iconBg: 'bg-red-100 text-red-600', trend: 'يحتاج متابعة', trendBg: 'bg-red-100 text-red-700' },
+      { label: 'نقاط الجودة', value: `${stats.quality_score || 0}%`, icon: <TrendingUp size={24} />, iconBg: 'bg-green-100 text-green-600', trend: (Number(stats.quality_score) || 0) >= 80 ? 'ممتاز' : 'جيد', trendBg: (Number(stats.quality_score) || 0) >= 80 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' },
+      { label: 'نقاط الامتثال', value: `${stats.compliance_score || 0}%`, icon: <CheckCircle size={24} />, iconBg: 'bg-purple-100 text-purple-600', trend: (Number(stats.compliance_score) || 0) >= 80 ? 'ممتاز' : 'جيد', trendBg: (Number(stats.compliance_score) || 0) >= 80 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }
+>>>>>>> cursor/fix-code-errors-and-warnings-8041
     ]
   }
 

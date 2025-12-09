@@ -7,6 +7,11 @@
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
     "migration:apply": "node scripts/apply-migration.js",
     "migration:auto": "node scripts/apply-migrations-auto.js",
     "migration:mcp": "node scripts/apply-migrations-mcp.js",
@@ -42,13 +47,22 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@types/node": "^20.19.25",
     "@types/react": "^18.3.27",
     "@types/react-big-calendar": "^1.16.3",
     "@types/react-dom": "^18.3.7",
     "@types/signature_pad": "^4.0.0",
     "@types/uuid": "^10.0.0",
+<<<<<<< HEAD
     "pg": "^8.16.3",
+=======
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
+    "@typescript-eslint/parser": "^8.49.0",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.0.8",
+    "playwright": "^1.57.0",
+>>>>>>> cursor/fix-code-errors-and-warnings-8041
     "typescript": "^5.9.3"
   }
 }

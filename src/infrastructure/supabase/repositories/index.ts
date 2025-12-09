@@ -12,5 +12,10 @@ export { contentItemsRepository } from './content-items.repository'
 export { socialMediaRepository } from './social-media.repository'
 export { statisticsRepository } from './statistics.repository'
 export { testimonialsRepository } from './testimonials.repository'
+export { guardianRepository } from './guardian.repository'
+export { patientRepository } from './patient.repository'
+export { appointmentRepository } from './appointment.repository'
+export { medicalRecordRepository } from './medical-record.repository'
+export { billingRepository } from './billing.repository'
 
 
