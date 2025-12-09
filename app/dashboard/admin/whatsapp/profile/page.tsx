@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { Save, RefreshCw, Image as ImageIcon, Building2, Mail, Globe, MapPin } from 'lucide-react'
-import { toast } from 'sonner'
+// import { toast } from 'sonner' // TODO: Install sonner package
+const toast = {
+  success: (message: string) => console.log('Success:', message),
+  error: (message: string) => console.error('Error:', message),
+  info: (message: string) => console.info('Info:', message),
+}
 
 interface BusinessProfile {
   id: string

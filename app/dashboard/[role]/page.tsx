@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
-import DashboardWidget from '@/components/DashboardWidget'
+// import DashboardWidget from '@/components/DashboardWidget' // TODO: Create DashboardWidget component
 import { Activity, TrendingUp, Users, Calendar, DollarSign, AlertCircle, FileText, UserCheck, CheckCircle } from 'lucide-react'
 
 interface DashboardStats {
@@ -137,15 +137,14 @@ export default function RoleDashboard() {
       </div>
 
       {/* Dashboard Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {sortedWidgets.filter(w => w.is_visible).map((widget) => (
-          <DashboardWidget
-            key={widget.id}
-            widget={widget}
-            stats={stats}
-          />
-        ))}
-      </div>
+      {/* TODO: Implement DashboardWidget component */}
+      {sortedWidgets.filter(w => w.is_visible).length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p className="text-gray-500 text-sm">Widgets coming soon...</p>
+          </div>
+        </div>
+      )}
 
       {/* Real-time Activity Feed */}
       <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
