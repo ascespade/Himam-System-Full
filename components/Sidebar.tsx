@@ -29,16 +29,12 @@ import {
     Plus,
     Bot,
     Activity,
-<<<<<<< HEAD
-    Monitor
-=======
     Monitor,
     Workflow,
     MessageCircle,
     Zap,
     Smartphone,
     GitBranch
->>>>>>> cursor/fix-code-errors-and-warnings-8041
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
