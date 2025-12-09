@@ -39,7 +39,6 @@ import {
     FlaskConical,
     Pill
 } from 'lucide-react'
-import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -278,23 +277,21 @@ export default function Sidebar() {
               {items.map((item) => {
                 const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'))
                 return (
-                  <Link
+                  <button
                     key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer relative z-10 ${
+                    onClick={() => {
+                      router.push(item.href)
+                      router.refresh()
+                    }}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer relative z-10 w-full text-right ${
                       isActive
                         ? 'bg-primary text-white shadow-md shadow-primary/20'
                         : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                     }`}
-                    onClick={(e) => {
-                      // Force navigation using router to ensure it works
-                      e.preventDefault()
-                      router.push(item.href)
-                    }}
                   >
                     <item.icon size={18} />
                     <span className="flex-1">{item.name}</span>
-                  </Link>
+                  </button>
                 )
               })}
             </div>
