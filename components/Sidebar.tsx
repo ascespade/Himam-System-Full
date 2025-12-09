@@ -35,7 +35,9 @@ import {
     Zap,
     Smartphone,
     GitBranch,
-    AlertCircle
+    AlertCircle,
+    FlaskConical,
+    Pill
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -163,6 +165,14 @@ export default function Sidebar() {
       { category: 'الرئيسية', name: 'لوحة التحكم', href: '/dashboard/patient', icon: LayoutDashboard, roles: ['patient'] },
       { category: 'المواعيد', name: 'مواعيدي', href: '/dashboard/patient/appointments', icon: Calendar, roles: ['patient'] },
       { category: 'السجلات', name: 'السجلات الطبية', href: '/dashboard/patient/records', icon: FileText, roles: ['patient'] },
+      { category: 'الأدوية', name: 'الأدوية', href: '/dashboard/patient/medications', icon: Activity, roles: ['patient'] },
+      { category: 'الأدوية', name: 'الوصفات الطبية', href: '/dashboard/patient/prescriptions', icon: FileText, roles: ['patient'] },
+      { category: 'التحاليل', name: 'نتائج التحاليل', href: '/dashboard/patient/lab-results', icon: Activity, roles: ['patient'] },
+      { category: 'العلاج', name: 'خطط العلاج', href: '/dashboard/patient/treatment-plans', icon: Target, roles: ['patient'] },
+      { category: 'العلاج', name: 'تتبع التقدم', href: '/dashboard/patient/progress', icon: TrendingUp, roles: ['patient'] },
+      { category: 'المستندات', name: 'المستندات', href: '/dashboard/patient/documents', icon: FileText, roles: ['patient'] },
+      { category: 'المالية', name: 'الفواتير والمدفوعات', href: '/dashboard/patient/billing', icon: DollarSign, roles: ['patient'] },
+      { category: 'الإعدادات', name: 'الإعدادات', href: '/dashboard/patient/settings', icon: Settings, roles: ['patient'] },
     ],
 
     // Guardian Module

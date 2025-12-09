@@ -8,7 +8,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
-import { Calendar, FileText, User, Phone, Clock, Activity, TrendingUp } from 'lucide-react'
+import { Calendar, FileText, User, Phone, Clock, Activity, TrendingUp, Pill, Target } from 'lucide-react'
 
 interface PatientInfo {
   id: string
@@ -44,6 +44,8 @@ export default function PatientDashboard() {
     upcomingAppointments: 0,
     totalRecords: 0,
     completedSessions: 0,
+    activeMedications: 0,
+    activePlans: 0,
   })
 
   const supabase = createBrowserClient(
@@ -97,6 +99,30 @@ export default function PatientDashboard() {
             ...prev,
             upcomingAppointments: upcoming.length,
           }))
+        }
+
+        // Load medications count
+        try {
+          const medsRes = await fetch(`/api/patients/${patientInfo.id}/medications`)
+          const medsData = await medsRes.json()
+          if (medsData.success) {
+            const activeMeds = (medsData.data || []).filter((m: any) => m.status === 'active').length
+            setStats((prev) => ({ ...prev, activeMedications: activeMeds }))
+          }
+        } catch (error) {
+          console.error('Error loading medications:', error)
+        }
+
+        // Load treatment plans count
+        try {
+          const plansRes = await fetch(`/api/patients/${patientInfo.id}/treatment-plans`)
+          const plansData = await plansRes.json()
+          if (plansData.success) {
+            const activePlans = (plansData.data || []).filter((p: any) => p.status === 'active').length
+            setStats((prev) => ({ ...prev, activePlans: activePlans }))
+          }
+        } catch (error) {
+          console.error('Error loading treatment plans:', error)
         }
       }
     } catch (error) {
@@ -170,8 +196,11 @@ export default function PatientDashboard() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div
+          onClick={() => router.push('/dashboard/patient/appointments')}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 rounded-xl bg-blue-100 text-blue-600">
               <Calendar size={24} />
@@ -181,7 +210,10 @@ export default function PatientDashboard() {
           <div className="text-sm text-gray-500">المواعيد القادمة</div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div
+          onClick={() => router.push('/dashboard/patient/records')}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 rounded-xl bg-green-100 text-green-600">
               <FileText size={24} />
@@ -191,14 +223,30 @@ export default function PatientDashboard() {
           <div className="text-sm text-gray-500">السجلات الطبية</div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div
+          onClick={() => router.push('/dashboard/patient/medications')}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 rounded-xl bg-purple-100 text-purple-600">
+              <Activity size={24} />
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 mb-1">{stats.activeMedications || 0}</div>
+          <div className="text-sm text-gray-500">الأدوية النشطة</div>
+        </div>
+
+        <div
+          onClick={() => router.push('/dashboard/patient/treatment-plans')}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl bg-orange-100 text-orange-600">
               <TrendingUp size={24} />
             </div>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-1">{stats.completedSessions}</div>
-          <div className="text-sm text-gray-500">الجلسات المكتملة</div>
+          <div className="text-3xl font-bold text-gray-900 mb-1">{stats.activePlans || 0}</div>
+          <div className="text-sm text-gray-500">خطط العلاج</div>
         </div>
       </div>
 
