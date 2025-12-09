@@ -2,7 +2,7 @@
 
 import { Shield, Save, ArrowRight } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { toast } from 'sonner'
 
 interface Patient {
@@ -11,7 +11,7 @@ interface Patient {
   phone: string
 }
 
-export default function NewClaimPage() {
+function NewClaimContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const patientId = searchParams.get('patient_id')
@@ -245,6 +245,20 @@ export default function NewClaimPage() {
         </div>
       </form>
     </div>
+  )
+}
+
+export default function NewClaimPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
+          <div className="text-gray-400">جاري التحميل...</div>
+        </div>
+      </div>
+    }>
+      <NewClaimContent />
+    </Suspense>
   )
 }
 

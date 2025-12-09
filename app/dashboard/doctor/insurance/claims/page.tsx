@@ -2,7 +2,7 @@
 
 import { Shield, Plus, Search, Filter, CheckCircle, XCircle, Clock, AlertCircle, Download, Edit, Send, Eye } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { toast } from 'sonner'
 
 interface InsuranceClaim {
@@ -24,7 +24,7 @@ interface InsuranceClaim {
   created_at: string
 }
 
-export default function InsuranceClaimsPage() {
+function InsuranceClaimsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [claims, setClaims] = useState<InsuranceClaim[]>([])
@@ -412,6 +412,20 @@ export default function InsuranceClaimsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function InsuranceClaimsPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-6">
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
+          <div className="text-gray-400">جاري التحميل...</div>
+        </div>
+      </div>
+    }>
+      <InsuranceClaimsContent />
+    </Suspense>
   )
 }
 
