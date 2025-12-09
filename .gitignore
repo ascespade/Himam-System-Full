@@ -50,3 +50,7 @@ Thumbs.db
 *.zip
 Himam-System-Full.zip
 
+# Environment variables
+.env.local
+.env*.local
+
