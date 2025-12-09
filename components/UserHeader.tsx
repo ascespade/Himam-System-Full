@@ -119,9 +119,22 @@ export default function UserHeader() {
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    try {
+      await supabase.auth.signOut()
+      // Clear any local storage
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+      }
+      // Redirect to login
+      router.push('/login')
+      router.refresh()
+    } catch (error) {
+      console.error('Error during logout:', error)
+      // Force redirect even if signOut fails
+      router.push('/login')
+      router.refresh()
+    }
   }
 
   // Get user's initial for avatar

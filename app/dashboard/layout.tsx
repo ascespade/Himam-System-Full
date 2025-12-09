@@ -45,17 +45,21 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-[#FAFAFA]" dir="rtl">
        <Sidebar />
        <div className="md:mr-64 min-h-screen transition-all duration-300">
-          <header className="bg-white border-b border-gray-100 min-h-16 flex items-center px-4 md:px-8 sticky top-0 z-20 shadow-sm">
-            <div className="w-full flex items-center gap-4">
+          <header className="bg-white border-b border-gray-100 min-h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-20 shadow-sm">
+            <div className="w-full flex items-center justify-between gap-4">
               {!loading && userRole === 'doctor' ? (
                 <>
-                  <NotificationsMenu />
-                  <DoctorHeader />
+                  <div className="flex items-center gap-4 flex-1">
+                    <NotificationsMenu />
+                    <DoctorHeader />
+                  </div>
                 </>
               ) : (
                 <>
-                  <NotificationsMenu />
-                  <UserHeader />
+                  <div className="flex items-center gap-4 flex-1 justify-end">
+                    <NotificationsMenu />
+                    <UserHeader />
+                  </div>
                 </>
               )}
             </div>
