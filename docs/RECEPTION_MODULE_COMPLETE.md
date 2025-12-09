@@ -1,103 +1,93 @@
-# 🏗️ موديول الاستقبال الكامل - Complete Reception Module
+# Reception Module - Complete Documentation
 
-**التاريخ:** 2025-01-17  
-**الحالة:** ⭐⭐⭐⭐⭐ (5/5) - احترافي كامل  
-**الهدف:** موديول استقبال شامل - أول خطوة في النظام قبل موديول الطبيب
+## Overview
 
----
+The Reception Module is the central hub for patient management, queue coordination, and workflow management between reception and doctors.
 
-## 📋 الهيكل الكامل | Complete Structure
+## Features
 
-### 1️⃣ **APIs - Backend**
+### 1. Patient Management
+- Complete patient registration with all medical fields
+- Patient search and filtering
+- Medical history tracking
+- Guardian relationship management
 
-#### Dashboard APIs
-- `GET /api/reception/dashboard/stats` - إحصائيات Dashboard
+### 2. Queue Management
+- Real-time queue tracking
+- Priority-based queuing
+- Status management (waiting, in_progress, confirmed, completed, cancelled)
+- Assignment to doctors
 
-#### Patient Management APIs
-- `GET /api/reception/patients` - قائمة المرضى
-- `POST /api/reception/patients` - تسجيل مريض جديد
-- `GET /api/reception/patients/[id]` - تفاصيل المريض
-- `PUT /api/reception/patients/[id]` - تحديث المريض
-- `DELETE /api/reception/patients/[id]` - حذف المريض
-- `GET /api/reception/patients/search` - بحث المرضى
-- `POST /api/reception/patients/check-duplicate` - التحقق من التكرار
+### 3. Payment & Insurance Verification
+- Payment status checking
+- Insurance approval workflow
+- Business rules integration
+- First visit detection (free consultation)
 
-#### Queue Management APIs
-- `GET /api/reception/queue` - قائمة الطابور
-- `POST /api/reception/queue` - إضافة للطابور
-- `PUT /api/reception/queue/[id]` - تحديث حالة
-- `DELETE /api/reception/queue/[id]` - حذف من الطابور
-- `POST /api/reception/queue/[id]/confirm-to-doctor` - تأكيد للطبيب
+### 4. Patient Visits
+- Links reception workflow to doctor sessions
+- Visit tracking
+- Payment and insurance status
+- Notes and documentation
 
-#### Appointment APIs (مستخدمة من `/api/appointments`)
-- `GET /api/appointments` - قائمة المواعيد
-- `POST /api/appointments` - حجز موعد جديد
+## APIs
 
----
+### Patients
+- `GET /api/reception/patients` - List patients
+- `POST /api/reception/patients` - Register new patient
+- `GET /api/reception/patients/[id]` - Get patient details
+- `GET /api/reception/patients/[id]/guardians` - Get patient guardians
+- `GET /api/reception/patients/[id]/medical-history` - Get medical history
 
-### 2️⃣ **Pages - Frontend**
+### Queue
+- `GET /api/reception/queue` - Get queue items
+- `POST /api/reception/queue` - Add to queue
+- `POST /api/reception/queue/[id]/confirm-to-doctor` - Confirm to doctor
 
-#### Dashboard
-- `/dashboard/reception` - Dashboard الرئيسي
+## Business Rules
 
-#### Patient Management
-- `/dashboard/reception/patients` - قائمة المرضى
-- `/dashboard/reception/patients/new` - تسجيل مريض جديد
-- `/dashboard/reception/patients/[id]` - ملف المريض
+### Payment Verification
+- First visit consultation is free
+- Payment or insurance approval required for subsequent visits
+- Business rules engine evaluates conditions
 
-#### Queue Management
-- `/dashboard/reception/queue` - شاشة الطابور
+### Session Validation
+- AI-powered validation
+- Template-based checking
+- Missing field detection
+- Warning system
 
-#### Appointment Management
-- `/dashboard/reception/appointments` - قائمة المواعيد
-- `/dashboard/reception/appointments/new` - حجز موعد جديد
+## Database Schema
 
----
+### `reception_queue`
+- Queue management with priorities
+- Status tracking
+- Doctor assignment
 
-## 🔄 Workflow - سير العمل
+### `patient_visits`
+- Links queue to sessions
+- Payment/insurance status
+- Visit documentation
 
-### Workflow 1: تسجيل مريض جديد
-```
-1. الاستقبال → /dashboard/reception/patients/new
-2. ملء نموذج التسجيل
-3. حفظ المريض → POST /api/reception/patients
-4. (اختياري) حجز موعد → /dashboard/reception/appointments/new
-```
+### `patient_insurance`
+- Insurance provider information
+- Verification status
+- Coverage details
 
-### Workflow 2: وصول مريض وإرساله للطبيب
-```
-1. المريض يصل → /dashboard/reception/queue
-2. إضافة للطابور → POST /api/reception/queue
-3. عند الدور → POST /api/reception/queue/[id]/confirm-to-doctor
-   - ينشئ patient_visit
-   - يرسل إشعار للطبيب
-   - يضيف للمريض في PatientContext
-4. الطبيب يستقبل → /dashboard/doctor/current-patient
-```
+## Workflow
 
----
+1. Patient arrives → Added to queue
+2. Payment/insurance verification
+3. Confirmed to doctor
+4. Patient visit created
+5. Doctor session starts
+6. Session completion
+7. Billing and documentation
 
-## ✅ Checklist
+## Frontend Pages
 
-### APIs:
-- [x] Dashboard stats
-- [x] Patient CRUD
-- [x] Patient search
-- [x] Patient duplicate check
-- [x] Queue management
-- [x] Queue confirm to doctor
-- [x] Appointments (مستخدمة من API العام)
-
-### Pages:
-- [x] Dashboard الرئيسي
-- [x] قائمة المرضى
-- [x] تسجيل مريض جديد
-- [x] ملف المريض
-- [x] شاشة الطابور
-- [ ] قائمة المواعيد (مستخدمة من الصفحة العامة)
-- [ ] حجز موعد جديد (مستخدمة من الصفحة العامة)
-
----
-
-**تم إعداد الوثيقة بواسطة:** AI Assistant  
-**التاريخ:** 2025-01-17
+- `/dashboard/reception` - Dashboard
+- `/dashboard/reception/patients` - Patient list
+- `/dashboard/reception/patients/new` - New patient registration
+- `/dashboard/reception/patients/[id]` - Patient profile
+- `/dashboard/reception/queue` - Queue management

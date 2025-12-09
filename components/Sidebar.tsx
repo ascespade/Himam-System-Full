@@ -136,6 +136,21 @@ export default function Sidebar() {
       { category: 'المالية', name: 'الفواتير', href: '/dashboard/billing', icon: DollarSign, roles: ['admin', 'reception'], priority: 3 },
     ],
 
+    // Guardian Module
+    guardian: [
+      { category: 'الرئيسية', name: 'لوحة التحكم', href: '/dashboard/guardian', icon: LayoutDashboard, roles: ['guardian'], priority: 1 },
+      { category: 'المرضى', name: 'قائمة المرضى', href: '/dashboard/guardian/patients', icon: Users, roles: ['guardian'], priority: 1 },
+      { category: 'الموافقات', name: 'الموافقات المعلقة', href: '/dashboard/guardian/approvals', icon: UserCheck, roles: ['guardian'], priority: 2 },
+    ],
+
+    // Supervisor Module
+    supervisor: [
+      { category: 'الرئيسية', name: 'لوحة التحكم', href: '/dashboard/supervisor', icon: LayoutDashboard, roles: ['supervisor'], priority: 1 },
+      { category: 'الحالات الحرجة', name: 'الحالات الحرجة', href: '/dashboard/supervisor/critical-cases', icon: Activity, roles: ['supervisor'], priority: 1 },
+      { category: 'المراجعات', name: 'مراجعات الجلسات', href: '/dashboard/supervisor/reviews', icon: FileText, roles: ['supervisor'], priority: 2 },
+      { category: 'الجودة', name: 'تحليلات الجودة', href: '/dashboard/supervisor/quality', icon: TrendingUp, roles: ['supervisor'], priority: 2 },
+    ],
+
     // Doctor Module - Organized by categories
     doctor: [
       // 🏠 الرئيسية
@@ -197,9 +212,15 @@ export default function Sidebar() {
     ...menuStructure.shared,
   ]
 
-  // Filter by role
+  // Filter by role with proper role mapping
   const menuItems = userRole 
-    ? allMenuItems.filter(item => item.roles.includes(userRole))
+    ? allMenuItems.filter(item => {
+        // Map roles for better access control
+        if (userRole === 'admin') {
+          return item.roles.includes('admin') || item.roles.includes('doctor') || item.roles.includes('reception')
+        }
+        return item.roles.includes(userRole)
+      })
     : allMenuItems
 
   // Smart grouping: Group by category and sort by priority
@@ -227,6 +248,10 @@ export default function Sidebar() {
     'القواعد',
     'المالية',
     'التقارير',
+    'الحالات الحرجة',
+    'المراجعات',
+    'الجودة',
+    'الموافقات',
     'الإعدادات',
     'مشترك'
   ]
@@ -276,6 +301,10 @@ export default function Sidebar() {
               'القواعد': Shield,
               'المالية': DollarSign,
               'التقارير': BarChart,
+              'الحالات الحرجة': Activity,
+              'المراجعات': FileText,
+              'الجودة': TrendingUp,
+              'الموافقات': UserCheck,
               'الإعدادات': Settings,
               'مشترك': MessageCircle
             }

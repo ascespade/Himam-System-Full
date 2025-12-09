@@ -8,6 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
+import { patientRepository } from '@/infrastructure/supabase/repositories'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,32 +55,21 @@ export async function GET(req: NextRequest) {
     }
 
     const searchParams = req.nextUrl.searchParams
-    const search = searchParams.get('search')
-    const status = searchParams.get('status')
+    const search = searchParams.get('search') || undefined
+    const status = searchParams.get('status') || undefined
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    let query = supabaseAdmin
-      .from('patients')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`)
-    }
-
-    if (status && status !== 'all') {
-      query = query.eq('status', status)
-    }
-
-    const { data: patients, error, count } = await query
-
-    if (error) throw error
+    const result = await patientRepository.search({
+      search,
+      status: status && status !== 'all' ? status : undefined,
+      limit,
+      offset
+    })
 
     return NextResponse.json(successResponse({
-      patients: patients || [],
-      total: count || 0,
+      patients: result.patients,
+      total: result.total,
       limit,
       offset
     }))
@@ -144,6 +134,7 @@ export async function POST(req: NextRequest) {
       chronic_diseases,
       emergency_contact_name,
       emergency_contact_phone,
+      emergency_contact_relation,
       insurance_provider,
       insurance_number,
       notes
@@ -157,46 +148,34 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create patient record
-    const patientData: any = {
+    // Create patient using repository
+    const patient = await patientRepository.create({
       name,
       phone,
-      status: 'active',
-      created_at: new Date().toISOString()
-    }
-
-    // Add optional fields
-    if (email) patientData.email = email
-    if (date_of_birth) patientData.date_of_birth = date_of_birth
-    if (gender) patientData.gender = gender
-    if (nationality) patientData.nationality = nationality
-    if (address) patientData.address = address
-    if (blood_type) patientData.blood_type = blood_type
-    if (allergies) patientData.allergies = Array.isArray(allergies) ? allergies : [allergies]
-    if (chronic_diseases) patientData.chronic_diseases = Array.isArray(chronic_diseases) ? chronic_diseases : [chronic_diseases]
-    if (emergency_contact_name) patientData.emergency_contact_name = emergency_contact_name
-    if (emergency_contact_phone) patientData.emergency_contact_phone = emergency_contact_phone
-    if (notes) patientData.notes = notes
-
-    const { data: patient, error } = await supabaseAdmin
-      .from('patients')
-      .insert(patientData)
-      .select()
-      .single()
-
-    if (error) throw error
+      email,
+      date_of_birth,
+      gender,
+      nationality,
+      address,
+      blood_type,
+      allergies: Array.isArray(allergies) ? allergies : allergies ? [allergies] : undefined,
+      chronic_diseases: Array.isArray(chronic_diseases) ? chronic_diseases : chronic_diseases ? [chronic_diseases] : undefined,
+      emergency_contact_name,
+      emergency_contact_phone,
+      emergency_contact_relation,
+      notes,
+      status: 'active'
+    })
 
     // Create insurance record if provided
     if (insurance_provider && insurance_number) {
       try {
-        await supabaseAdmin
-          .from('patient_insurance')
-          .insert({
-            patient_id: patient.id,
-            provider: insurance_provider,
-            policy_number: insurance_number,
-            is_active: true
-          })
+        const { receptionRepository } = await import('@/infrastructure/supabase/repositories')
+        await receptionRepository.createInsurance({
+          patient_id: patient.id,
+          provider: insurance_provider,
+          policy_number: insurance_number
+        })
       } catch (e) {
         console.error('Failed to create insurance record:', e)
         // Don't fail the whole request if insurance fails

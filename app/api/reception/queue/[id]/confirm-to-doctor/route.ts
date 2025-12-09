@@ -1,6 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { receptionRepository, patientRepository } from '@/infrastructure/supabase/repositories'
+import { paymentVerificationService } from '@/core/business-rules/payment-verification'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,20 +56,21 @@ export async function POST(
       )
     }
 
-    // Get queue item
-    const { data: queueItem, error: queueError } = await supabaseAdmin
-      .from('reception_queue')
-      .select(`
-        *,
-        patients (*),
-        appointments (*)
-      `)
-      .eq('id', params.id)
-      .single()
+    // Get queue item using repository
+    const queueItem = await receptionRepository.getQueueItem(params.id)
 
-    if (queueError || !queueItem) {
+    if (!queueItem) {
       return NextResponse.json(
         { success: false, error: 'Queue item not found' },
+        { status: 404 }
+      )
+    }
+
+    // Get patient details
+    const patient = await patientRepository.findById(queueItem.patient_id)
+    if (!patient) {
+      return NextResponse.json(
+        { success: false, error: 'Patient not found' },
         { status: 404 }
       )
     }
@@ -75,65 +78,45 @@ export async function POST(
     // ============================================
     // BUSINESS RULES: Payment & Insurance Verification
     // ============================================
-    try {
-      const { paymentVerificationService } = await import('@/core/business-rules/payment-verification')
-      
-      const paymentCheck = await paymentVerificationService.verifyPayment(
-        queueItem.patient_id,
-        queueItem.appointments?.service_type || 'consultation',
-        queueItem.appointments?.service_type
-      )
+    const paymentCheck = await paymentVerificationService.verifyPayment(
+      queueItem.patient_id,
+      queueItem.service_type || 'consultation',
+      queueItem.service_type
+    )
 
-      if (!paymentCheck.canProceed) {
-        return NextResponse.json({
-          success: false,
-          error: paymentCheck.reason,
-          requiredActions: paymentCheck.requiredActions,
-          paymentStatus: paymentCheck.paymentStatus
-        }, { status: 403 })
-      }
-    } catch (error) {
-      console.error('Payment verification error:', error)
-      // Continue if verification service fails (graceful degradation)
+    if (!paymentCheck.canProceed) {
+      return NextResponse.json({
+        success: false,
+        error: paymentCheck.reason,
+        requiredActions: paymentCheck.requiredActions,
+        paymentStatus: paymentCheck.paymentStatus
+      }, { status: 403 })
     }
 
-    // Update queue status
-    await supabaseAdmin
-      .from('reception_queue')
-      .update({
-        status: 'in_progress',
-        called_at: new Date().toISOString()
-      })
-      .eq('id', params.id)
+    // Update queue status and confirm to doctor using repository
+    await receptionRepository.confirmToDoctor(params.id, doctor_id)
 
-    // Create patient visit record
-    const { data: visit, error: visitError } = await supabaseAdmin
-      .from('patient_visits')
-      .insert({
-        patient_id: queueItem.patient_id,
-        appointment_id: queueItem.appointment_id || null,
-        queue_id: params.id,
-        doctor_id: doctor_id,
-        visit_date: new Date().toISOString(),
-        check_in_time: queueItem.checked_in_at,
-        confirmed_to_doctor_time: new Date().toISOString(),
-        status: 'confirmed_to_doctor',
-        notes: notes || null
-      })
-      .select(`
-        *,
-        patients (*),
-        appointments (*)
-      `)
-      .single()
+    // Create patient visit record using repository
+    const visit = await receptionRepository.createVisit({
+      patient_id: queueItem.patient_id,
+      queue_id: params.id,
+      visit_date: new Date().toISOString(),
+      visit_type: 'consultation',
+      reception_notes: notes || null,
+      created_by: user.id
+    })
 
-    if (visitError) throw visitError
+    // Update visit with payment and insurance status
+    await receptionRepository.updateVisit(visit.id, {
+      payment_status: paymentCheck.paymentStatus?.paid ? 'paid' : 'pending',
+      insurance_status: paymentCheck.paymentStatus?.insuranceApproved ? 'approved' : 'pending'
+    })
 
     // Create notification for doctor
     try {
       const { createNotification, NotificationTemplates } = await import('@/lib/notifications')
       const template = NotificationTemplates.systemAlert(
-        `مريض ${queueItem.patients?.name || 'جديد'} في انتظارك - تم التأكيد من الاستقبال`
+        `مريض ${patient.name || 'جديد'} في انتظارك - تم التأكيد من الاستقبال`
       )
       await createNotification({
         userId: doctor_id,
@@ -145,10 +128,14 @@ export async function POST(
       console.error('Failed to create notification:', e)
     }
 
+    // Get full visit details
+    const fullVisit = await receptionRepository.getVisit(visit.id)
+
     return NextResponse.json({
       success: true,
       data: {
-        visit,
+        visit: fullVisit,
+        patient,
         message: 'تم تأكيد المريض للطبيب بنجاح. سيظهر ملف المريض الكامل في شاشة الطبيب.'
       }
     })
