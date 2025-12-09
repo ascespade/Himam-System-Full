@@ -131,19 +131,6 @@ export function validateRequestBody<T extends Record<string, unknown>>(
 // ============================================================================
 
 /**
- * Safely parses JSON request body
- * @deprecated Use parseRequestBody from @/core/api/middleware instead
- */
-export async function parseRequestBody<T = unknown>(request: Request): Promise<T> {
-  try {
-    const body = await request.json()
-    return body as T
-  } catch (error) {
-    throw new ApiError('Invalid JSON in request body', HTTP_STATUS.BAD_REQUEST, 'INVALID_JSON')
-  }
-}
-
-/**
  * Gets query parameter from URL
  */
 export function getQueryParam(url: string, param: string): string | null {
