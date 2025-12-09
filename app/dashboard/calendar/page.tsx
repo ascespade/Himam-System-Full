@@ -57,7 +57,14 @@ export default function CalendarPage() {
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6">جدول المواعيد</h1>
-      {userRole === 'doctor' ? <DoctorCalendar /> : <AdminCalendar />}
+      {userRole === 'doctor' ? (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">تقويم الطبيب</h2>
+          <p className="text-gray-500">تقويم الطبيب قريباً...</p>
+        </div>
+      ) : (
+        <AdminCalendar />
+      )}
     </div>
   )
 }

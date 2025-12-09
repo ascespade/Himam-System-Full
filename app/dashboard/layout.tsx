@@ -62,7 +62,7 @@ export default function DashboardLayout({
           </header>
           {children}
        </div>
-       <Toaster position="top-center" richColors />
+       {/* <Toaster position="top-center" richColors /> TODO: Install sonner package */}
     </div>
   )
 }
