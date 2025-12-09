@@ -4,6 +4,7 @@ import { successResponse, paginatedResponse, errorResponse } from '@/shared/util
 import { HTTP_STATUS } from '@/shared/constants'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createUserSchema } from '@/core/validations/schemas'
+import { userService } from '@/core/services/user.service'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,111 +59,15 @@ export const POST = withAuth(async (context) => {
   // Parse and validate request body
   const body = await parseRequestBody(request)
   const validated = createUserSchema.parse(body)
-  const { name, email, phone, role, password } = validated
 
-  // Check if user exists in auth.users
-    const { data: existingAuthUser } = await supabaseAdmin.auth.admin.listUsers()
-    const authUserExists = existingAuthUser?.users?.some(u => u.email === email)
+  // Use service layer for business logic
+  const user = await userService.createUser(validated)
 
-    if (authUserExists) {
-      return NextResponse.json(
-        errorResponse('User with this email already exists'),
-        { status: HTTP_STATUS.BAD_REQUEST }
-      )
-    }
-
-    // Check if user exists in public.users
-    const { data: existingUser } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single()
-
-    if (existingUser) {
-      return NextResponse.json(
-        errorResponse('User with this email already exists'),
-        { status: HTTP_STATUS.BAD_REQUEST }
-      )
-    }
-
-    // Create auth user first (this will trigger handle_new_user() to create public.users entry)
-    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // Auto-confirm email
-      user_metadata: {
-        name,
-        phone,
-        role
-      }
-    })
-
-    if (authError) {
-      throw new Error(`Failed to create authentication user: ${authError.message}`)
-    }
-
-    if (!authUser?.user?.id) {
-      throw new Error('Failed to create user: No user ID returned')
-    }
-
-    // Verify the auth user was created and can be retrieved
-    const { data: verifyUser, error: verifyError } = await supabaseAdmin.auth.admin.getUserById(authUser.user.id)
-    if (verifyError || !verifyUser?.user) {
-      throw new Error('User created but verification failed')
-    }
-
-    // Wait a moment for trigger to create public.users entry
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    // Update the public.users record with correct role and details
-    // The trigger might have created a basic entry, so we update it
-    const { data: updatedUser, error: updateError } = await supabaseAdmin
-      .from('users')
-      .update({
-        name,
-        phone,
-        role,
-        email
-      })
-      .eq('id', authUser.user.id)
-      .select()
-      .single()
-
-    if (updateError) {
-      // If update fails, the trigger might not have created the entry yet
-      // Try to insert directly
-      const { data: insertedUser, error: insertError } = await supabaseAdmin
-        .from('users')
-        .insert({
-          id: authUser.user.id,
-          name,
-          email,
-          phone,
-          role,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single()
-
-      if (insertError) {
-        // Clean up auth user if we can't create public.users entry
-        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
-        throw new Error(`Failed to create user record: ${insertError.message}`)
-      }
-
-      return NextResponse.json(
-        successResponse(insertedUser),
-        { status: HTTP_STATUS.CREATED }
-      )
-    }
-
-    return NextResponse.json(
-      successResponse(updatedUser),
-      { status: HTTP_STATUS.CREATED }
-    )
-  },
-  {
-    requireRoles: ['admin'], // Only admins can create users
-  }
-)
+  return NextResponse.json(
+    successResponse(user),
+    { status: HTTP_STATUS.CREATED }
+  )
+}, {
+  requireRoles: ['admin'], // Only admins can create users
+})
 

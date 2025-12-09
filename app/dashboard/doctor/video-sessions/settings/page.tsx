@@ -1,8 +1,8 @@
 'use client'
 
 import { Monitor, Settings, Save, Video, Mic, Shield } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { useApi, useMutation } from '@/core/hooks/use-api'
+import { API_ROUTES } from '@/shared/constants/api-routes'
 
 interface VideoSettings {
   provider: string
@@ -15,59 +15,35 @@ interface VideoSettings {
 }
 
 export default function VideoSessionsSettingsPage() {
-  const [settings, setSettings] = useState<VideoSettings>({
-    provider: 'slack_huddle',
-    recording_enabled: false,
-    auto_record: false,
-    quality: 'high',
-    max_duration: 60,
-    require_consent: true,
-    notifications_enabled: true
-  })
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  // Use centralized hooks for data fetching
+  const { data: settings, loading, mutate: setSettings } = useApi<VideoSettings>(
+    API_ROUTES.DOCTOR_VIDEO_SETTINGS,
+    {
+      immediate: true,
+      showToast: false,
+    }
+  )
 
-  useEffect(() => {
-    fetchSettings()
-  }, [])
+  const { mutate: saveSettings, loading: saving } = useMutation<VideoSettings, VideoSettings>(
+    API_ROUTES.DOCTOR_VIDEO_SETTINGS,
+    'PUT',
+    {
+      showToast: true,
+      onSuccess: () => {
+        // Settings are automatically updated via refetch
+      },
+    }
+  )
 
-  const fetchSettings = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/doctor/video-settings')
-      const data = await response.json()
-      
-      if (data.success && data.data) {
-        setSettings(data.data)
-      }
-    } catch (error) {
-      console.error('Error fetching video settings:', error)
-    } finally {
-      setLoading(false)
+  const handleSave = async () => {
+    if (settings) {
+      await saveSettings(settings)
     }
   }
 
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      const response = await fetch('/api/doctor/video-settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
-      })
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        toast.success('تم حفظ الإعدادات بنجاح')
-      } else {
-        toast.error('فشل حفظ الإعدادات: ' + (data.error || 'خطأ غير معروف'))
-      }
-    } catch (error) {
-      console.error('Error saving video settings:', error)
-      toast.error('فشل حفظ الإعدادات')
-    } finally {
-      setSaving(false)
+  const updateSetting = <K extends keyof VideoSettings>(key: K, value: VideoSettings[K]) => {
+    if (settings) {
+      setSettings({ ...settings, [key]: value })
     }
   }
 
@@ -97,8 +73,8 @@ export default function VideoSessionsSettingsPage() {
             مزود الخدمة
           </label>
           <select
-            value={settings.provider}
-            onChange={(e) => setSettings({ ...settings, provider: e.target.value })}
+            value={settings?.provider || 'slack_huddle'}
+            onChange={(e) => updateSetting('provider', e.target.value)}
             className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="slack_huddle">Slack Huddle</option>
@@ -123,15 +99,15 @@ export default function VideoSessionsSettingsPage() {
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={settings.recording_enabled}
-                onChange={(e) => setSettings({ ...settings, recording_enabled: e.target.checked })}
+                checked={settings?.recording_enabled || false}
+                onChange={(e) => updateSetting('recording_enabled', e.target.checked)}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
             </label>
           </div>
 
-          {settings.recording_enabled && (
+          {settings?.recording_enabled && (
             <>
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>
@@ -141,8 +117,8 @@ export default function VideoSessionsSettingsPage() {
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={settings.auto_record}
-                    onChange={(e) => setSettings({ ...settings, auto_record: e.target.checked })}
+                    checked={settings?.auto_record || false}
+                    onChange={(e) => updateSetting('auto_record', e.target.checked)}
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
@@ -154,8 +130,8 @@ export default function VideoSessionsSettingsPage() {
                   جودة التسجيل
                 </label>
                 <select
-                  value={settings.quality}
-                  onChange={(e) => setSettings({ ...settings, quality: e.target.value })}
+                  value={settings?.quality || 'high'}
+                  onChange={(e) => updateSetting('quality', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="low">منخفضة</option>
@@ -170,8 +146,8 @@ export default function VideoSessionsSettingsPage() {
                 </label>
                 <input
                   type="number"
-                  value={settings.max_duration}
-                  onChange={(e) => setSettings({ ...settings, max_duration: parseInt(e.target.value) })}
+                  value={settings?.max_duration || 60}
+                  onChange={(e) => updateSetting('max_duration', parseInt(e.target.value))}
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   min="15"
                   max="180"
@@ -196,8 +172,8 @@ export default function VideoSessionsSettingsPage() {
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={settings.require_consent}
-                onChange={(e) => setSettings({ ...settings, require_consent: e.target.checked })}
+                checked={settings?.require_consent ?? true}
+                onChange={(e) => updateSetting('require_consent', e.target.checked)}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
@@ -220,8 +196,8 @@ export default function VideoSessionsSettingsPage() {
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={settings.notifications_enabled}
-                onChange={(e) => setSettings({ ...settings, notifications_enabled: e.target.checked })}
+                checked={settings?.notifications_enabled ?? true}
+                onChange={(e) => updateSetting('notifications_enabled', e.target.checked)}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
