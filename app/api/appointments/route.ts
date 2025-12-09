@@ -45,13 +45,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('appointments')
-      .select(`
-        *,
-        patients (
-          name,
-          phone
-        )
-      `)
+      .select('*')
       .order('date', { ascending: false })
       .order('time', { ascending: false })
       .limit(limit)
