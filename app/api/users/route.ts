@@ -47,11 +47,6 @@ export const GET = withAuth(async (context) => {
   requireRoles: ['admin'], // Only admins can list all users
 })
 
-import { createUserSchema } from '@/core/validations/schemas'
-import { parseRequestBody } from '@/core/api/middleware'
-import { HTTP_STATUS } from '@/shared/constants'
-import { errorResponse } from '@/shared/utils/api'
-
 /**
  * POST /api/users
  * Create a new user
@@ -71,8 +66,8 @@ export const POST = withAuth(async (context) => {
 
     if (authUserExists) {
       return NextResponse.json(
-        { success: false, error: 'User with this email already exists' },
-        { status: 409 }
+        errorResponse('User with this email already exists'),
+        { status: HTTP_STATUS.BAD_REQUEST }
       )
     }
 
@@ -85,8 +80,8 @@ export const POST = withAuth(async (context) => {
 
     if (existingUser) {
       return NextResponse.json(
-        { success: false, error: 'User with this email already exists' },
-        { status: 409 }
+        errorResponse('User with this email already exists'),
+        { status: HTTP_STATUS.BAD_REQUEST }
       )
     }
 
@@ -103,31 +98,17 @@ export const POST = withAuth(async (context) => {
     })
 
     if (authError) {
-      console.error('Error creating auth user:', authError)
-      console.error('Auth error details:', JSON.stringify(authError, null, 2))
-      return NextResponse.json(
-        { success: false, error: `Failed to create authentication user: ${authError.message}` },
-        { status: 500 }
-      )
+      throw new Error(`Failed to create authentication user: ${authError.message}`)
     }
 
     if (!authUser?.user?.id) {
-      console.error('No user ID returned from auth creation')
-      console.error('Auth user response:', JSON.stringify(authUser, null, 2))
-      return NextResponse.json(
-        { success: false, error: 'Failed to create user: No user ID returned' },
-        { status: 500 }
-      )
+      throw new Error('Failed to create user: No user ID returned')
     }
 
     // Verify the auth user was created and can be retrieved
     const { data: verifyUser, error: verifyError } = await supabaseAdmin.auth.admin.getUserById(authUser.user.id)
     if (verifyError || !verifyUser?.user) {
-      console.error('Failed to verify created auth user:', verifyError)
-      return NextResponse.json(
-        { success: false, error: 'User created but verification failed' },
-        { status: 500 }
-      )
+      throw new Error('User created but verification failed')
     }
 
     // Wait a moment for trigger to create public.users entry
@@ -164,19 +145,15 @@ export const POST = withAuth(async (context) => {
         .single()
 
       if (insertError) {
-        console.error('Error creating/updating public.users:', insertError)
         // Clean up auth user if we can't create public.users entry
         await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
-        return NextResponse.json(
-          { success: false, error: `Failed to create user record: ${insertError.message}` },
-          { status: 500 }
-        )
+        throw new Error(`Failed to create user record: ${insertError.message}`)
       }
 
-      return NextResponse.json({
-        success: true,
-        data: insertedUser
-      }, { status: 201 })
+      return NextResponse.json(
+        successResponse(insertedUser),
+        { status: HTTP_STATUS.CREATED }
+      )
     }
 
     return NextResponse.json(

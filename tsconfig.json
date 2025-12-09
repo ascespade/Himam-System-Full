@@ -23,6 +23,7 @@
       "@/*": ["./*"],
       "@/lib": ["./src/lib/index.ts"],
       "@/lib/*": ["./src/lib/*"],
+      "@/core/*": ["./src/core/*"],
       "@/infrastructure/*": ["./src/infrastructure/*"],
       "@/shared": ["./src/shared/index.ts"],
       "@/shared/*": ["./src/shared/*"],
