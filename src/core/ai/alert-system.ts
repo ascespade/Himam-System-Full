@@ -3,7 +3,7 @@
  * Sends alerts based on monitoring results
  */
 
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib'
 import { createNotification, NotificationTemplates } from '@/lib/notifications'
 import type { PatientMonitoringResult } from './patient-monitoring'
 
@@ -85,7 +85,10 @@ ${result.recommendations.length > 0 ? `\nالتوصيات:\n${result.recommendat
       }
     }
   } catch (error) {
-    console.error('Error sending alert:', error)
+    // Error logging handled by notification service
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error sending alert:', error)
+    }
   }
 }
 
@@ -137,6 +140,9 @@ export async function sendCriticalCaseAlert(
       }
     }
   } catch (error) {
-    console.error('Error sending critical case alert:', error)
+    // Error logging handled by notification service
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error sending critical case alert:', error)
+    }
   }
 }

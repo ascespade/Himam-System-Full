@@ -3,9 +3,7 @@
 import { Clock, Eye, MessageSquare, Phone, UserCheck, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-// import { toast } from 'sonner' // TODO: Install sonner package
-const toast = {
-}
+import { toast } from '@/shared/utils/toast'
 
 interface QueueItem {
   id: string

@@ -9,7 +9,7 @@ import type {
   GuardianRelationship,
   CreateGuardianRelationshipInput,
   UpdateGuardianRelationshipInput
-} from '@/core/interfaces/repositories/guardian.repository.interface'
+} from '../../../core/interfaces/repositories/guardian.repository.interface'
 
 export class GuardianRepository implements IGuardianRepository {
   private readonly table = 'guardian_patient_relationships'

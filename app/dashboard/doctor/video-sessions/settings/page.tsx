@@ -1,13 +1,8 @@
 'use client'
 
-import { Monitor, Settings, Save, Video, Mic, Shield } from 'lucide-react'
+import { Save, Video, Mic, Shield } from 'lucide-react'
 import { useEffect, useState } from 'react'
-// import { toast } from 'sonner' // TODO: Install sonner package
-const toast = {
-  success: (message: string) => console.log('Success:', message),
-  error: (message: string) => console.error('Error:', message),
-  info: (message: string) => console.info('Info:', message),
-} // TODO: Install sonner package
+import { toast } from '@/shared/utils/toast'
 interface VideoSettings {
   provider: string
   recording_enabled: boolean

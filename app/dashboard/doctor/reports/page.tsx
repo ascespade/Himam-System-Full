@@ -2,9 +2,7 @@
 
 import { FileSearch, Download, Calendar, Filter, BarChart, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
-// import { toast } from 'sonner' // TODO: Install sonner package
-const toast = {
-}
+import { toast } from '@/shared/utils/toast'
 
 interface Report {
   id: string

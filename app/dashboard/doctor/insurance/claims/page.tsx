@@ -3,9 +3,7 @@
 import { Shield, Plus, Search, Filter, CheckCircle, XCircle, Clock, AlertCircle, Download, Edit, Send, Eye } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-// import { toast } from 'sonner' // TODO: Install sonner package
-const toast = {
-}
+import { toast } from '@/shared/utils/toast'
 
 interface InsuranceClaim {
   id: string
