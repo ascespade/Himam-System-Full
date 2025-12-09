@@ -52,6 +52,7 @@ export default function SupervisorDashboard() {
       }
     } catch (error) {
       console.error('Error loading dashboard:', error)
+      // Continue to show dashboard with default stats if API fails
     } finally {
       setLoading(false)
     }

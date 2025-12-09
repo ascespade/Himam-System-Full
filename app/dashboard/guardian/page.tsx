@@ -76,6 +76,7 @@ export default function GuardianDashboard() {
       }
     } catch (error) {
       console.error('Error loading dashboard:', error)
+      // Continue to show dashboard even if some data fails to load
     } finally {
       setLoading(false)
     }

@@ -101,6 +101,11 @@ export default function PatientDashboard() {
       }
     } catch (error) {
       console.error('Error loading dashboard:', error)
+      // Show user-friendly error message
+      if (!patient) {
+        setLoading(false)
+        return
+      }
     } finally {
       setLoading(false)
     }
@@ -117,7 +122,10 @@ export default function PatientDashboard() {
   if (!patient) {
     return (
       <div className="p-8">
-        <div className="text-center text-gray-500">لا توجد معلومات مريض</div>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+          <div className="text-gray-500 mb-4">لا توجد معلومات مريض متاحة</div>
+          <div className="text-sm text-gray-400">يرجى التأكد من تسجيل الدخول بحساب مريض صحيح</div>
+        </div>
       </div>
     )
   }
