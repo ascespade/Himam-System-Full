@@ -115,6 +115,7 @@ export default function Sidebar() {
       { category: 'الرئيسية', name: 'لوحة التحكم', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['admin'] },
       { category: 'التقارير', name: 'التقارير', href: '/dashboard/reports', icon: BarChart, roles: ['admin'] },
       { category: 'الإدارة', name: 'الأطباء', href: '/dashboard/doctors', icon: Users, roles: ['admin'] },
+      { category: 'الإدارة', name: 'المرضى', href: '/dashboard/patients', icon: Users, roles: ['admin'] },
       { category: 'الإدارة', name: 'المستخدمين', href: '/dashboard/users', icon: Users, roles: ['admin'] },
       { category: 'الإدارة', name: 'المحتوى', href: '/dashboard/content', icon: FileText, roles: ['admin'] },
       { category: 'الإدارة', name: 'الذكاء الاصطناعي', href: '/dashboard/knowledge', icon: BrainCircuit, roles: ['admin'] },

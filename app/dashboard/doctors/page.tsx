@@ -37,10 +37,29 @@ export default function DoctorsPage() {
   const fetchDoctors = async () => {
     try {
       setLoading(true)
-      const res = await fetch('/api/doctors/profiles')
+      // Fetch all users with role 'doctor'
+      const res = await fetch('/api/users?role=doctor')
       const data = await res.json()
       if (data.success) {
-        setDoctors(data.data || [])
+        // Map users to doctor profile format
+        const doctorsList = (data.data || []).map((user: any) => ({
+          id: user.id,
+          user_id: user.id,
+          user_name: user.name || 'غير معروف',
+          user_email: user.email || '',
+          specialization: user.specialization || 'غير محدد',
+          license_number: user.license_number,
+          license_expiry: user.license_expiry,
+          years_of_experience: user.years_of_experience,
+          education: user.education || [],
+          certifications: user.certifications || [],
+          languages: user.languages || [],
+          bio: user.bio,
+          consultation_fee: user.consultation_fee,
+          image_url: user.image_url,
+          patient_count: 0 // Will be fetched separately if needed
+        }))
+        setDoctors(doctorsList)
       }
     } catch (error) {
       console.error('Error fetching doctors:', error)

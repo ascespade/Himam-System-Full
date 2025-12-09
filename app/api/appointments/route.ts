@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { supabaseAdmin } from '@/lib'
+import { supabaseAdmin } from '@/lib/supabase'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
 
@@ -45,7 +45,13 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('appointments')
-      .select('*, patients(name, phone)')
+      .select(`
+        *,
+        patients (
+          name,
+          phone
+        )
+      `)
       .order('date', { ascending: false })
       .order('time', { ascending: false })
       .limit(limit)
