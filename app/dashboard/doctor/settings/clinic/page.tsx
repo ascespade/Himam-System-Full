@@ -2,7 +2,7 @@
 
 import { Building2, Clock, DollarSign, Save, Settings, Users, XCircle, CheckCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
-// import { toast } } from 'sonner' // TODO: Install sonner package
+// import { toast } from 'sonner' // TODO: Install sonner package
 const toast = {
   success: (message: string) => console.log('Success:', message),
   error: (message: string) => console.error('Error:', message),
