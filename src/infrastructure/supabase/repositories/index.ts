@@ -12,5 +12,8 @@ export { contentItemsRepository } from './content-items.repository'
 export { socialMediaRepository } from './social-media.repository'
 export { statisticsRepository } from './statistics.repository'
 export { testimonialsRepository } from './testimonials.repository'
+export { patientRepository } from './patient.repository'
+export { guardianRepository } from './guardian.repository'
+export { receptionRepository } from './reception.repository'
 
 
