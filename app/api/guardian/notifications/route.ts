@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
     const unreadOnly = searchParams.get('unread_only') === 'true'
+    const type = searchParams.get('type')
 
     // Get notifications for guardian
     // Note: Adjust based on your notifications table structure
@@ -75,9 +76,6 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    const searchParams = req.nextUrl.searchParams
-    const type = searchParams.get('type')
-
     // Filter by type if provided (e.g., 'approval')
     let filteredNotifications = notifications || []
     if (type === 'approval') {
@@ -85,12 +83,23 @@ export async function GET(req: NextRequest) {
       filteredNotifications = filteredNotifications.filter((n: any) => 
         n.type === 'approval_request' || 
         n.type === 'procedure_approval' ||
+        n.type === 'approval' ||
         n.title?.includes('موافقة') ||
         n.message?.includes('موافقة')
       )
     }
 
-    return NextResponse.json(successResponse(filteredNotifications))
+    // Return array directly for type=approval, otherwise return object with metadata
+    if (type === 'approval') {
+      return NextResponse.json(successResponse(filteredNotifications))
+    }
+
+    return NextResponse.json(successResponse({
+      notifications: filteredNotifications,
+      total: count || 0,
+      limit,
+      offset
+    }))
   } catch (error: unknown) {
     return handleApiError(error)
   }
