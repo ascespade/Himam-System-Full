@@ -275,16 +275,21 @@ export default function Sidebar() {
               
               {/* Category Items */}
               {items.map((item) => {
-                const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+                const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'))
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer relative z-10 ${
                       isActive
                         ? 'bg-primary text-white shadow-md shadow-primary/20'
                         : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                     }`}
+                    onClick={(e) => {
+                      // Force navigation using router to ensure it works
+                      e.preventDefault()
+                      router.push(item.href)
+                    }}
                   >
                     <item.icon size={18} />
                     <span className="flex-1">{item.name}</span>
