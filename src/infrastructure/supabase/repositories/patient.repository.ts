@@ -10,8 +10,8 @@ import type {
   CreatePatientInput,
   UpdatePatientInput,
   PatientSearchFilters,
-} from '@/core/interfaces/repositories/patient.repository.interface'
-import { DatabaseError } from '@/core/errors'
+} from '../../../core/interfaces/repositories/patient.repository.interface'
+import { DatabaseError } from '../../../core/errors'
 
 export class PatientRepository implements IPatientRepository {
   async findById(id: string): Promise<Patient | null> {

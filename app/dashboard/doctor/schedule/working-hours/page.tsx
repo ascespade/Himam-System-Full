@@ -2,12 +2,7 @@
 
 import { Calendar, Clock, Save, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-// import { toast } from 'sonner' // TODO: Install sonner package
-const toast = {
-  success: (message: string) => console.log('Success:', message),
-  error: (message: string) => console.error('Error:', message),
-  info: (message: string) => console.info('Info:', message),
-} // TODO: Install sonner package
+import { toast } from '@/shared/utils/toast'
 interface WorkingHour {
   id?: string
   day_of_week: number

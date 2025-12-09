@@ -2,12 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, CheckCircle, XCircle, Clock, Save } from 'lucide-react'
-// import { toast } from 'sonner' // TODO: Install sonner package
-const toast = {
-  success: (message: string) => console.log('Success:', message),
-  error: (message: string) => console.error('Error:', message),
-  info: (message: string) => console.info('Info:', message),
-}
+import { toast } from '@/shared/utils/toast'
 
 interface WhatsAppTemplate {
   id: string

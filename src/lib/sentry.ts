@@ -22,12 +22,13 @@ export function initSentry(): void {
     }
 
     // Dynamic import to avoid errors if Sentry is not installed
-    import('@sentry/nextjs').then((Sentry) => {
+    // @ts-expect-error - Optional dependency, may not be installed
+    import('@sentry/nextjs').then((Sentry: any) => {
       Sentry.init({
         dsn,
         environment: process.env.NODE_ENV || 'development',
         tracesSampleRate: 1.0,
-        beforeSend(event) {
+        beforeSend(event: any) {
           // Don't send events in development
           if (process.env.NODE_ENV === 'development') {
             return null
@@ -56,7 +57,8 @@ export function captureException(error: Error, context?: Record<string, unknown>
   }
 
   try {
-    import('@sentry/nextjs').then((Sentry) => {
+    // @ts-expect-error - Optional dependency, may not be installed
+    import('@sentry/nextjs').then((Sentry: any) => {
       Sentry.captureException(error, {
         extra: context
       })
@@ -78,9 +80,10 @@ export function captureMessage(message: string, level: 'info' | 'warning' | 'err
   }
 
   try {
-    import('@sentry/nextjs').then((Sentry) => {
+    // @ts-expect-error - Optional dependency, may not be installed
+    import('@sentry/nextjs').then((Sentry: any) => {
       Sentry.captureMessage(message, {
-        level: level as any
+        level: level as 'info' | 'warning' | 'error' | 'fatal' | 'debug'
       })
     }).catch(() => {
       console.log(`[${level}]`, message)

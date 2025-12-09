@@ -4,12 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
-import { guardianRepository, patientRepository } from '@/infrastructure/supabase/repositories'
+import { guardianRepository } from '@/infrastructure/supabase/repositories'
 import { sendTextMessage } from '@/lib/whatsapp-messaging'
 import { generateWhatsAppResponse } from '@/lib/ai'
+import { supabaseAdmin } from '@/lib'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,23 +51,21 @@ export async function POST(req: NextRequest) {
     }
 
     // Use AI to understand the message intent
-    const aiResponse = await generateWhatsAppResponse(message, {
-      userPhone: from,
-      userRole: 'guardian',
-      context: {
-        guardianId: guardian.id,
-        linkedPatients: relationships.map(r => r.patient_id)
-      }
-    })
+    const aiResponse = await generateWhatsAppResponse(
+      from,
+      message,
+      undefined, // conversationHistory
+      undefined // patientName
+    )
 
     // Send AI response
-    await sendTextMessage(from, aiResponse)
+    await sendTextMessage(from, aiResponse.text)
 
     // Log interaction
     await supabaseAdmin.from('conversation_history').insert({
       user_phone: from,
       user_message: message,
-      ai_response: aiResponse,
+      ai_response: aiResponse.text,
       session_id: `guardian-${guardian.id}`
     })
 
