@@ -4,7 +4,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { parseRequestBody from '@/core/api/middleware'
+import { parseRequestBody } from '@/core/api/middleware'
 
 export const dynamic = 'force-dynamic'
 
