@@ -34,7 +34,8 @@ import {
     MessageCircle,
     Zap,
     Smartphone,
-    GitBranch
+    GitBranch,
+    AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -157,6 +158,28 @@ export default function Sidebar() {
       { category: 'الإعدادات', name: 'إعدادات الجلسات المرئية', href: '/dashboard/doctor/video-sessions/settings', icon: Monitor, roles: ['admin', 'doctor'] },
     ],
 
+    // Patient Module
+    patient: [
+      { category: 'الرئيسية', name: 'لوحة التحكم', href: '/dashboard/patient', icon: LayoutDashboard, roles: ['patient'] },
+      { category: 'المواعيد', name: 'مواعيدي', href: '/dashboard/patient/appointments', icon: Calendar, roles: ['patient'] },
+      { category: 'السجلات', name: 'السجلات الطبية', href: '/dashboard/patient/records', icon: FileText, roles: ['patient'] },
+    ],
+
+    // Guardian Module
+    guardian: [
+      { category: 'الرئيسية', name: 'لوحة التحكم', href: '/dashboard/guardian', icon: LayoutDashboard, roles: ['guardian'] },
+      { category: 'المرضى', name: 'المرضى المرتبطين', href: '/dashboard/guardian/patients', icon: Users, roles: ['guardian'] },
+      { category: 'الموافقات', name: 'الموافقات المعلقة', href: '/dashboard/guardian/approvals', icon: UserCheck, roles: ['guardian'] },
+    ],
+
+    // Supervisor Module
+    supervisor: [
+      { category: 'الرئيسية', name: 'لوحة التحكم', href: '/dashboard/supervisor', icon: LayoutDashboard, roles: ['supervisor'] },
+      { category: 'المراجعات', name: 'مراجعات الجلسات', href: '/dashboard/supervisor/reviews', icon: FileText, roles: ['supervisor'] },
+      { category: 'الجودة', name: 'تحليلات الجودة', href: '/dashboard/supervisor/quality', icon: TrendingUp, roles: ['supervisor'] },
+      { category: 'الحالات', name: 'الحالات الحرجة', href: '/dashboard/supervisor/critical-cases', icon: AlertCircle, roles: ['supervisor'] },
+    ],
+
     // Shared pages
     shared: [
       { category: 'مشترك', name: 'التقويم', href: '/dashboard/calendar', icon: Calendar, roles: ['admin', 'doctor', 'staff', 'reception'] },
@@ -169,6 +192,9 @@ export default function Sidebar() {
     ...menuStructure.admin,
     ...menuStructure.reception,
     ...menuStructure.doctor,
+    ...menuStructure.patient,
+    ...menuStructure.guardian,
+    ...menuStructure.supervisor,
     ...menuStructure.shared,
   ]
 
