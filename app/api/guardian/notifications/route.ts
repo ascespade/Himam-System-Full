@@ -75,12 +75,22 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    return NextResponse.json(successResponse({
-      notifications: notifications || [],
-      total: count || 0,
-      limit,
-      offset
-    }))
+    const searchParams = req.nextUrl.searchParams
+    const type = searchParams.get('type')
+
+    // Filter by type if provided (e.g., 'approval')
+    let filteredNotifications = notifications || []
+    if (type === 'approval') {
+      // Filter for approval-related notifications
+      filteredNotifications = filteredNotifications.filter((n: any) => 
+        n.type === 'approval_request' || 
+        n.type === 'procedure_approval' ||
+        n.title?.includes('موافقة') ||
+        n.message?.includes('موافقة')
+      )
+    }
+
+    return NextResponse.json(successResponse(filteredNotifications))
   } catch (error: unknown) {
     return handleApiError(error)
   }

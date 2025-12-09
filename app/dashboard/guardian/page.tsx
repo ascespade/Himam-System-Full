@@ -66,7 +66,11 @@ export default function GuardianDashboard() {
       const approvalsRes = await fetch('/api/guardian/notifications?type=approval')
       const approvalsData = await approvalsRes.json()
       if (approvalsData.success) {
-        const approvals = approvalsData.data?.filter((a: PendingApproval) => a.status === 'pending') || []
+        // Handle both array and object with notifications property
+        const notifications = Array.isArray(approvalsData.data) 
+          ? approvalsData.data 
+          : approvalsData.data?.notifications || []
+        const approvals = notifications.filter((a: PendingApproval) => a.status === 'pending') || []
         setPendingApprovals(approvals)
         setStats((prev) => ({ ...prev, pendingApprovals: approvals.length }))
       }
