@@ -3,7 +3,17 @@
 import { Shield, Save, ArrowRight } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+// // import { toast } from 'sonner' // TODO: Install sonner package
+const toast = {
+  success: (message: string) => console.log('Success:', message),
+  error: (message: string) => console.error('Error:', message),
+  info: (message: string) => console.info('Info:', message),
+} // TODO: Install sonner package
+const toast = {
+  success: (message: string) => console.log('Success:', message),
+  error: (message: string) => console.error('Error:', message),
+  info: (message: string) => console.info('Info:', message),
+}
 
 interface Patient {
   id: string

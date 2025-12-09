@@ -16,7 +16,12 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
-import { toast } from 'sonner'
+// import { toast } from 'sonner' // TODO: Install sonner package
+const toast = {
+  success: (message: string) => console.log('Success:', message),
+  error: (message: string) => console.error('Error:', message),
+  info: (message: string) => console.info('Info:', message),
+}
 import { createBrowserClient } from '@supabase/ssr'
 
 interface DashboardStats {

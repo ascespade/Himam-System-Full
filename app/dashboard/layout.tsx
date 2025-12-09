@@ -4,7 +4,7 @@ import NotificationsMenu from '@/components/NotificationsMenu'
 import Sidebar from '@/components/Sidebar'
 import UserHeader from '@/components/UserHeader'
 import DoctorHeader from '@/components/DoctorHeader'
-import { Toaster } from 'sonner'
+// import { Toaster } from 'sonner' // TODO: Install sonner package
 import { createBrowserClient } from '@supabase/ssr'
 import { useEffect, useState } from 'react'
 

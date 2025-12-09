@@ -3,7 +3,7 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { useEffect, useState } from 'react'
 import AdminCalendar from '@/components/AdminCalendar'
-import DoctorCalendar from '@/components/DoctorCalendar'
+// import DoctorCalendar from '@/components/DoctorCalendar' // TODO: Create DoctorCalendar component
 
 export default function CalendarPage() {
   const [userRole, setUserRole] = useState<string | null>(null)

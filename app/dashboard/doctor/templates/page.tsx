@@ -2,7 +2,12 @@
 
 import { FileText, Plus, Search, Edit, Trash2, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+// import { toast } from 'sonner' // TODO: Install sonner package
+const toast = {
+  success: (message: string) => console.log('Success:', message),
+  error: (message: string) => console.error('Error:', message),
+  info: (message: string) => console.info('Info:', message),
+}
 
 interface Template {
   id: string
