@@ -116,22 +116,12 @@ export async function GET(req: NextRequest) {
       : 0
 
     return NextResponse.json(successResponse({
-      overview: {
-        totalSessions: totalSessions.count || 0,
-        reviewedSessions: reviewedSessions.count || 0,
-        pendingReviews: pendingReviews.count || 0,
-        criticalCases: criticalCases.count || 0,
-        activeDoctors: doctorStats.data?.length || 0
-      },
-      quality: {
-        averageQualityScore: Math.round(avgQuality * 100) / 100,
-        averageComplianceScore: Math.round(avgCompliance * 100) / 100,
-        reviewRate: totalSessions.count ? Math.round((reviewedSessions.count || 0) / totalSessions.count * 100) : 0
-      },
-      period: {
-        startDate,
-        endDate
-      }
+      totalSessions: totalSessions.count || 0,
+      reviewedSessions: reviewedSessions.count || 0,
+      pendingReviews: pendingReviews.count || 0,
+      criticalCases: criticalCases.count || 0,
+      qualityScore: Math.round(avgQuality * 100) / 100,
+      complianceScore: Math.round(avgCompliance * 100) / 100,
     }))
   } catch (error: unknown) {
     return handleApiError(error)

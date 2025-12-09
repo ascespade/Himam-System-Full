@@ -39,8 +39,16 @@ export default function SupervisorDashboard() {
       setLoading(true)
       const res = await fetch('/api/supervisor/dashboard')
       const data = await res.json()
-      if (data.success) {
-        setStats(data.data || {})
+      if (data.success && data.data) {
+        const dashboardData = data.data
+        setStats({
+          totalSessions: dashboardData.totalSessions || 0,
+          reviewedSessions: dashboardData.reviewedSessions || 0,
+          pendingReviews: dashboardData.pendingReviews || 0,
+          criticalCases: dashboardData.criticalCases || 0,
+          qualityScore: dashboardData.qualityScore || 0,
+          complianceScore: dashboardData.complianceScore || 0,
+        })
       }
     } catch (error) {
       console.error('Error loading dashboard:', error)
