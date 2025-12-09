@@ -11,7 +11,14 @@ import type {
   UpdatePatientInput,
   PatientSearchFilters,
 } from '@/core/interfaces/repositories/patient.repository.interface'
-import { DatabaseError } from '@/core/errors'
+// import { DatabaseError } from '@/core/errors' // TODO: Create error classes module
+// Temporary DatabaseError class
+class DatabaseError extends Error {
+  constructor(message: string, public originalError?: unknown) {
+    super(message)
+    this.name = 'DatabaseError'
+  }
+}
 
 export class PatientRepository implements IPatientRepository {
   async findById(id: string): Promise<Patient | null> {
