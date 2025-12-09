@@ -56,3 +56,5 @@ Thumbs.db
 *.zip
 Himam-System-Full.zip
 
+core
+*.core
