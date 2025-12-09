@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { askAI } from '@/lib/ai'
 import { parseRequestBody } from '@/core/api/middleware'
-import { successResponse, errorResponse } from '@/shared/utils/api'
+import { successResponse, errorResponse, validateRequestBody } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
 
 export async function POST(req: NextRequest) {
