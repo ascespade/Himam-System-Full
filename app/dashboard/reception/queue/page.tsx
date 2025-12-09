@@ -22,6 +22,10 @@ interface QueueItem {
   doctor_id?: string
   doctor_name?: string
   notes?: string
+  service_type?: string
+  appointments?: {
+    service_type?: string
+  }
 }
 
 interface Doctor {
@@ -136,8 +140,8 @@ export default function QueuePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patient_id: queueItem.patient_id,
-          session_type: queueItem.appointments?.service_type || 'consultation',
-          service_type: queueItem.appointments?.service_type
+          session_type: queueItem.service_type || queueItem.appointments?.service_type || 'consultation',
+          service_type: queueItem.service_type || queueItem.appointments?.service_type
         })
       })
       const data = await res.json()
