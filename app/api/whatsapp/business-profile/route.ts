@@ -94,10 +94,11 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      // Fetch business profile - note: profile_picture_url is not available on phone number endpoint
-      // It's only available on the WhatsApp Business Profile endpoint (WABA level)
+      // Fetch phone number details - only fields available on phone number endpoint
+      // Note: Business profile fields (about, addresses, description, email, websites, profile_picture_url)
+      // are only available on the WhatsApp Business Profile endpoint (requires WABA ID)
       const metaResponse = await fetch(
-        `https://graph.facebook.com/v20.0/${phoneNumberId}?fields=verified_name,display_phone_number,about,addresses,description,email,websites`,
+        `https://graph.facebook.com/v20.0/${phoneNumberId}?fields=verified_name,display_phone_number`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -114,17 +115,20 @@ export async function GET(req: NextRequest) {
       const metaData = await metaResponse.json()
 
       // Save to database (if table exists)
+      // Note: Only phone number fields are available from this endpoint
+      // Business profile details (description, email, websites, etc.) require WABA-level API access
       try {
         const { data: savedProfile } = await supabaseAdmin
           .from('whatsapp_business_profiles')
           .insert({
             business_name: metaData.verified_name || 'مركز الهمم',
-            business_description: metaData.description || metaData.about || null,
-            business_email: metaData.email || null,
-            business_website: metaData.websites?.[0] || null,
-            business_address: metaData.addresses?.[0] || null,
-            profile_picture_url: metaData.profile_picture_url || null,
+            business_description: null, // Not available from phone number endpoint
+            business_email: null, // Not available from phone number endpoint
+            business_website: null, // Not available from phone number endpoint
+            business_address: null, // Not available from phone number endpoint
+            profile_picture_url: null, // Not available from phone number endpoint
             phone_number_id: phoneNumberId,
+            display_phone_number: metaData.display_phone_number || null,
             waba_id: metaData.id || null,
             is_active: true,
           })
@@ -139,12 +143,13 @@ export async function GET(req: NextRequest) {
           success: true,
           data: {
             business_name: metaData.verified_name || 'مركز الهمم',
-            business_description: metaData.description || metaData.about || null,
-            business_email: metaData.email || null,
-            business_website: metaData.websites?.[0] || null,
-            business_address: metaData.addresses?.[0] || null,
-            profile_picture_url: metaData.profile_picture_url || null,
+            business_description: null,
+            business_email: null,
+            business_website: null,
+            business_address: null,
+            profile_picture_url: null,
             phone_number_id: phoneNumberId,
+            display_phone_number: metaData.display_phone_number || null,
             waba_id: metaData.id || null,
             is_active: true,
           },
