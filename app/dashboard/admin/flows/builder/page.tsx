@@ -27,7 +27,7 @@ export default function FlowBuilderPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    module: 'whatsapp',
+    module: 'whatsapp' as string,
     category: 'automation',
     trigger_type: 'event',
     trigger_config: {} as Record<string, any>,

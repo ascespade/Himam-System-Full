@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url)
-    const module = searchParams.get('module')
+    const flowModule = searchParams.get('module')
     const category = searchParams.get('category')
     const isActive = searchParams.get('is_active')
     const tag = searchParams.get('tag')
@@ -63,8 +63,8 @@ export async function GET(req: NextRequest) {
       .order('priority', { ascending: false })
       .order('created_at', { ascending: false })
 
-    if (module) {
-      query = query.eq('module', module)
+    if (flowModule) {
+      query = query.eq('module', flowModule)
     }
 
     if (category) {
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     const {
       name,
       description,
-      module,
+      module: flowModule,
       category,
       trigger_type,
       trigger_config,
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
     } = body
 
     // Validation
-    if (!name || !module || !trigger_type) {
+    if (!name || !flowModule || !trigger_type) {
       return NextResponse.json(
         { success: false, error: 'Name, module, and trigger_type are required' },
         { status: HTTP_STATUS.BAD_REQUEST }
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
       .insert({
         name,
         description: description || null,
-        module,
+        module: flowModule,
         category: category || 'automation',
         trigger_type,
         trigger_config: trigger_config || {},
