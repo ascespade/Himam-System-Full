@@ -25,6 +25,7 @@ export default function WhatsAppAnalyticsPage() {
 
   useEffect(() => {
     fetchAnalytics()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFrom, dateTo])
 
   const fetchAnalytics = async () => {

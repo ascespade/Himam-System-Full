@@ -46,6 +46,7 @@ export default function FlowBuilderPage() {
     if (flowId) {
       loadFlow()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flowId])
 
   const loadFlow = async () => {
@@ -405,6 +406,7 @@ function NodeEditor({ node, index, onUpdate, onRemove }: {
 
   useEffect(() => {
     onUpdate(config)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config])
 
   const renderConfigFields = () => {

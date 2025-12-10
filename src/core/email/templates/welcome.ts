@@ -2,7 +2,7 @@
  * Welcome Email Template
  */
 
-export default {
+const welcomeTemplate = {
   subject: 'مرحباً بك في نظام حِمام',
   html: `
     <!DOCTYPE html>
@@ -47,3 +47,5 @@ export default {
     © 2024 نظام حِمام. جميع الحقوق محفوظة.
   `,
 }
+
+export default welcomeTemplate

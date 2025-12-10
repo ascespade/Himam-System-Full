@@ -115,12 +115,14 @@ async function executeFlowAsync(
     // Execute nodes in order
     while (currentNodeId) {
       const currentNode = nodes.find((n: any) => n.id === currentNodeId)
-      if (!currentNode) break
+      if (!currentNode || !currentNodeId) break
+
+      const nodeId = currentNodeId // Store in const to ensure it's not null
 
       // Log node start
       await supabaseAdmin.from('flow_logs').insert({
         execution_id: executionId,
-        node_id: currentNodeId,
+        node_id: nodeId,
         log_level: 'info',
         message: `Executing node: ${currentNode.label || currentNode.type}`,
         data: { node: currentNode },
@@ -175,20 +177,20 @@ async function executeFlowAsync(
             nodeResult = { success: true, data: {} }
         }
 
-        nodeResults[currentNodeId] = nodeResult
+        nodeResults[nodeId] = nodeResult
 
         // Update execution
         await supabaseAdmin
           .from('flow_executions')
           .update({
-            current_node_id: currentNodeId,
+            current_node_id: nodeId,
             node_results: nodeResults,
           })
           .eq('id', executionId)
 
         // Find next node
         const nextEdge = edges.find((e: any) => {
-          if (e.source !== currentNodeId) return false
+          if (e.source !== nodeId) return false
           
           // Check condition if edge has condition
           if (e.condition) {
@@ -200,23 +202,27 @@ async function executeFlowAsync(
         currentNodeId = nextEdge?.target || null
       } catch (nodeError: any) {
         // Node execution failed
-        nodeResults[currentNodeId] = {
-          success: false,
-          error: nodeError.message,
-        }
+        if (nodeId) {
+          nodeResults[nodeId] = {
+            success: false,
+            error: nodeError.message,
+          }
 
-        await supabaseAdmin.from('flow_logs').insert({
-          execution_id: executionId,
-          node_id: currentNodeId,
-          log_level: 'error',
-          message: `Node execution failed: ${nodeError.message}`,
-          data: { error: nodeError.stack },
-        })
+          await supabaseAdmin.from('flow_logs').insert({
+            execution_id: executionId,
+            node_id: nodeId,
+            log_level: 'error',
+            message: `Node execution failed: ${nodeError.message}`,
+            data: { error: nodeError.stack },
+          })
 
-        // Check if flow should continue on error
-        if (currentNode.continueOnError) {
-          const nextEdge = edges.find((e: any) => e.source === currentNodeId)
-          currentNodeId = nextEdge?.target || null
+          // Check if flow should continue on error
+          if (currentNode.continueOnError) {
+            const nextEdge = edges.find((e: any) => e.source === nodeId)
+            currentNodeId = nextEdge?.target || null
+          } else {
+            throw nodeError
+          }
         } else {
           throw nodeError
         }

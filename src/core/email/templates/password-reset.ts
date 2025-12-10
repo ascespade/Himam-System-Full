@@ -2,7 +2,7 @@
  * Password Reset Email Template
  */
 
-export default {
+const passwordResetTemplate = {
   subject: 'إعادة تعيين كلمة المرور',
   html: `
     <!DOCTYPE html>
@@ -48,3 +48,5 @@ export default {
     © 2024 نظام حِمام. جميع الحقوق محفوظة.
   `,
 }
+
+export default passwordResetTemplate

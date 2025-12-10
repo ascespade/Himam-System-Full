@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { User, Stethoscope, GraduationCap, Award, Mail, Phone, Calendar, Users, MessageSquare, Eye, Edit, Plus, Search, DollarSign } from 'lucide-react'
 import Modal from '@/components/Modal'
 
@@ -149,9 +150,11 @@ export default function DoctorsPage() {
             <div key={doctor.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-all">
               <div className="flex items-start gap-4 mb-4">
                 {doctor.image_url ? (
-                  <img
+                  <Image
                     src={doctor.image_url}
                     alt={doctor.user_name}
+                    width={80}
+                    height={80}
                     className="w-20 h-20 rounded-full object-cover"
                   />
                 ) : (

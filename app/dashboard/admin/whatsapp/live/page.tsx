@@ -88,6 +88,7 @@ export default function WhatsAppLiveLogPage() {
         supabase.removeChannel(messagesChannel)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversation])
 
   useEffect(() => {

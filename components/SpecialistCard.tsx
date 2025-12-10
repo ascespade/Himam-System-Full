@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Specialist } from '@/shared'
 import Button from '@/shared/components/ui/Button'
 
@@ -13,9 +14,11 @@ export default function SpecialistCard({ specialist }: SpecialistCardProps) {
     <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-primary/20 group">
       <div className="flex items-center space-x-4 space-x-reverse mb-4">
         <div className="w-16 h-16 bg-primary-light rounded-full flex items-center justify-center group-hover:bg-primary/10 transition-colors overflow-hidden">
-          <img
+          <Image
             src={imagePlaceholder}
             alt={specialist.name}
+            width={64}
+            height={64}
             className="w-full h-full object-cover"
           />
         </div>

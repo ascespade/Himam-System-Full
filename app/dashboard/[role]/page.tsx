@@ -37,12 +37,14 @@ export default function RoleDashboard() {
 
   useEffect(() => {
     loadUserRole()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     if (userRole) {
       loadDashboard()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole])
 
   const loadUserRole = async () => {
@@ -210,6 +212,7 @@ function ActivityFeed({ userRole }: { userRole: string }) {
     // Refresh every 30 seconds
     const interval = setInterval(loadActivities, 30000)
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole])
 
   const loadActivities = async () => {

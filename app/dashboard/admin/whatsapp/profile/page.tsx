@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { Save, RefreshCw, Image as ImageIcon, Building2, Mail, Globe, MapPin, Shield, Star, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -176,9 +177,11 @@ export default function WhatsAppBusinessProfilePage() {
         </h2>
         <div className="flex items-center gap-6">
           {formData.profile_picture_url ? (
-            <img
+            <Image
               src={formData.profile_picture_url}
               alt="Profile"
+              width={96}
+              height={96}
               className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
             />
           ) : (

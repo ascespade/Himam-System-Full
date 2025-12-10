@@ -2,7 +2,7 @@
  * Appointment Confirmation Email Template
  */
 
-export default {
+const appointmentConfirmationTemplate = {
   subject: 'تأكيد موعدك الطبي',
   html: `
     <!DOCTYPE html>
@@ -54,3 +54,5 @@ export default {
     © 2024 نظام حِمام. جميع الحقوق محفوظة.
   `,
 }
+
+export default appointmentConfirmationTemplate
