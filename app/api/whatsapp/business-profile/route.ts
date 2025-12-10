@@ -93,11 +93,14 @@ export async function GET(req: NextRequest) {
       )
     }
 
+    const wabaId = whatsappSettings?.waba_id
+
     try {
-      // Fetch phone number details - only fields available on phone number endpoint
-      // Note: Business profile fields (about, addresses, description, email, websites, profile_picture_url)
-      // are only available on the WhatsApp Business Profile endpoint (requires WABA ID)
-      const metaResponse = await fetch(
+      let metaData: any = {}
+      let profileData: any = {}
+
+      // Step 1: Fetch phone number details (always available)
+      const phoneResponse = await fetch(
         `https://graph.facebook.com/v20.0/${phoneNumberId}?fields=verified_name,display_phone_number`,
         {
           headers: {
@@ -106,32 +109,58 @@ export async function GET(req: NextRequest) {
         }
       )
 
-      if (!metaResponse.ok) {
-        const errorData = await metaResponse.json().catch(() => ({}))
+      if (!phoneResponse.ok) {
+        const errorData = await phoneResponse.json().catch(() => ({}))
         const errorMessage = errorData.error?.message || errorData.error?.error_user_msg || 'Failed to fetch from Meta API'
         throw new Error(errorMessage)
       }
 
-      const metaData = await metaResponse.json()
+      metaData = await phoneResponse.json()
+
+      // Step 2: If WABA ID is configured, fetch Business Profile (WABA-level endpoint)
+      if (wabaId) {
+        try {
+          const profileResponse = await fetch(
+            `https://graph.facebook.com/v20.0/${wabaId}/whatsapp_business_profile?fields=about,addresses,description,email,websites,profile_picture_url,vertical,cover_photo_url`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          )
+
+          if (profileResponse.ok) {
+            profileData = await profileResponse.json()
+          } else {
+            console.warn('Failed to fetch business profile from WABA endpoint, using phone number data only')
+          }
+        } catch (profileError: any) {
+          console.warn('Error fetching business profile from WABA endpoint:', profileError.message)
+          // Continue with phone number data only
+        }
+      }
+
+      // Merge data from both endpoints
+      const mergedData = {
+        business_name: metaData.verified_name || 'مركز الهمم',
+        business_description: profileData.description || profileData.about || null,
+        business_email: profileData.email || null,
+        business_website: profileData.websites?.[0] || null,
+        business_address: profileData.addresses?.[0]?.street || profileData.addresses?.[0] || null,
+        business_category: profileData.vertical || null,
+        profile_picture_url: profileData.profile_picture_url || null,
+        cover_photo_url: profileData.cover_photo_url || null,
+        phone_number_id: phoneNumberId,
+        display_phone_number: metaData.display_phone_number || null,
+        waba_id: wabaId || null,
+        is_active: true,
+      }
 
       // Save to database (if table exists)
-      // Note: Only phone number fields are available from this endpoint
-      // Business profile details (description, email, websites, etc.) require WABA-level API access
       try {
         const { data: savedProfile } = await supabaseAdmin
           .from('whatsapp_business_profiles')
-          .insert({
-            business_name: metaData.verified_name || 'مركز الهمم',
-            business_description: null, // Not available from phone number endpoint
-            business_email: null, // Not available from phone number endpoint
-            business_website: null, // Not available from phone number endpoint
-            business_address: null, // Not available from phone number endpoint
-            profile_picture_url: null, // Not available from phone number endpoint
-            phone_number_id: phoneNumberId,
-            display_phone_number: metaData.display_phone_number || null,
-            waba_id: metaData.id || null,
-            is_active: true,
-          })
+          .insert(mergedData)
           .select()
           .single()
 
@@ -141,18 +170,7 @@ export async function GET(req: NextRequest) {
         console.warn('Could not save to database, returning Meta API data:', dbError.message)
         return NextResponse.json({
           success: true,
-          data: {
-            business_name: metaData.verified_name || 'مركز الهمم',
-            business_description: null,
-            business_email: null,
-            business_website: null,
-            business_address: null,
-            profile_picture_url: null,
-            phone_number_id: phoneNumberId,
-            display_phone_number: metaData.display_phone_number || null,
-            waba_id: metaData.id || null,
-            is_active: true,
-          },
+          data: mergedData,
         })
       }
     } catch (metaError: any) {
