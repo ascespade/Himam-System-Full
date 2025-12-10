@@ -542,11 +542,41 @@ export async function POST(req: NextRequest) {
               const textResponse = await sendTextMessage(from, cleanResponse)
               outboundMessageId = textResponse?.messageId || null
               console.log('✅ Message sent successfully:', { messageId: outboundMessageId })
+              
+              // If messageId is null, try again once
+              if (!outboundMessageId) {
+                console.warn('⚠️ First attempt returned no messageId, retrying...')
+                await new Promise(resolve => setTimeout(resolve, 500))
+                const retryResponse = await sendTextMessage(from, cleanResponse)
+                outboundMessageId = retryResponse?.messageId || null
+                console.log('🔄 Retry result:', { messageId: outboundMessageId })
+              }
             } catch (sendError: any) {
               console.error('❌ Error sending WhatsApp message:', sendError)
-              // Still return success to webhook to avoid retries
-              // But log the error for debugging
               logError('Failed to send WhatsApp message', sendError)
+              
+              // Try to send a fallback message
+              try {
+                console.log('🔄 Attempting fallback message...')
+                const fallbackText = 'عذراً، حدث خطأ في إرسال الرسالة. يرجى المحاولة مرة أخرى.'
+                const fallbackResponse = await sendTextMessage(from, fallbackText)
+                outboundMessageId = fallbackResponse?.messageId || null
+                console.log('✅ Fallback message sent:', { messageId: outboundMessageId })
+              } catch (fallbackError) {
+                console.error('❌ Fallback message also failed:', fallbackError)
+                // Log to database for admin review (non-blocking)
+                try {
+                  await supabaseAdmin.from('system_errors').insert({
+                    error_type: 'whatsapp_send_failed',
+                    error_message: sendError?.message || 'Unknown error',
+                    context: { from, originalMessage: cleanResponse.substring(0, 100) },
+                    severity: 'high'
+                  })
+                } catch (dbError) {
+                  // Silent fail - logging error is not critical
+                  console.error('Failed to log error to database:', dbError)
+                }
+              }
             }
          }
 
