@@ -301,7 +301,20 @@ export async function POST(req: NextRequest) {
           : []
 
         // Generate AI response with Patient Context
-        const aiResponse = await generateWhatsAppResponse(from, text, formattedHistory, patientProfile?.name)
+        let aiResponse
+        try {
+          console.log('🤖 Generating AI response for message:', text.substring(0, 50) + '...')
+          aiResponse = await generateWhatsAppResponse(from, text, formattedHistory, patientProfile?.name)
+          console.log('✅ AI response generated:', aiResponse.model, '-', aiResponse.text.substring(0, 50) + '...')
+        } catch (aiError: any) {
+          console.error('❌ Error generating AI response:', aiError)
+          // Fallback response if AI fails
+          aiResponse = {
+            text: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً. يرجى المحاولة مرة أخرى لاحقاً.',
+            model: 'error',
+          }
+          logError('AI response generation failed', aiError)
+        }
 
         // Check if AI extracted booking details (before saving conversation)
         const bookingDetails = parseBookingFromAI(aiResponse.text)
