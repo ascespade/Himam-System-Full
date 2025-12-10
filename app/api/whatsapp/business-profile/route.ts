@@ -104,7 +104,9 @@ export async function GET(req: NextRequest) {
       )
 
       if (!metaResponse.ok) {
-        throw new Error('Failed to fetch from Meta API')
+        const errorData = await metaResponse.json().catch(() => ({}))
+        const errorMessage = errorData.error?.message || errorData.error?.error_user_msg || 'Failed to fetch from Meta API'
+        throw new Error(errorMessage)
       }
 
       const metaData = await metaResponse.json()
@@ -148,8 +150,9 @@ export async function GET(req: NextRequest) {
       }
     } catch (metaError: any) {
       console.error('Error fetching from Meta API:', metaError)
+      const errorMessage = metaError.message || 'Failed to fetch profile from Meta API'
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch profile from Meta API' },
+        { success: false, error: errorMessage },
         { status: 500 }
       )
     }

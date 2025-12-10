@@ -137,20 +137,47 @@ export default function WhatsAppSettingsPage() {
       const activeRes = await fetch('/api/whatsapp/settings/active')
       const activeData = await activeRes.json()
       
-      if (!activeData.success || !activeData.data || !activeData.data.is_active) {
+      if (!activeRes.ok || !activeData.success || !activeData.data || !activeData.data.is_active) {
         setConnectionStatus('disconnected')
         return
       }
 
       // Test connection by checking business profile
+      // Use a simpler endpoint or just verify settings are valid
       const profileRes = await fetch('/api/whatsapp/business-profile')
-      const profileData = await profileRes.json()
       
-      if (profileRes.ok && profileData.success) {
-        setConnectionStatus('connected')
-      } else {
-        setConnectionStatus('disconnected')
+      if (profileRes.ok) {
+        const profileData = await profileRes.json()
+        if (profileData.success) {
+          setConnectionStatus('connected')
+          return
+        }
       }
+      
+      // If profile fetch fails, check if it's just a configuration issue
+      // Don't mark as disconnected if settings are present and active
+      if (activeData.data && activeData.data.is_active && activeData.data.phone_number_id && activeData.data.access_token) {
+        // Settings are configured, but API test failed - might be temporary
+        // Try a simpler test: just verify we can reach Meta API
+        try {
+          const testRes = await fetch(
+            `https://graph.facebook.com/v20.0/${activeData.data.phone_number_id}?fields=verified_name`,
+            {
+              headers: {
+                Authorization: `Bearer ${activeData.data.access_token}`,
+              },
+            }
+          )
+          if (testRes.ok) {
+            setConnectionStatus('connected')
+            return
+          }
+        } catch (testError) {
+          // Meta API test failed
+        }
+      }
+      
+      setConnectionStatus('disconnected')
     } catch (error) {
       console.error('Error checking connection:', error)
       setConnectionStatus('disconnected')
@@ -282,18 +309,52 @@ export default function WhatsAppSettingsPage() {
         }
       }
       
-      // Test connection by checking business profile
-      const res = await fetch('/api/whatsapp/business-profile')
-      const data = await res.json()
-      
-      if (res.ok && data.success) {
-        toast.success('✅ الاتصال يعمل بشكل صحيح!')
-        setConnectionStatus('connected')
-      } else {
-        const errorMsg = data.error?.message || data.error || 'تحقق من الإعدادات'
-        toast.error('❌ فشل الاتصال: ' + errorMsg)
-        setConnectionStatus('disconnected')
+      // Test connection by making a direct call to Meta API
+      try {
+        const testRes = await fetch(
+          `https://graph.facebook.com/v20.0/${settings.phone_number_id}?fields=verified_name`,
+          {
+            headers: {
+              Authorization: `Bearer ${settings.access_token}`,
+            },
+          }
+        )
+
+        if (testRes.ok) {
+          const testData = await testRes.json()
+          if (testData.verified_name || testData.id) {
+            toast.success('✅ الاتصال يعمل بشكل صحيح!')
+            setConnectionStatus('connected')
+            // Also refresh settings to get updated status
+            await loadSettings()
+            return
+          }
+        } else {
+          const errorData = await testRes.json().catch(() => ({}))
+          const errorMsg = errorData.error?.message || errorData.error?.error_user_msg || 'فشل الاتصال بـ Meta API'
+          toast.error('❌ فشل الاتصال: ' + errorMsg)
+          setConnectionStatus('disconnected')
+          return
+        }
+      } catch (apiError: any) {
+        // If direct API call fails, try the business profile endpoint as fallback
+        const res = await fetch('/api/whatsapp/business-profile')
+        const data = await res.json()
+        
+        if (res.ok && data.success) {
+          toast.success('✅ الاتصال يعمل بشكل صحيح!')
+          setConnectionStatus('connected')
+        } else {
+          const errorMsg = data.error?.message || data.error || 'تحقق من الإعدادات'
+          toast.error('❌ فشل الاتصال: ' + errorMsg)
+          setConnectionStatus('disconnected')
+        }
+        return
       }
+      
+      // If we get here, connection failed
+      toast.error('❌ فشل الاتصال: تحقق من صحة Access Token و Phone Number ID')
+      setConnectionStatus('disconnected')
     } catch (error: any) {
       console.error('Error testing connection:', error)
       toast.error('حدث خطأ أثناء اختبار الاتصال: ' + (error.message || 'خطأ غير معروف'))
