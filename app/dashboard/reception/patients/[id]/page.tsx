@@ -2,7 +2,7 @@
 
 import { ArrowRight, Edit, Phone, Mail, Calendar, MapPin, FileText, User, Heart, AlertCircle, Save, X } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { toast } from '@/shared/utils/toast'
 
 interface Patient {
@@ -38,11 +38,7 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
   const [saving, setSaving] = useState(false)
   const [editMode, setEditMode] = useState(isEdit)
 
-  useEffect(() => {
-    fetchPatient()
-  }, [params.id])
-
-  const fetchPatient = async () => {
+  const fetchPatient = useCallback(async () => {
     try {
       setLoading(true)
       const res = await fetch(`/api/reception/patients/${params.id}`)
@@ -59,7 +55,11 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id, router])
+
+  useEffect(() => {
+    fetchPatient()
+  }, [fetchPatient])
 
   const handleSave = async (updatedData: Partial<Patient>) => {
     try {

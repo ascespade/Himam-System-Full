@@ -5,7 +5,7 @@
  * مكون ديناميكي لعرض أنواع مختلفة من Widgets
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { BarChart3, LineChart, PieChart, TrendingUp, Table, List } from 'lucide-react'
 
 interface Widget {
@@ -25,11 +25,7 @@ export default function DashboardWidget({ widget, stats }: DashboardWidgetProps)
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadWidgetData()
-  }, [widget])
-
-  const loadWidgetData = async () => {
+  const loadWidgetData = useCallback(async () => {
     try {
       setLoading(true)
       const res = await fetch(`/api/dashboard/widget-data?widget_id=${widget.id}`)
@@ -42,7 +38,11 @@ export default function DashboardWidget({ widget, stats }: DashboardWidgetProps)
     } finally {
       setLoading(false)
     }
-  }
+  }, [widget.id])
+
+  useEffect(() => {
+    loadWidgetData()
+  }, [loadWidgetData])
 
   if (loading) {
     return (

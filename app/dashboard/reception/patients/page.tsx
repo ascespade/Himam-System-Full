@@ -2,7 +2,7 @@
 
 import { Search, UserPlus, Edit, Trash2, Eye, Phone, Calendar, Filter, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { toast } from '@/shared/utils/toast'
 
 interface Patient {
@@ -23,7 +23,7 @@ export default function PatientsListPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [total, setTotal] = useState(0)
 
-  const fetchPatients = async () => {
+  const fetchPatients = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -46,18 +46,14 @@ export default function PatientsListPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    fetchPatients()
-  }, [statusFilter])
+  }, [statusFilter, searchTerm])
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchPatients()
     }, 500) // Debounce search
     return () => clearTimeout(timeoutId)
-  }, [searchTerm])
+  }, [fetchPatients])
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`هل أنت متأكد من حذف المريض "${name}"؟`)) {

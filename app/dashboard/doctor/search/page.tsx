@@ -108,7 +108,7 @@ export default function SearchPage() {
     } else {
       setResults([])
     }
-  }, [searchQuery, typeFilter])
+  }, [searchQuery, typeFilter, handleSearch])
 
   const getResultIcon = (type: string) => {
     switch (type) {

@@ -5,7 +5,7 @@
  * View invoices and payment history
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { DollarSign, Calendar, Download, CheckCircle, Clock, AlertCircle, Search } from 'lucide-react'
@@ -38,11 +38,7 @@ export default function PatientBillingPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    loadInvoices()
-  }, [])
-
-  const loadInvoices = async () => {
+  const loadInvoices = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -68,7 +64,11 @@ export default function PatientBillingPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, router])
+
+  useEffect(() => {
+    loadInvoices()
+  }, [loadInvoices])
 
   const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch =

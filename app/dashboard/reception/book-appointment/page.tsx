@@ -2,7 +2,7 @@
 
 import { ChevronRight, Save, Search, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 interface Doctor {
   id: string
@@ -33,17 +33,7 @@ export default function BookAppointmentPage() {
     notes: ''
   })
 
-  useEffect(() => {
-    fetchDoctors()
-  }, [])
-
-  useEffect(() => {
-    if (searchTerm.length > 2) {
-      searchPatients()
-    }
-  }, [searchTerm])
-
-  const fetchDoctors = async () => {
+  const fetchDoctors = useCallback(async () => {
     try {
       // Fetch doctors (users with role 'doctor')
       const res = await fetch('/api/users?role=doctor')
@@ -54,9 +44,9 @@ export default function BookAppointmentPage() {
     } catch (err) {
       console.error('Error fetching doctors:', err)
     }
-  }
+  }, [])
 
-  const searchPatients = async () => {
+  const searchPatients = useCallback(async () => {
     try {
       const res = await fetch(`/api/patients/search?q=${searchTerm}`)
       const data = await res.json()
@@ -66,7 +56,17 @@ export default function BookAppointmentPage() {
     } catch (err) {
       console.error('Error searching patients:', err)
     }
-  }
+  }, [searchTerm])
+
+  useEffect(() => {
+    fetchDoctors()
+  }, [fetchDoctors])
+
+  useEffect(() => {
+    if (searchTerm.length > 2) {
+      searchPatients()
+    }
+  }, [searchTerm, searchPatients])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

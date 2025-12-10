@@ -5,7 +5,7 @@
  * View patient medical records and history
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { FileText, Calendar, User, Download, Search } from 'lucide-react'
@@ -34,11 +34,7 @@ export default function PatientRecordsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    loadRecords()
-  }, [])
-
-  const loadRecords = async () => {
+  const loadRecords = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -67,7 +63,11 @@ export default function PatientRecordsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, router])
+
+  useEffect(() => {
+    loadRecords()
+  }, [loadRecords])
 
   const filteredRecords = records.filter((record) => {
     const matchesSearch =

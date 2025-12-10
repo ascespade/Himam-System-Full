@@ -5,7 +5,7 @@
  * View and manage patient appointments
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { Calendar, Clock, User, MapPin, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
@@ -32,11 +32,7 @@ export default function PatientAppointmentsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    loadAppointments()
-  }, [])
-
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -65,7 +61,11 @@ export default function PatientAppointmentsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, router])
+
+  useEffect(() => {
+    loadAppointments()
+  }, [loadAppointments])
 
   const getStatusIcon = (status: string) => {
     switch (status) {

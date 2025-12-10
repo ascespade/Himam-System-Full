@@ -2,7 +2,7 @@
 
 import { Bell, Calendar, CheckCircle, Clock, Phone, Search, User, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 interface QueueItem {
   id: string
@@ -47,7 +47,7 @@ export default function ReceptionPage() {
     })
   }
 
-  const fetchQueue = async () => {
+  const fetchQueue = useCallback(async () => {
     try {
       setLoading(true)
       const res = await fetch('/api/reception/queue')
@@ -61,13 +61,13 @@ export default function ReceptionPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchQueue()
     const interval = setInterval(fetchQueue, 30000) // Refresh every 30 seconds
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchQueue])
 
   const updateQueueStatus = async (id: string, status: QueueItem['status']) => {
     try {

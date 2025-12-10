@@ -10,7 +10,7 @@
  */
 
 import { Bot, Send, Sparkles, AlertTriangle, TrendingUp, FileText, X } from 'lucide-react'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePatientContext } from '@/contexts/PatientContext'
 
 interface AIMessage {
@@ -28,18 +28,7 @@ export default function AIAssistant() {
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (isOpen && currentPatient) {
-      // Auto-generate initial analysis when opening with a patient
-      generateInitialAnalysis()
-    }
-  }, [isOpen, currentPatient])
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  const generateInitialAnalysis = async () => {
+  const generateInitialAnalysis = useCallback(async () => {
     if (!currentPatient) return
 
     setLoading(true)
@@ -69,7 +58,18 @@ export default function AIAssistant() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentPatient])
+
+  useEffect(() => {
+    if (isOpen && currentPatient) {
+      // Auto-generate initial analysis when opening with a patient
+      generateInitialAnalysis()
+    }
+  }, [isOpen, currentPatient, generateInitialAnalysis])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const handleSend = async () => {
     if (!input.trim() || loading) return

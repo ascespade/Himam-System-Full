@@ -87,13 +87,15 @@ export default function ContentPage() {
         })
 
         // Pagination
-        const start = (pagination.page - 1) * pagination.limit
-        const end = start + pagination.limit
-        setContent(items.slice(start, end))
-        setPagination({
-          ...pagination,
-          total: items.length,
-          totalPages: Math.ceil(items.length / pagination.limit)
+        setPagination((prev) => {
+          const start = (prev.page - 1) * prev.limit
+          const end = start + prev.limit
+          setContent(items.slice(start, end))
+          return {
+            ...prev,
+            total: items.length,
+            totalPages: Math.ceil(items.length / prev.limit)
+          }
         })
       } else {
         setError(data.error || 'فشل تحميل المحتوى')
@@ -104,7 +106,7 @@ export default function ContentPage() {
     } finally {
       setLoading(false)
     }
-  }, [pagination.page, pagination.limit, selectedType, selectedStatus, searchTerm, sortBy, sortOrder])
+  }, [selectedType, selectedStatus, searchTerm, sortBy, sortOrder])
 
   useEffect(() => {
     fetchContent()

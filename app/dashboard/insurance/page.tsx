@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Shield, Search, Filter, FileText, CheckCircle, XCircle, Clock, DollarSign, TrendingUp, AlertCircle, Eye } from 'lucide-react'
 import Modal from '@/components/Modal'
 
@@ -41,11 +41,7 @@ export default function InsurancePage() {
   const [showClaimModal, setShowClaimModal] = useState(false)
   const [selectedClaim, setSelectedClaim] = useState<InsuranceClaim | null>(null)
 
-  useEffect(() => {
-    fetchClaims()
-  }, [])
-
-  const fetchClaims = async () => {
+  const fetchClaims = useCallback(async () => {
     try {
       setLoading(true)
       const res = await fetch('/api/insurance/claims')
@@ -59,7 +55,11 @@ export default function InsurancePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchClaims()
+  }, [fetchClaims])
 
   const calculateStats = (items: InsuranceClaim[]) => {
     setStats({

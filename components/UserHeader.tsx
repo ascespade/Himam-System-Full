@@ -62,22 +62,7 @@ export default function UserHeader() {
     }
   }, [userInfo])
 
-  useEffect(() => {
-    fetchUserInfo()
-  }, [])
-
-  useEffect(() => {
-    if (userInfo?.role === 'admin') {
-      fetchStats()
-      // Refresh stats every 30 seconds
-      const interval = setInterval(() => {
-        fetchStats()
-      }, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [userInfo?.role, fetchStats])
-
-  const fetchUserInfo = async () => {
+  const fetchUserInfo = useCallback(async () => {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
@@ -116,7 +101,22 @@ export default function UserHeader() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchUserInfo()
+  }, [fetchUserInfo])
+
+  useEffect(() => {
+    if (userInfo?.role === 'admin') {
+      fetchStats()
+      // Refresh stats every 30 seconds
+      const interval = setInterval(() => {
+        fetchStats()
+      }, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [userInfo?.role, fetchStats])
 
   const handleLogout = async () => {
     try {

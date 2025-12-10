@@ -5,7 +5,7 @@
  * Track treatment progress and milestones
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { TrendingUp, Calendar, Target, CheckCircle, Clock, BarChart } from 'lucide-react'
@@ -40,11 +40,7 @@ export default function PatientProgressPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    loadProgress()
-  }, [])
-
-  const loadProgress = async () => {
+  const loadProgress = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -79,7 +75,11 @@ export default function PatientProgressPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, router])
+
+  useEffect(() => {
+    loadProgress()
+  }, [loadProgress])
 
   if (loading) {
     return (

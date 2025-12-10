@@ -40,7 +40,7 @@ import {
     Pill
 } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 export default function Sidebar() {
   const pathname = usePathname()
@@ -52,11 +52,7 @@ export default function Sidebar() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    fetchUserRole()
-  }, [])
-
-  const fetchUserRole = async () => {
+  const fetchUserRole = useCallback(async () => {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
@@ -85,7 +81,11 @@ export default function Sidebar() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchUserRole()
+  }, [fetchUserRole])
 
   const handleLogout = async () => {
     try {

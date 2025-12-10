@@ -9,20 +9,14 @@
 import { Calendar, Phone, AlertCircle, Target, Activity, FileText, MessageSquare, X } from 'lucide-react'
 import { usePatientContext } from '@/contexts/PatientContext'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 export default function PatientContextPanel() {
   const { currentPatient, clearPatient } = usePatientContext()
   const router = useRouter()
   const [quickStats, setQuickStats] = useState<any>(null)
 
-  useEffect(() => {
-    if (currentPatient) {
-      fetchQuickStats()
-    }
-  }, [currentPatient])
-
-  const fetchQuickStats = async () => {
+  const fetchQuickStats = useCallback(async () => {
     if (!currentPatient) return
     try {
       const res = await fetch(`/api/doctor/patients/${currentPatient.id}/quick-stats`)
@@ -33,7 +27,13 @@ export default function PatientContextPanel() {
     } catch (error) {
       console.error('Error fetching quick stats:', error)
     }
-  }
+  }, [currentPatient])
+
+  useEffect(() => {
+    if (currentPatient) {
+      fetchQuickStats()
+    }
+  }, [currentPatient, fetchQuickStats])
 
   if (!currentPatient) return null
 

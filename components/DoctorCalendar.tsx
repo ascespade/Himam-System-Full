@@ -3,7 +3,7 @@
 import { addMonths, format, isSameDay, isToday, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek } from 'date-fns'
 import { arSA } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 
 interface Appointment {
@@ -56,27 +56,7 @@ export default function DoctorCalendar() {
 
   const DAYS_OF_WEEK = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
 
-  useEffect(() => {
-    fetchAppointments()
-    
-    // Subscribe to real-time updates
-    const channel = supabase
-      .channel('appointments_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'appointments'
-      }, () => {
-        fetchAppointments()
-      })
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [currentDate])
-
-  const fetchAppointments = async () => {
+  const fetchAppointments = useCallback(async () => {
     try {
       setLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
@@ -96,7 +76,27 @@ export default function DoctorCalendar() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentDate, supabase])
+
+  useEffect(() => {
+    fetchAppointments()
+    
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('appointments_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'appointments'
+      }, () => {
+        fetchAppointments()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [currentDate, fetchAppointments, supabase])
 
   const handlePrevMonth = () => {
     setCurrentDate(subMonths(currentDate, 1))

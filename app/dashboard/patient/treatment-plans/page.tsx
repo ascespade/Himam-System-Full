@@ -5,7 +5,7 @@
  * View treatment plans and progress
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { Target, Calendar, User, TrendingUp, CheckCircle, Clock, AlertCircle } from 'lucide-react'
@@ -39,11 +39,7 @@ export default function PatientTreatmentPlansPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    loadTreatmentPlans()
-  }, [])
-
-  const loadTreatmentPlans = async () => {
+  const loadTreatmentPlans = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -69,7 +65,11 @@ export default function PatientTreatmentPlansPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, router])
+
+  useEffect(() => {
+    loadTreatmentPlans()
+  }, [loadTreatmentPlans])
 
   const getStatusIcon = (status: string) => {
     switch (status) {

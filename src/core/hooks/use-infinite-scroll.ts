@@ -115,6 +115,7 @@ export function useInfiniteScroll<T>(
   // Initial load
   useEffect(() => {
     fetchData(initialPage, false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run once on mount
 
   const loadMore = useCallback(async () => {

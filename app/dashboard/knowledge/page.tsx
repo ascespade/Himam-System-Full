@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { BrainCircuit, Plus, Edit, Trash2, Search, BookOpen, FileText, MessageSquare, Database, X, Save, Calendar, ChevronRight, ChevronLeft, Eye, Tag } from 'lucide-react'
 import Modal from '@/components/Modal'
 
@@ -44,11 +44,7 @@ export default function KnowledgePage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchKnowledge()
-  }, [pagination.page, selectedCategory, searchTerm])
-
-  const fetchKnowledge = async () => {
+  const fetchKnowledge = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -78,7 +74,11 @@ export default function KnowledgePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [pagination.page, pagination.limit, selectedCategory, searchTerm])
+
+  useEffect(() => {
+    fetchKnowledge()
+  }, [fetchKnowledge])
 
   const handleAddKnowledge = () => {
     setFormData({ 

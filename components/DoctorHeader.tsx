@@ -131,22 +131,7 @@ export default function DoctorHeader() {
     return () => clearInterval(interval)
   }, [activeSession])
 
-  useEffect(() => {
-    fetchUserInfo()
-  }, [])
-
-  useEffect(() => {
-    if (userInfo?.role === 'doctor') {
-      fetchDoctorData()
-      // Refresh every 30 seconds
-      const interval = setInterval(() => {
-        fetchDoctorData()
-      }, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [userInfo?.role, fetchDoctorData])
-
-  const fetchUserInfo = async () => {
+  const fetchUserInfo = useCallback(async () => {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -175,7 +160,22 @@ export default function DoctorHeader() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchUserInfo()
+  }, [fetchUserInfo])
+
+  useEffect(() => {
+    if (userInfo?.role === 'doctor') {
+      fetchDoctorData()
+      // Refresh every 30 seconds
+      const interval = setInterval(() => {
+        fetchDoctorData()
+      }, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [userInfo?.role, fetchDoctorData])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()

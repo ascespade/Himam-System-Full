@@ -5,7 +5,7 @@
  * Detailed view of a patient for guardians
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowRight, FileText, Calendar, Shield, Phone, User } from 'lucide-react'
 
@@ -50,13 +50,7 @@ export default function GuardianPatientDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'records' | 'appointments'>('overview')
 
-  useEffect(() => {
-    if (patientId) {
-      loadPatientData()
-    }
-  }, [patientId])
-
-  const loadPatientData = async () => {
+  const loadPatientData = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -80,7 +74,13 @@ export default function GuardianPatientDetailsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [patientId])
+
+  useEffect(() => {
+    if (patientId) {
+      loadPatientData()
+    }
+  }, [patientId, loadPatientData])
 
   if (loading) {
     return (

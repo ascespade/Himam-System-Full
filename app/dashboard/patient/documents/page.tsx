@@ -81,6 +81,7 @@ export default function PatientDocumentsPage() {
   const categories = Array.from(new Set(documents.map((d) => d.category).filter(Boolean)))
 
   const getFileIcon = (type: string) => {
+    // eslint-disable-next-line jsx-a11y/alt-text
     if (type.includes('image')) return <Image size={20} className="text-blue-500" />
     if (type.includes('pdf')) return <FileText size={20} className="text-red-500" />
     return <File size={20} className="text-gray-500" />

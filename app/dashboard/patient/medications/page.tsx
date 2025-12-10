@@ -5,7 +5,7 @@
  * View and manage patient medications
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { Pill, Calendar, Clock, AlertCircle, CheckCircle, Search, Filter } from 'lucide-react'
@@ -36,11 +36,7 @@ export default function PatientMedicationsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    loadMedications()
-  }, [])
-
-  const loadMedications = async () => {
+  const loadMedications = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -69,7 +65,11 @@ export default function PatientMedicationsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, router])
+
+  useEffect(() => {
+    loadMedications()
+  }, [loadMedications])
 
   const filteredMedications = medications.filter((med) => {
     const matchesSearch =

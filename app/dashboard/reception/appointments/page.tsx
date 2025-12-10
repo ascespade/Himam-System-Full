@@ -5,7 +5,7 @@
  * Manage all appointments from reception perspective
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Calendar, Clock, User, Search, Filter, Plus, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -33,11 +33,7 @@ export default function ReceptionAppointmentsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterDate, setFilterDate] = useState<string>('today')
 
-  useEffect(() => {
-    loadAppointments()
-  }, [filterDate])
-
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
     try {
       setLoading(true)
       let url = '/api/appointments'
@@ -61,7 +57,11 @@ export default function ReceptionAppointmentsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filterDate])
+
+  useEffect(() => {
+    loadAppointments()
+  }, [loadAppointments])
 
   const updateAppointmentStatus = async (id: string, status: string) => {
     try {

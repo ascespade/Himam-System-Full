@@ -5,7 +5,7 @@
  * View prescription history
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { FileText, Calendar, User, Download, Search, Filter } from 'lucide-react'
@@ -39,11 +39,7 @@ export default function PatientPrescriptionsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    loadPrescriptions()
-  }, [])
-
-  const loadPrescriptions = async () => {
+  const loadPrescriptions = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -69,7 +65,11 @@ export default function PatientPrescriptionsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, router])
+
+  useEffect(() => {
+    loadPrescriptions()
+  }, [loadPrescriptions])
 
   const filteredPrescriptions = prescriptions.filter((pres) => {
     const matchesSearch =

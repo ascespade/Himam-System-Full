@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Users, Search, Plus, Edit, Trash2, Mail, Phone, Calendar, ChevronRight, ChevronLeft, X, Save, Eye, EyeOff, ArrowUpDown } from 'lucide-react'
 import Modal from '@/components/Modal'
 
@@ -40,11 +40,7 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchUsers()
-  }, [pagination.page, selectedRole, searchTerm, sortBy, sortOrder])
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -84,7 +80,11 @@ export default function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [pagination.page, pagination.limit, selectedRole, searchTerm, sortBy, sortOrder])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   const handleAddUser = () => {
     setFormData({ name: '', email: '', phone: '', role: 'patient', password: '' })

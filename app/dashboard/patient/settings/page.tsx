@@ -5,7 +5,7 @@
  * Manage patient account settings and preferences
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { Settings, User, Bell, Shield, Save, Phone, Mail, Calendar } from 'lucide-react'
@@ -64,11 +64,7 @@ export default function PatientSettingsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    loadSettings()
-  }, [])
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -111,7 +107,11 @@ export default function PatientSettingsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, router])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   const handleSave = async () => {
     setSaving(true)

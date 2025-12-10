@@ -5,7 +5,7 @@
  * View laboratory test results
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { FlaskConical, Calendar, User, Download, Search, Filter, AlertCircle, CheckCircle } from 'lucide-react'
@@ -40,11 +40,7 @@ export default function PatientLabResultsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    loadLabResults()
-  }, [])
-
-  const loadLabResults = async () => {
+  const loadLabResults = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -70,7 +66,11 @@ export default function PatientLabResultsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, router])
+
+  useEffect(() => {
+    loadLabResults()
+  }, [loadLabResults])
 
   const filteredResults = labResults.filter((result) => {
     const matchesSearch =

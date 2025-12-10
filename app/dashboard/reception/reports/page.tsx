@@ -5,7 +5,7 @@
  * Generate and view reports
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { FileText, Calendar, Download, BarChart, TrendingUp, Users, DollarSign, Filter } from 'lucide-react'
 
 interface ReportData {
@@ -23,11 +23,7 @@ export default function ReceptionReportsPage() {
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'year'>('today')
 
-  useEffect(() => {
-    loadReportData()
-  }, [period])
-
-  const loadReportData = async () => {
+  const loadReportData = useCallback(async () => {
     try {
       setLoading(true)
       const res = await fetch(`/api/reception/reports?period=${period}`)
@@ -40,7 +36,11 @@ export default function ReceptionReportsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [period])
+
+  useEffect(() => {
+    loadReportData()
+  }, [loadReportData])
 
   const handleExport = (format: 'pdf' | 'excel') => {
     // TODO: Implement export functionality
