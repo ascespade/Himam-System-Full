@@ -94,8 +94,10 @@ export async function GET(req: NextRequest) {
     }
 
     try {
+      // Fetch business profile - note: profile_picture_url is not available on phone number endpoint
+      // It's only available on the WhatsApp Business Profile endpoint (WABA level)
       const metaResponse = await fetch(
-        `https://graph.facebook.com/v20.0/${phoneNumberId}?fields=verified_name,display_phone_number,profile_picture_url,about,addresses,description,email,websites`,
+        `https://graph.facebook.com/v20.0/${phoneNumberId}?fields=verified_name,display_phone_number,about,addresses,description,email,websites`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
