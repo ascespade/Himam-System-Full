@@ -20,7 +20,7 @@
     "migration:mcp": "node scripts/apply-migrations-mcp.js",
     "migration:cleanup": "bash scripts/cleanup-migrations.sh",
     "migration:manual": "bash scripts/apply-migration-manual.sh",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
