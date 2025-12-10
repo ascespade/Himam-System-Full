@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     // Get WABA ID from settings or profile
     const { data: profile } = await supabaseAdmin
       .from('whatsapp_business_profiles')
-      .select('waba_id')
+      .select('waba_id, metadata')
       .eq('phone_number_id', phoneNumberId)
       .single()
 
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
       await supabaseAdmin
         .from('whatsapp_business_profiles')
         .update({
-          verification_status,
+          verification_status: verificationStatus,
           metadata: {
             ...(profile?.metadata || {}),
             account_review_status: metaData.account_review_status,
@@ -120,23 +120,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          verification_status,
+          verification_status: verificationStatus,
           account_review_status: metaData.account_review_status,
           ownership_type: metaData.ownership_type,
           message_template_namespace: metaData.message_template_namespace,
         },
       })
-    } catch (metaError: any) {
-      console.error('Error fetching verification status:', metaError)
+    } catch (metaError: unknown) {
+      const errorMessage = metaError instanceof Error ? metaError.message : 'Failed to fetch verification status'
       return NextResponse.json(
-        { success: false, error: metaError.message || 'Failed to fetch verification status' },
+        { success: false, error: errorMessage },
         { status: 500 }
       )
     }
-  } catch (error: any) {
-    console.error('Error in business verification API:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

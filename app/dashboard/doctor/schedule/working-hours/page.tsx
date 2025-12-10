@@ -1,7 +1,7 @@
 'use client'
 
 import { Calendar, Clock, Save, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'sonner'
 
 interface WorkingHour {
@@ -36,11 +36,7 @@ export default function WorkingHoursPage() {
   const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly')
   const [monthlyDate, setMonthlyDate] = useState(new Date().toISOString().split('T')[0])
 
-  useEffect(() => {
-    fetchWorkingHours()
-  }, [viewMode, monthlyDate])
-
-  const fetchWorkingHours = async () => {
+  const fetchWorkingHours = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -81,7 +77,11 @@ export default function WorkingHoursPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [viewMode, monthlyDate])
+
+  useEffect(() => {
+    fetchWorkingHours()
+  }, [fetchWorkingHours])
 
   const updateWorkingHour = (dayOfWeek: number, field: keyof WorkingHour, value: any) => {
     setWorkingHours((prev) => {

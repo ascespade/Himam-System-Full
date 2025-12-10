@@ -275,11 +275,11 @@ export async function POST(req: NextRequest) {
 
         // Format history for AI
         const formattedHistory = messages
-          ? messages.reverse().flatMap((m: any) => {
+          ? messages.reverse().map((m: any) => {
               if (m.direction === 'inbound') {
-                return [{ role: 'user' as const, content: m.content }]
+                return { role: 'user' as const, content: m.content }
               } else {
-                return [{ role: 'assistant' as const, content: m.content }]
+                return { role: 'assistant' as const, content: m.content }
               }
             })
           : []

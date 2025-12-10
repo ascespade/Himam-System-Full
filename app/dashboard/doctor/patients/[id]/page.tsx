@@ -14,18 +14,14 @@ import {
     User
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 // Insurance Info Component
 function InsuranceInfoCard({ patientId }: { patientId: string }) {
   const [insurance, setInsurance] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchInsurance()
-  }, [patientId])
-
-  const fetchInsurance = async () => {
+  const fetchInsurance = useCallback(async () => {
     try {
       const res = await fetch(`/api/patients/${patientId}/insurance`)
       const data = await res.json()
@@ -37,7 +33,11 @@ function InsuranceInfoCard({ patientId }: { patientId: string }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [patientId])
+
+  useEffect(() => {
+    fetchInsurance()
+  }, [fetchInsurance])
 
   if (loading) {
     return (
@@ -89,11 +89,7 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
   const [patientData, setPatientData] = useState<any>(null)
   const [activeTab, setActiveTab] = useState('overview')
 
-  useEffect(() => {
-    fetchPatientData()
-  }, [])
-
-  const fetchPatientData = async () => {
+  const fetchPatientData = useCallback(async () => {
     try {
       const res = await fetch(`/api/patients/${params.id}/medical-file`)
       const data = await res.json()
@@ -105,7 +101,11 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])
+
+  useEffect(() => {
+    fetchPatientData()
+  }, [fetchPatientData])
 
   if (loading) {
     return <div className="p-8 text-center">جاري تحميل ملف المريض...</div>

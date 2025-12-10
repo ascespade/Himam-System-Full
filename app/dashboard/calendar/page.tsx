@@ -1,7 +1,7 @@
 'use client'
 
 import { createBrowserClient } from '@supabase/ssr'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import AdminCalendar from '@/components/AdminCalendar'
 
 export default function CalendarPage() {
@@ -12,11 +12,7 @@ export default function CalendarPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    fetchUserRole()
-  }, [])
-
-  const fetchUserRole = async () => {
+  const fetchUserRole = useCallback(async () => {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
@@ -43,7 +39,11 @@ export default function CalendarPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchUserRole()
+  }, [fetchUserRole])
 
   if (loading) {
     return (

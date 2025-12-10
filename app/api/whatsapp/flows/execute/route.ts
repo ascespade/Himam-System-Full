@@ -251,7 +251,7 @@ ${message}
           flow_id: matchedFlow.id,
           flow_name: matchedFlow.name,
           execution_id: execution.id,
-          step_results,
+          step_results: stepResults,
         },
       })
     } catch (execError: any) {

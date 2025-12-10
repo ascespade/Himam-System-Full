@@ -2,7 +2,7 @@
 
 import { Shield, ArrowRight, Download, Edit, Send, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'sonner'
 
 interface Claim {
@@ -30,11 +30,7 @@ export default function ClaimDetailPage({ params }: { params: { id: string } }) 
   const [claim, setClaim] = useState<Claim | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchClaim()
-  }, [params.id])
-
-  const fetchClaim = async () => {
+  const fetchClaim = useCallback(async () => {
     try {
       const res = await fetch(`/api/insurance/claims`)
       const data = await res.json()
@@ -53,7 +49,11 @@ export default function ClaimDetailPage({ params }: { params: { id: string } }) 
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id, router])
+
+  useEffect(() => {
+    fetchClaim()
+  }, [fetchClaim])
 
   const handleSubmit = async () => {
     if (!claim) return

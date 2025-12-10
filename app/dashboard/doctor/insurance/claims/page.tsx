@@ -2,7 +2,7 @@
 
 import { Shield, Plus, Search, Filter, CheckCircle, XCircle, Clock, AlertCircle, Download, Edit, Send, Eye } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useCallback } from 'react'
 import { toast } from 'sonner'
 
 interface InsuranceClaim {
@@ -37,11 +37,7 @@ function InsuranceClaimsContent() {
 
   const patientId = searchParams.get('patient_id')
 
-  useEffect(() => {
-    fetchClaims()
-  }, [statusFilter, patientId])
-
-  const fetchClaims = async () => {
+  const fetchClaims = useCallback(async () => {
     try {
       let url = '/api/insurance/claims'
       const params = new URLSearchParams()
@@ -64,7 +60,11 @@ function InsuranceClaimsContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter, patientId])
+
+  useEffect(() => {
+    fetchClaims()
+  }, [fetchClaims])
 
   const handleSubmitClaim = async (claimId: string) => {
     try {

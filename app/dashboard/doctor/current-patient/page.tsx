@@ -6,7 +6,7 @@ import {
   Edit, Plus, Eye, Camera, Stethoscope, Bot
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'sonner'
 
 interface Patient {
@@ -83,11 +83,7 @@ export default function CurrentPatientPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'records' | 'treatment' | 'insurance'>('overview')
 
-  useEffect(() => {
-    fetchCurrentPatient()
-  }, [])
-
-  const fetchCurrentPatient = async () => {
+  const fetchCurrentPatient = useCallback(async () => {
     try {
       const res = await fetch('/api/doctor/current-patient')
       const data = await res.json()
@@ -115,7 +111,11 @@ export default function CurrentPatientPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    fetchCurrentPatient()
+  }, [fetchCurrentPatient])
 
   const calculateAge = (dateOfBirth?: string) => {
     if (!dateOfBirth) return null

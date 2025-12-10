@@ -27,7 +27,7 @@ export async function GET(
         cookies: {
           get(name: string) { return cookieStore.get(name)?.value },
           set(name: string, value: string, options: CookieOptions) {},
-          remove(name: string, value: string, options: CookieOptions) {},
+          remove(name: string, options: CookieOptions) {},
         },
       }
     )
@@ -102,7 +102,7 @@ export async function PUT(
         cookies: {
           get(name: string) { return cookieStore.get(name)?.value },
           set(name: string, value: string, options: CookieOptions) {},
-          remove(name: string, value: string, options: CookieOptions) {},
+          remove(name: string, options: CookieOptions) {},
         },
       }
     )
@@ -189,7 +189,7 @@ export async function DELETE(
         cookies: {
           get(name: string) { return cookieStore.get(name)?.value },
           set(name: string, value: string, options: CookieOptions) {},
-          remove(name: string, value: string, options: CookieOptions) {},
+          remove(name: string, options: CookieOptions) {},
         },
       }
     )

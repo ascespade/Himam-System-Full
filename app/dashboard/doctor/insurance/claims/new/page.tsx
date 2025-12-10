@@ -2,7 +2,7 @@
 
 import { Shield, Save, ArrowRight } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useCallback } from 'react'
 import { toast } from 'sonner'
 
 interface Patient {
@@ -27,13 +27,7 @@ function NewClaimContent() {
   })
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (patientId) {
-      fetchPatient()
-    }
-  }, [patientId])
-
-  const fetchPatient = async () => {
+  const fetchPatient = useCallback(async () => {
     try {
       const res = await fetch(`/api/patients/${patientId}`)
       const data = await res.json()
@@ -44,7 +38,13 @@ function NewClaimContent() {
     } catch (error) {
       console.error('Error fetching patient:', error)
     }
-  }
+  }, [patientId])
+
+  useEffect(() => {
+    if (patientId) {
+      fetchPatient()
+    }
+  }, [patientId, fetchPatient])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

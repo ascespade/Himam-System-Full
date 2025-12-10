@@ -5,7 +5,7 @@
  * View and manage medical documents
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { FileText, Download, Calendar, User, Search, Filter, File, Image, FileImage } from 'lucide-react'
@@ -34,12 +34,7 @@ export default function PatientDocumentsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    loadDocuments()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -65,7 +60,11 @@ export default function PatientDocumentsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, router])
+
+  useEffect(() => {
+    loadDocuments()
+  }, [loadDocuments])
 
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch =

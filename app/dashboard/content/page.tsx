@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { FileText, Plus, Edit, Trash2, Eye, Search, Image as ImageIcon, Video, File, X, Save, Calendar, User, ArrowUpDown, ChevronRight, ChevronLeft } from 'lucide-react'
 import Modal from '@/components/Modal'
 
@@ -50,11 +50,7 @@ export default function ContentPage() {
   const [sortBy, setSortBy] = useState<'title' | 'created_at' | 'views'>('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
-  useEffect(() => {
-    fetchContent()
-  }, [pagination.page, selectedType, selectedStatus, searchTerm, sortBy, sortOrder])
-
-  const fetchContent = async () => {
+  const fetchContent = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -108,7 +104,11 @@ export default function ContentPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [pagination.page, pagination.limit, selectedType, selectedStatus, searchTerm, sortBy, sortOrder])
+
+  useEffect(() => {
+    fetchContent()
+  }, [fetchContent])
 
   const handleAddContent = () => {
     setFormData({ 

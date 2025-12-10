@@ -1,7 +1,7 @@
 'use client'
 
 import { Search, Filter, FileText, User, Calendar, Target } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface SearchResult {
@@ -20,7 +20,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string>('all')
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) {
       setResults([])
       return
@@ -99,7 +99,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchQuery, typeFilter])
 
   useEffect(() => {
     if (searchQuery.trim()) {

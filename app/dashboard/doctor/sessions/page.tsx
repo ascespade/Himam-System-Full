@@ -2,7 +2,7 @@
 
 import { Calendar, Clock, Filter, Plus, Search, Video, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 interface Session {
   id: string
@@ -59,11 +59,7 @@ export default function DoctorSessionsPage() {
   const [filterType, setFilterType] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
-  useEffect(() => {
-    fetchSessions()
-  }, [filterType, filterStatus])
-
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -80,7 +76,11 @@ export default function DoctorSessionsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filterType, filterStatus])
+
+  useEffect(() => {
+    fetchSessions()
+  }, [fetchSessions])
 
   const filteredSessions = sessions.filter(session => {
     if (!searchTerm) return true

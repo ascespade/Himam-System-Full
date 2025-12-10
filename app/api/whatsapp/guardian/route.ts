@@ -80,15 +80,15 @@ export async function POST(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(10)
 
-    const formattedHistory = messages
-      ? messages.reverse().flatMap((m: any) => {
-          if (m.direction === 'inbound') {
-            return [{ role: 'user' as const, content: m.content }]
-          } else {
-            return [{ role: 'assistant' as const, content: m.content }]
-          }
-        })
-      : []
+        const formattedHistory = messages
+          ? messages.reverse().map((m: any) => {
+              if (m.direction === 'inbound') {
+                return { role: 'user' as const, content: m.content }
+              } else {
+                return { role: 'assistant' as const, content: m.content }
+              }
+            })
+          : []
 
     // Use AI to understand the message intent
     const aiResponse = await generateWhatsAppResponse(

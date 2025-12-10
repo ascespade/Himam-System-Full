@@ -92,8 +92,8 @@ export default function WhatsAppSettingsPage() {
       
       if (data.success && data.data) {
         const settingsMap = new Map(data.data.map((s: any) => [s.key, s.value]))
-        const geminiKey = settingsMap.get('GEMINI_KEY') || ''
-        const openaiKey = settingsMap.get('OPENAI_KEY') || ''
+        const geminiKey = (settingsMap.get('GEMINI_KEY') as string) || ''
+        const openaiKey = (settingsMap.get('OPENAI_KEY') as string) || ''
         
         // Determine if AI agent is enabled (if at least one key exists)
         const aiEnabled = !!(geminiKey || openaiKey)

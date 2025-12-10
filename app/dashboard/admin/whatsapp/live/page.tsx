@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { MessageSquare, Send, Check, CheckCheck, Clock, AlertCircle, Search, Filter } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -39,6 +39,43 @@ export default function WhatsAppLiveLogPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  const fetchConversations = useCallback(async () => {
+    try {
+      const res = await fetch('/api/whatsapp/conversations?status=active&limit=100')
+      const data = await res.json()
+      if (data.success) {
+        setConversations(data.data || [])
+        if (data.data && data.data.length > 0 && !selectedConversation) {
+          setSelectedConversation(data.data[0].id)
+        }
+      } else {
+        console.error('Failed to fetch conversations:', data.error)
+        setConversations([])
+      }
+    } catch (error) {
+      console.error('Error fetching conversations:', error)
+      setConversations([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [selectedConversation])
+
+  const fetchMessages = useCallback(async (conversationId: string) => {
+    try {
+      const res = await fetch(`/api/whatsapp/conversations/${conversationId}`)
+      const data = await res.json()
+      if (data.success) {
+        setMessages(data.data.messages || [])
+      } else {
+        console.error('Failed to fetch messages:', data.error)
+        setMessages([])
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error)
+      setMessages([])
+    }
+  }, [])
+
   useEffect(() => {
     fetchConversations()
     
@@ -61,7 +98,7 @@ export default function WhatsAppLiveLogPage() {
     return () => {
       supabase.removeChannel(conversationsChannel)
     }
-  }, [])
+  }, [fetchConversations])
 
   useEffect(() => {
     if (selectedConversation) {
@@ -88,50 +125,12 @@ export default function WhatsAppLiveLogPage() {
         supabase.removeChannel(messagesChannel)
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedConversation])
+  }, [selectedConversation, fetchMessages])
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
-
-  const fetchConversations = async () => {
-    try {
-      const res = await fetch('/api/whatsapp/conversations?status=active&limit=100')
-      const data = await res.json()
-      if (data.success) {
-        setConversations(data.data || [])
-        if (data.data && data.data.length > 0 && !selectedConversation) {
-          setSelectedConversation(data.data[0].id)
-        }
-      } else {
-        console.error('Failed to fetch conversations:', data.error)
-        setConversations([])
-      }
-    } catch (error) {
-      console.error('Error fetching conversations:', error)
-      setConversations([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const fetchMessages = async (conversationId: string) => {
-    try {
-      const res = await fetch(`/api/whatsapp/conversations/${conversationId}`)
-      const data = await res.json()
-      if (data.success) {
-        setMessages(data.data.messages || [])
-      } else {
-        console.error('Failed to fetch messages:', data.error)
-        setMessages([])
-      }
-    } catch (error) {
-      console.error('Error fetching messages:', error)
-      setMessages([])
-    }
-  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {

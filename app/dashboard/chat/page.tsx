@@ -1,7 +1,7 @@
 'use client'
 
 import { createBrowserClient } from '@supabase/ssr'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 interface Conversation {
   phone: string
@@ -29,13 +29,30 @@ export default function ChatPage() {
   )
 
   // Scroll to bottom function
-  const scrollToBottom = (smooth: boolean = true) => {
+  const scrollToBottom = useCallback((smooth: boolean = true) => {
     messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' })
-  }
+  }, [])
+
+  const fetchConversations = useCallback(async () => {
+    const res = await fetch('/api/chat/conversations')
+    const data = await res.json()
+    if (data.success) {
+       setConversations(data.data)
+       setLoading(false)
+    }
+  }, [])
+
+  const fetchMessages = useCallback(async (phone: string) => {
+    const res = await fetch(`/api/chat-history?phone=${phone}`)
+    const data = await res.json()
+    if (data.success) {
+      setMessages(data.data)
+    }
+  }, [])
 
   useEffect(() => {
     fetchConversations()
-  }, [])
+  }, [fetchConversations])
 
   useEffect(() => {
     if (selectedPhone) {
@@ -43,7 +60,7 @@ export default function ChatPage() {
     } else {
       setMessages([])
     }
-  }, [selectedPhone])
+  }, [selectedPhone, fetchMessages])
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -54,30 +71,13 @@ export default function ChatPage() {
         scrollToBottom(!isInitialLoad)
       }, 100)
     }
-  }, [messages, selectedPhone])
-
-  const fetchConversations = async () => {
-    const res = await fetch('/api/chat/conversations')
-    const data = await res.json()
-    if (data.success) {
-       setConversations(data.data)
-       setLoading(false)
-    }
-  }
-
-  const fetchMessages = async (phone: string) => {
-    const res = await fetch(`/api/chat-history?phone=${phone}`)
-    const data = await res.json()
-    if (data.success) {
-      setMessages(data.data)
-    }
-  }
+  }, [messages, selectedPhone, scrollToBottom])
 
   // Set up real-time subscription for new messages
   useEffect(() => {
     if (!selectedPhone) return
 
-    let channel: any = null
+    let channel: ReturnType<typeof supabase.channel> | null = null
 
     // Subscribe to new messages in whatsapp_messages table
     // First, we need to get the conversation ID
@@ -88,19 +88,19 @@ export default function ChatPage() {
         const convData = await convRes.json()
         if (!convData.success) return
 
-        const conversation = convData.data.find((c: any) => c.phone === selectedPhone)
-        if (!conversation || !conversation.id) return
+        const conversation = convData.data.find((c: Conversation) => c.phone === selectedPhone)
+        if (!conversation || !('id' in conversation)) return
 
         // Subscribe to new messages for this conversation
         channel = supabase
-          .channel(`whatsapp_messages_${conversation.id}`)
+          .channel(`whatsapp_messages_${(conversation as { id: string }).id}`)
           .on(
             'postgres_changes',
             {
               event: 'INSERT',
               schema: 'public',
               table: 'whatsapp_messages',
-              filter: `conversation_id=eq.${conversation.id}`
+              filter: `conversation_id=eq.${(conversation as { id: string }).id}`
             },
             () => {
               // Refetch messages when new one arrives
@@ -120,7 +120,7 @@ export default function ChatPage() {
         supabase.removeChannel(channel)
       }
     }
-  }, [selectedPhone])
+  }, [selectedPhone, supabase, fetchMessages])
 
   return (
     <div className="flex h-[calc(100vh-64px)] bg-white overflow-hidden">
