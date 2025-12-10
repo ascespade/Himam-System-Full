@@ -535,15 +535,19 @@ export default function WhatsAppSettingsPage() {
           {/* WABA ID (Optional) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              WABA ID (اختياري)
+              WABA ID (اختياري - للحصول على معلومات البروفايل الكاملة)
             </label>
             <input
               type="text"
               value={settings.waba_id || ''}
               onChange={(e) => setSettings({ ...settings, waba_id: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="123456789"
+              placeholder="123456789012345"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              WhatsApp Business Account ID - للوصول الكامل لمعلومات البروفايل (الوصف، البريد الإلكتروني، الموقع، العنوان، صورة البروفايل). 
+              يمكنك الحصول عليه من Meta Business Suite → Settings → Business Info أو من Phone Number API Response
+            </p>
           </div>
 
           {/* Phone Number (Optional) */}
