@@ -147,9 +147,9 @@ export default function WhatsAppLiveLogPage() {
     }
   }
 
-  const filteredConversations = conversations.filter((conv) => {
+  const filteredConversations = (Array.isArray(conversations) ? conversations : []).filter((conv) => {
     const matchesSearch = 
-      conv.phone_number.includes(searchQuery) ||
+      conv.phone_number?.includes(searchQuery) ||
       conv.patients?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === 'all' || conv.status === statusFilter
     return matchesSearch && matchesStatus

@@ -117,7 +117,7 @@ export default function WhatsAppTemplatesPage() {
     }
   }
 
-  const filteredTemplates = templates.filter(template => {
+  const filteredTemplates = (Array.isArray(templates) ? templates : []).filter(template => {
     const matchesSearch = template.name?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === 'all' || template.category === categoryFilter
     return matchesSearch && matchesCategory
@@ -186,7 +186,7 @@ export default function WhatsAppTemplatesPage() {
             <div>
               <p className="text-sm text-gray-500">افتراضي</p>
               <p className="text-2xl font-bold text-blue-600 mt-1">
-                {templates.filter(t => t.is_default).length}
+                {(Array.isArray(templates) ? templates : []).filter(t => t.is_default).length}
               </p>
             </div>
             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -199,7 +199,7 @@ export default function WhatsAppTemplatesPage() {
             <div>
               <p className="text-sm text-gray-500">نشط</p>
               <p className="text-2xl font-bold text-green-600 mt-1">
-                {templates.filter(t => t.is_active).length}
+                {(Array.isArray(templates) ? templates : []).filter(t => t.is_active).length}
               </p>
             </div>
             <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">

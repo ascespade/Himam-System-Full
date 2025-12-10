@@ -45,11 +45,19 @@ export async function GET(req: NextRequest) {
 
     // Get settings from whatsapp_settings table
     const whatsappSettings = await whatsappSettingsRepository.getActiveSettings()
+    
+    if (!whatsappSettings && !process.env.WHATSAPP_PHONE_NUMBER_ID) {
+      return NextResponse.json(
+        { success: false, error: 'WhatsApp not configured. Please configure WhatsApp settings first.' },
+        { status: 400 }
+      )
+    }
+    
     const phoneNumberId = whatsappSettings?.phone_number_id || process.env.WHATSAPP_PHONE_NUMBER_ID
 
     if (!phoneNumberId) {
       return NextResponse.json(
-        { success: false, error: 'WhatsApp not configured' },
+        { success: false, error: 'WhatsApp phone number ID not configured' },
         { status: 400 }
       )
     }
@@ -203,11 +211,19 @@ export async function PUT(req: NextRequest) {
 
     // Get settings from whatsapp_settings table
     const whatsappSettings = await whatsappSettingsRepository.getActiveSettings()
+    
+    if (!whatsappSettings && !process.env.WHATSAPP_PHONE_NUMBER_ID) {
+      return NextResponse.json(
+        { success: false, error: 'WhatsApp not configured. Please configure WhatsApp settings first.' },
+        { status: 400 }
+      )
+    }
+    
     const phoneNumberId = whatsappSettings?.phone_number_id || process.env.WHATSAPP_PHONE_NUMBER_ID
 
     if (!phoneNumberId) {
       return NextResponse.json(
-        { success: false, error: 'WhatsApp not configured' },
+        { success: false, error: 'WhatsApp phone number ID not configured' },
         { status: 400 }
       )
     }
