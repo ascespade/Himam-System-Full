@@ -32,14 +32,15 @@ export class CenterInfoRepository {
     const { data, error } = await supabase
       .from('center_info')
       .select('*')
-      .single()
+      .limit(1)
+      .maybeSingle()
 
     if (error) {
       console.error('Error fetching center info:', error)
       return null
     }
 
-    return data as CenterInfo
+    return data as CenterInfo | null
   }
 
   async updateCenterInfo(id: string, updates: Partial<CenterInfo>): Promise<CenterInfo | null> {

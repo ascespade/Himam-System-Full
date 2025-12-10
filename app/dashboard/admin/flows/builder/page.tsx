@@ -5,7 +5,7 @@
  * No-code flow creation interface
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Save, X, Plus, Trash2, Play, Settings, Zap, Database, Bot, Bell, Clock, Webhook, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -17,7 +17,7 @@ interface FlowNode {
   config: Record<string, any>
 }
 
-export default function FlowBuilderPage() {
+function FlowBuilderContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const flowId = searchParams.get('id')
@@ -613,5 +613,17 @@ function NodeEditor({ node, index, onUpdate, onRemove }: {
       </div>
       {renderConfigFields()}
     </div>
+  )
+}
+
+export default function FlowBuilderPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-8">
+        <div className="text-center text-gray-500">جاري التحميل...</div>
+      </div>
+    }>
+      <FlowBuilderContent />
+    </Suspense>
   )
 }

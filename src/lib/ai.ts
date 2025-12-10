@@ -163,7 +163,7 @@ export async function generateWhatsAppResponse(
     
     // Fetch dynamic data from database
     const [centerInfo, services, specialists, workingHours] = await Promise.all([
-      supabaseAdmin.from('center_info').select('*').single(),
+      supabaseAdmin.from('center_info').select('*').limit(1).maybeSingle(),
       supabaseAdmin.from('service_types').select('*').eq('is_active', true).order('order_index'),
       supabaseAdmin.from('users').select('id, name, role').eq('role', 'doctor'),
       supabaseAdmin.from('working_hours').select('*').eq('is_working_day', true).order('day_of_week'),

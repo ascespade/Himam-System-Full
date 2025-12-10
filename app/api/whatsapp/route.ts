@@ -220,7 +220,7 @@ export async function POST(req: NextRequest) {
           } else if (buttonId === 'contact_us') {
             // Fetch center info and working hours from database
             const [centerInfo, workingHours] = await Promise.all([
-              supabaseAdmin.from('center_info').select('*').single(),
+              supabaseAdmin.from('center_info').select('*').limit(1).maybeSingle(),
               supabaseAdmin.from('working_hours').select('*').eq('is_working_day', true).order('day_of_week'),
             ])
 
