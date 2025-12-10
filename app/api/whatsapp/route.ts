@@ -519,8 +519,17 @@ export async function POST(req: NextRequest) {
               outboundMessageId = textResponse?.messageId || null
            }
          } else {
-            const textResponse = await sendTextMessage(from, cleanResponse)
-            outboundMessageId = textResponse?.messageId || null
+            try {
+              console.log('📤 Sending WhatsApp reply to', from, ':', cleanResponse.substring(0, 50) + '...')
+              const textResponse = await sendTextMessage(from, cleanResponse)
+              outboundMessageId = textResponse?.messageId || null
+              console.log('✅ Message sent successfully:', { messageId: outboundMessageId })
+            } catch (sendError: any) {
+              console.error('❌ Error sending WhatsApp message:', sendError)
+              // Still return success to webhook to avoid retries
+              // But log the error for debugging
+              logError('Failed to send WhatsApp message', sendError)
+            }
          }
 
         // Save outbound message to whatsapp_messages table
