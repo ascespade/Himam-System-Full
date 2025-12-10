@@ -13,6 +13,7 @@ import { successResponse, errorResponse } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
 import { logError } from '@/shared/utils/logger'
 import type { WhatsAppWebhookPayload } from '@/shared/types'
+import { whatsappSettingsRepository } from '@/infrastructure/supabase/repositories'
 import {
   sendTextMessage,
   sendWelcomeMessage,
@@ -333,6 +334,10 @@ export async function POST(req: NextRequest) {
           conversation = newConv
         }
 
+        // Get WhatsApp settings for phone number ID
+        const whatsappSettings = await whatsappSettingsRepository.getActiveSettings()
+        const phoneNumberId = whatsappSettings?.phone_number_id || process.env.WHATSAPP_PHONE_NUMBER_ID || ''
+
         // Save inbound message to whatsapp_messages table
         let savedMessage: any = null
         try {
@@ -341,7 +346,7 @@ export async function POST(req: NextRequest) {
             .insert({
               message_id: messageId,
               from_phone: from,
-              to_phone: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+              to_phone: phoneNumberId,
               message_type: message.type,
               content: text,
               status: 'delivered',
@@ -552,7 +557,7 @@ export async function POST(req: NextRequest) {
               .from('whatsapp_messages')
               .insert({
                 message_id: outboundMessageId,
-                from_phone: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+                from_phone: phoneNumberId,
                 to_phone: from,
                 message_type: shouldReplyWithVoice ? 'audio' : 'text',
                 content: cleanResponse,
