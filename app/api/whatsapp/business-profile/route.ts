@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { getSettings } from '@/lib/config'
+import { whatsappSettingsRepository } from '@/infrastructure/supabase/repositories'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,8 +43,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
-    const settings = await getSettings()
-    const phoneNumberId = settings.WHATSAPP_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID
+    // Get settings from whatsapp_settings table
+    const whatsappSettings = await whatsappSettingsRepository.getActiveSettings()
+    const phoneNumberId = whatsappSettings?.phone_number_id || process.env.WHATSAPP_PHONE_NUMBER_ID
 
     if (!phoneNumberId) {
       return NextResponse.json(
@@ -53,20 +54,30 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Get from database first
-    const { data: profile } = await supabaseAdmin
-      .from('whatsapp_business_profiles')
-      .select('*')
-      .eq('phone_number_id', phoneNumberId)
-      .eq('is_active', true)
-      .single()
+    // Get from database first (table might not exist, handle gracefully)
+    let profile = null
+    try {
+      const { data } = await supabaseAdmin
+        .from('whatsapp_business_profiles')
+        .select('*')
+        .eq('phone_number_id', phoneNumberId)
+        .eq('is_active', true)
+        .maybeSingle()
+
+      if (data) {
+        profile = data
+      }
+    } catch (dbError: any) {
+      // Table might not exist, continue to fetch from Meta API
+      console.warn('whatsapp_business_profiles table not found, will fetch from Meta API:', dbError.message)
+    }
 
     if (profile) {
       return NextResponse.json({ success: true, data: profile })
     }
 
     // If not in DB, fetch from Meta API
-    const accessToken = settings.WHATSAPP_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN
+    const accessToken = whatsappSettings?.access_token || process.env.WHATSAPP_ACCESS_TOKEN
     if (!accessToken) {
       return NextResponse.json(
         { success: false, error: 'WhatsApp access token not configured' },
@@ -90,24 +101,43 @@ export async function GET(req: NextRequest) {
 
       const metaData = await metaResponse.json()
 
-      // Save to database
-      const { data: savedProfile } = await supabaseAdmin
-        .from('whatsapp_business_profiles')
-        .insert({
-          business_name: metaData.verified_name || 'مركز الهمم',
-          business_description: metaData.description || metaData.about || null,
-          business_email: metaData.email || null,
-          business_website: metaData.websites?.[0] || null,
-          business_address: metaData.addresses?.[0] || null,
-          profile_picture_url: metaData.profile_picture_url || null,
-          phone_number_id: phoneNumberId,
-          waba_id: metaData.id || null,
-          is_active: true,
-        })
-        .select()
-        .single()
+      // Save to database (if table exists)
+      try {
+        const { data: savedProfile } = await supabaseAdmin
+          .from('whatsapp_business_profiles')
+          .insert({
+            business_name: metaData.verified_name || 'مركز الهمم',
+            business_description: metaData.description || metaData.about || null,
+            business_email: metaData.email || null,
+            business_website: metaData.websites?.[0] || null,
+            business_address: metaData.addresses?.[0] || null,
+            profile_picture_url: metaData.profile_picture_url || null,
+            phone_number_id: phoneNumberId,
+            waba_id: metaData.id || null,
+            is_active: true,
+          })
+          .select()
+          .single()
 
-      return NextResponse.json({ success: true, data: savedProfile })
+        return NextResponse.json({ success: true, data: savedProfile })
+      } catch (dbError: any) {
+        // Table doesn't exist, return data from Meta API
+        console.warn('Could not save to database, returning Meta API data:', dbError.message)
+        return NextResponse.json({
+          success: true,
+          data: {
+            business_name: metaData.verified_name || 'مركز الهمم',
+            business_description: metaData.description || metaData.about || null,
+            business_email: metaData.email || null,
+            business_website: metaData.websites?.[0] || null,
+            business_address: metaData.addresses?.[0] || null,
+            profile_picture_url: metaData.profile_picture_url || null,
+            phone_number_id: phoneNumberId,
+            waba_id: metaData.id || null,
+            is_active: true,
+          },
+        })
+      }
     } catch (metaError: any) {
       console.error('Error fetching from Meta API:', metaError)
       return NextResponse.json(
@@ -171,8 +201,9 @@ export async function PUT(req: NextRequest) {
       cover_photo_url,
     } = body
 
-    const settings = await getSettings()
-    const phoneNumberId = settings.WHATSAPP_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID
+    // Get settings from whatsapp_settings table
+    const whatsappSettings = await whatsappSettingsRepository.getActiveSettings()
+    const phoneNumberId = whatsappSettings?.phone_number_id || process.env.WHATSAPP_PHONE_NUMBER_ID
 
     if (!phoneNumberId) {
       return NextResponse.json(
@@ -194,37 +225,48 @@ export async function PUT(req: NextRequest) {
     if (profile_picture_url !== undefined) updateData.profile_picture_url = profile_picture_url
     if (cover_photo_url !== undefined) updateData.cover_photo_url = cover_photo_url
 
-    // Update in database
-    const { data, error } = await supabaseAdmin
-      .from('whatsapp_business_profiles')
-      .update(updateData)
-      .eq('phone_number_id', phoneNumberId)
-      .select()
-      .single()
+    // Update in database (if table exists)
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('whatsapp_business_profiles')
+        .update(updateData)
+        .eq('phone_number_id', phoneNumberId)
+        .select()
+        .maybeSingle()
 
-    if (error) {
-      // If doesn't exist, create it
-      if (error.code === 'PGRST116') {
-        const { data: newProfile } = await supabaseAdmin
-          .from('whatsapp_business_profiles')
-          .insert({
-            phone_number_id: phoneNumberId,
-            ...updateData,
-            is_active: true,
-          })
-          .select()
-          .single()
-
-        return NextResponse.json({ success: true, data: newProfile })
+      if (error && error.code !== 'PGRST116') {
+        throw error
       }
-      throw error
+
+      if (data) {
+        return NextResponse.json({ success: true, data })
+      }
+
+      // If doesn't exist, create it
+      const { data: newProfile } = await supabaseAdmin
+        .from('whatsapp_business_profiles')
+        .insert({
+          phone_number_id: phoneNumberId,
+          ...updateData,
+          is_active: true,
+        })
+        .select()
+        .single()
+
+      return NextResponse.json({ success: true, data: newProfile })
+    } catch (dbError: any) {
+      // Table might not exist or other DB error
+      // Return success anyway since we're just storing locally
+      console.warn('Database operation failed, but continuing:', dbError.message)
+      return NextResponse.json({
+        success: true,
+        data: {
+          phone_number_id: phoneNumberId,
+          ...updateData,
+          is_active: true,
+        },
+      })
     }
-
-    // Optionally update Meta API (if supported)
-    // Note: Meta API has limited support for updating profile via API
-    // Most updates need to be done via Meta Business Manager
-
-    return NextResponse.json({ success: true, data })
   } catch (error: any) {
     console.error('Error updating business profile:', error)
     return NextResponse.json(

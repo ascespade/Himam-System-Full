@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { getSettings } from '@/lib/config'
+import { whatsappSettingsRepository } from '@/infrastructure/supabase/repositories'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,9 +44,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
-    const settings = await getSettings()
-    const phoneNumberId = settings.WHATSAPP_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID
-    const accessToken = settings.WHATSAPP_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN
+    // Get settings from whatsapp_settings table
+    const whatsappSettings = await whatsappSettingsRepository.getActiveSettings()
+    const phoneNumberId = whatsappSettings?.phone_number_id || process.env.WHATSAPP_PHONE_NUMBER_ID
+    const accessToken = whatsappSettings?.access_token || process.env.WHATSAPP_ACCESS_TOKEN
 
     if (!phoneNumberId || !accessToken) {
       return NextResponse.json(
@@ -73,21 +74,26 @@ export async function GET(req: NextRequest) {
 
       const metaData = await metaResponse.json()
 
-      // Update business profile with phone number details
-      await supabaseAdmin
-        .from('whatsapp_business_profiles')
-        .update({
-          display_phone_number: metaData.display_phone_number || null,
-          quality_rating: metaData.quality_rating?.code || null,
-          quality_rating_updated_at: metaData.quality_rating?.timestamp 
-            ? new Date(metaData.quality_rating.timestamp * 1000).toISOString()
-            : null,
-          verification_status: metaData.verified_name ? 'verified' : 'unverified',
-          account_type: metaData.account_type || null,
-          certificate: metaData.certificate || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('phone_number_id', phoneNumberId)
+      // Update business profile with phone number details (if table exists)
+      try {
+        await supabaseAdmin
+          .from('whatsapp_business_profiles')
+          .update({
+            display_phone_number: metaData.display_phone_number || null,
+            quality_rating: metaData.quality_rating?.code || null,
+            quality_rating_updated_at: metaData.quality_rating?.timestamp 
+              ? new Date(metaData.quality_rating.timestamp * 1000).toISOString()
+              : null,
+            verification_status: metaData.verified_name ? 'verified' : 'unverified',
+            account_type: metaData.account_type || null,
+            certificate: metaData.certificate || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('phone_number_id', phoneNumberId)
+      } catch (dbError: any) {
+        // Table might not exist, continue anyway
+        console.warn('Could not update business profile:', dbError.message)
+      }
 
       return NextResponse.json({
         success: true,

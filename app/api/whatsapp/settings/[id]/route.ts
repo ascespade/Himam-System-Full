@@ -58,19 +58,27 @@ export async function PUT(
     const { id } = params
     const body = await req.json()
     const {
+      name,
       verify_token,
       access_token,
       phone_number_id,
       webhook_url,
+      app_id,
+      waba_id,
+      phone_number,
       is_active,
     } = body
 
     // Build update object (only include provided fields)
     const updates: any = {}
+    if (name !== undefined) updates.name = name
     if (verify_token !== undefined) updates.verify_token = verify_token
     if (access_token !== undefined) updates.access_token = access_token
     if (phone_number_id !== undefined) updates.phone_number_id = phone_number_id
     if (webhook_url !== undefined) updates.webhook_url = webhook_url
+    if (app_id !== undefined) updates.app_id = app_id
+    if (waba_id !== undefined) updates.waba_id = waba_id
+    if (phone_number !== undefined) updates.phone_number = phone_number
     if (is_active !== undefined) updates.is_active = is_active
 
     if (Object.keys(updates).length === 0) {

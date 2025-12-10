@@ -9,9 +9,12 @@ export async function GET(req: NextRequest) {
   try {
     const settings = await whatsappSettingsRepository.getAllSettings()
     
+    // Ensure we always return an array
+    const settingsArray = Array.isArray(settings) ? settings : (settings ? [settings] : [])
+    
     return NextResponse.json({
       success: true,
-      data: settings,
+      data: settingsArray,
     })
   } catch (error: any) {
     console.error('Error fetching WhatsApp settings:', error)
@@ -36,10 +39,14 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
+      name,
       verify_token,
       access_token,
       phone_number_id,
       webhook_url,
+      app_id,
+      waba_id,
+      phone_number,
       is_active = false,
     } = body
 
@@ -58,10 +65,14 @@ export async function POST(req: NextRequest) {
     }
 
     const newSettings = await whatsappSettingsRepository.createSettings({
+      name: name || 'WhatsApp Business Account',
       verify_token,
       access_token,
       phone_number_id,
       webhook_url: webhook_url || null,
+      app_id: app_id || null,
+      waba_id: waba_id || null,
+      phone_number: phone_number || null,
       is_active,
     })
 

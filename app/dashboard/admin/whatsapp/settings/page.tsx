@@ -56,10 +56,27 @@ export default function WhatsAppSettingsPage() {
       const res = await fetch('/api/whatsapp/settings')
       const data = await res.json()
       
-      if (data.success && data.data && data.data.length > 0) {
-        // Get active settings or first one
-        const activeSettings = data.data.find((s: WhatsAppSettings) => s.is_active) || data.data[0]
-        setSettings(activeSettings)
+      if (data.success && data.data) {
+        // Handle both array and single object responses
+        const settingsArray = Array.isArray(data.data) ? data.data : [data.data]
+        
+        if (settingsArray.length > 0) {
+          // Get active settings or first one
+          const activeSettings = settingsArray.find((s: WhatsAppSettings) => s.is_active) || settingsArray[0]
+          setSettings({
+            ...activeSettings,
+            name: activeSettings.name || 'WhatsApp Business Account',
+          })
+        } else {
+          // Create default empty settings
+          setSettings({
+            name: 'WhatsApp Business Account',
+            phone_number_id: '',
+            access_token: '',
+            verify_token: '',
+            is_active: false,
+          })
+        }
       } else {
         // Create default empty settings
         setSettings({
@@ -115,17 +132,22 @@ export default function WhatsAppSettingsPage() {
   const checkConnection = async () => {
     try {
       setConnectionStatus('checking')
-      const res = await fetch('/api/whatsapp/settings/active')
-      const data = await res.json()
       
-      if (data.success && data.data && data.data.is_active) {
-        // Test connection by checking business profile
-        const profileRes = await fetch('/api/whatsapp/business-profile')
-        if (profileRes.ok) {
-          setConnectionStatus('connected')
-        } else {
-          setConnectionStatus('disconnected')
-        }
+      // First check if we have active settings
+      const activeRes = await fetch('/api/whatsapp/settings/active')
+      const activeData = await activeRes.json()
+      
+      if (!activeData.success || !activeData.data || !activeData.data.is_active) {
+        setConnectionStatus('disconnected')
+        return
+      }
+
+      // Test connection by checking business profile
+      const profileRes = await fetch('/api/whatsapp/business-profile')
+      const profileData = await profileRes.json()
+      
+      if (profileRes.ok && profileData.success) {
+        setConnectionStatus('connected')
       } else {
         setConnectionStatus('disconnected')
       }
@@ -241,19 +263,40 @@ export default function WhatsAppSettingsPage() {
 
     try {
       setTesting(true)
+      setConnectionStatus('checking')
+      
+      // First save settings if they have an ID (to ensure they're active)
+      if (settings.id) {
+        const saveRes = await fetch(`/api/whatsapp/settings/${settings.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...settings,
+            is_active: true,
+          }),
+        })
+        
+        if (!saveRes.ok) {
+          const saveData = await saveRes.json()
+          throw new Error(saveData.error?.message || 'Failed to save settings')
+        }
+      }
+      
+      // Test connection by checking business profile
       const res = await fetch('/api/whatsapp/business-profile')
       const data = await res.json()
       
-      if (data.success) {
+      if (res.ok && data.success) {
         toast.success('✅ الاتصال يعمل بشكل صحيح!')
         setConnectionStatus('connected')
       } else {
-        toast.error('❌ فشل الاتصال: ' + (data.error?.message || 'تحقق من الإعدادات'))
+        const errorMsg = data.error?.message || data.error || 'تحقق من الإعدادات'
+        toast.error('❌ فشل الاتصال: ' + errorMsg)
         setConnectionStatus('disconnected')
       }
     } catch (error: any) {
       console.error('Error testing connection:', error)
-      toast.error('حدث خطأ أثناء اختبار الاتصال: ' + error.message)
+      toast.error('حدث خطأ أثناء اختبار الاتصال: ' + (error.message || 'خطأ غير معروف'))
       setConnectionStatus('disconnected')
     } finally {
       setTesting(false)

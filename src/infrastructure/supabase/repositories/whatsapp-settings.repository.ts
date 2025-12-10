@@ -1,11 +1,15 @@
-import { supabase } from '@/lib'
+import { supabaseAdmin } from '@/lib'
 
 export interface WhatsAppSettings {
   id: string
+  name?: string
   verify_token: string
   access_token: string
   phone_number_id: string
   webhook_url: string | null
+  app_id?: string | null
+  waba_id?: string | null
+  phone_number?: string | null
   is_active: boolean
   created_at: string
   updated_at: string
@@ -17,7 +21,7 @@ export class WhatsAppSettingsRepository {
    */
   async getActiveSettings(): Promise<WhatsAppSettings | null> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('whatsapp_settings')
         .select('*')
         .eq('is_active', true)
@@ -43,7 +47,7 @@ export class WhatsAppSettingsRepository {
    */
   async getAllSettings(): Promise<WhatsAppSettings[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('whatsapp_settings')
         .select('*')
         .order('created_at', { ascending: false })
@@ -64,9 +68,14 @@ export class WhatsAppSettingsRepository {
     updates: Partial<Omit<WhatsAppSettings, 'id' | 'created_at' | 'updated_at'>>
   ): Promise<WhatsAppSettings | null> {
     try {
-      const { data, error } = await supabase
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString(),
+      }
+      
+      const { data, error } = await supabaseAdmin
         .from('whatsapp_settings')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single()
@@ -88,15 +97,20 @@ export class WhatsAppSettingsRepository {
     try {
       // Deactivate all existing settings if this one should be active
       if (settings.is_active) {
-        await supabase
+        await supabaseAdmin
           .from('whatsapp_settings')
           .update({ is_active: false })
           .eq('is_active', true)
       }
 
-      const { data, error } = await supabase
+      const insertData = {
+        ...settings,
+        updated_at: new Date().toISOString(),
+      }
+
+      const { data, error } = await supabaseAdmin
         .from('whatsapp_settings')
-        .insert([settings])
+        .insert([insertData])
         .select()
         .single()
 
