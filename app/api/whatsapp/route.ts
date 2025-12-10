@@ -82,6 +82,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await parseRequestBody<WhatsAppWebhookPayload>(req)
 
+    // Log incoming webhook for debugging
+    console.log('📥 WhatsApp Webhook Received:', {
+      object: body.object,
+      hasEntry: !!body.entry?.[0],
+      hasChanges: !!body.entry?.[0]?.changes?.[0],
+      hasMessages: !!body.entry?.[0]?.changes?.[0]?.value?.messages,
+      messageCount: body.entry?.[0]?.changes?.[0]?.value?.messages?.length || 0,
+    })
+
     // Handle WhatsApp webhook events
     if (body.object === 'whatsapp_business_account') {
       const entry = body.entry?.[0]
@@ -92,6 +101,13 @@ export async function POST(req: NextRequest) {
         const message = value.messages[0]
         const from = message.from
         const messageId = message.id
+
+        console.log('💬 Processing WhatsApp message:', {
+          from,
+          messageId,
+          type: message.type,
+          hasText: !!message.text?.body,
+        })
 
         /*
         if (from === '966581421483') {
