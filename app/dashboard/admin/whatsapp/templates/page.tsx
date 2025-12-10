@@ -35,16 +35,23 @@ export default function WhatsAppTemplatesPage() {
     try {
       setLoading(true)
       const response = await fetch('/api/whatsapp/templates')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
       
       if (data.success) {
         setTemplates(data.data || [])
       } else {
         console.error('Error fetching templates:', data.error)
+        toast.error('فشل تحميل القوالب: ' + (data.error?.message || data.error || 'خطأ غير معروف'))
         setTemplates([])
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching templates:', error)
+      toast.error('حدث خطأ أثناء تحميل القوالب: ' + (error.message || 'خطأ غير معروف'))
       setTemplates([])
     } finally {
       setLoading(false)

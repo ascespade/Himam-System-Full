@@ -1,11 +1,14 @@
+import { getSettings } from './config'
+
 const WHATSAPP_API_URL = 'https://graph.facebook.com/v19.0' // Or configured version
 
 export async function sendTextMessage(to: string, text: string) {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID
+  const settings = await getSettings()
+  const token = settings.WHATSAPP_TOKEN
+  const phoneId = settings.WHATSAPP_PHONE_NUMBER_ID
 
   if (!token || !phoneId) {
-    console.error('WhatsApp credentials missing')
+    console.error('WhatsApp credentials missing - check database settings')
     return null
   }
 

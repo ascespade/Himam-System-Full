@@ -100,13 +100,17 @@ export default function WhatsAppLiveLogPage() {
       const res = await fetch('/api/whatsapp/conversations?status=active&limit=100')
       const data = await res.json()
       if (data.success) {
-        setConversations(data.data)
-        if (data.data.length > 0 && !selectedConversation) {
+        setConversations(data.data || [])
+        if (data.data && data.data.length > 0 && !selectedConversation) {
           setSelectedConversation(data.data[0].id)
         }
+      } else {
+        console.error('Failed to fetch conversations:', data.error)
+        setConversations([])
       }
     } catch (error) {
       console.error('Error fetching conversations:', error)
+      setConversations([])
     } finally {
       setIsLoading(false)
     }
@@ -118,9 +122,13 @@ export default function WhatsAppLiveLogPage() {
       const data = await res.json()
       if (data.success) {
         setMessages(data.data.messages || [])
+      } else {
+        console.error('Failed to fetch messages:', data.error)
+        setMessages([])
       }
     } catch (error) {
       console.error('Error fetching messages:', error)
+      setMessages([])
     }
   }
 

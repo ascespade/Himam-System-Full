@@ -73,13 +73,40 @@ serve(async (req) => {
       const settings: Record<string, string> = {}
       allSettings?.forEach((s) => (settings[s.key] = s.value))
 
-      // Get conversation history
-      const { data: history } = await supabase
-        .from('conversation_history')
-        .select('user_message, ai_response')
-        .eq('user_phone', from)
+      // Get or create conversation
+      let conversation = null
+      const { data: existingConversation } = await supabase
+        .from('whatsapp_conversations')
+        .select('id')
+        .eq('phone_number', from)
+        .single()
+
+      if (existingConversation) {
+        conversation = existingConversation
+      } else {
+        const { data: newConversation } = await supabase
+          .from('whatsapp_conversations')
+          .insert({
+            phone_number: from,
+            status: 'active',
+          })
+          .select()
+          .single()
+        conversation = newConversation
+      }
+
+      // Get conversation history from messages
+      const { data: messages } = await supabase
+        .from('whatsapp_messages')
+        .select('content, direction')
+        .eq('conversation_id', conversation?.id)
         .order('created_at', { ascending: false })
         .limit(10)
+
+      const history = messages?.reverse().map((m: any) => ({
+        user_message: m.direction === 'inbound' ? m.content : '',
+        ai_response: m.direction === 'outbound' ? m.content : '',
+      })) || []
 
       // Generate AI response using Gemini (primary) or OpenAI (fallback)
       const aiPrompt = `أنت مساعد ذكي لمركز الهمم الطبي في جدة، المملكة العربية السعودية.
@@ -159,11 +186,41 @@ ${history && history.length > 0 ? `تاريخ المحادثة:\n${history.map((
         }
       }
 
-      // Save conversation
-      await supabase.from('conversation_history').insert({
-        user_phone: from,
-        user_message: text,
-        ai_response: aiResponse,
+      // Ensure conversation exists
+      if (!conversation) {
+        const { data: newConv } = await supabase
+          .from('whatsapp_conversations')
+          .insert({
+            phone_number: from,
+            status: 'active',
+          })
+          .select()
+          .single()
+        conversation = newConv
+      }
+
+      // Save inbound message
+      await supabase.from('whatsapp_messages').insert({
+        message_id: message.id || `msg_${Date.now()}`,
+        from_phone: from,
+        to_phone: settings.WHATSAPP_PHONE_NUMBER_ID || '',
+        message_type: 'text',
+        content: text,
+        direction: 'inbound',
+        status: 'delivered',
+        conversation_id: conversation.id,
+      })
+
+      // Save outbound message (AI response)
+      await supabase.from('whatsapp_messages').insert({
+        message_id: `out_${Date.now()}`,
+        from_phone: settings.WHATSAPP_PHONE_NUMBER_ID || '',
+        to_phone: from,
+        message_type: 'text',
+        content: aiResponse,
+        direction: 'outbound',
+        status: 'sent',
+        conversation_id: conversation.id,
       })
 
       // Send WhatsApp reply

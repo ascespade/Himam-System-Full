@@ -50,9 +50,9 @@ async function getAdminPhone(): Promise<string> {
 export async function askAI(prompt: string, context?: string): Promise<AIResponse> {
   const settings = await getSettings()
   
-  // FAILSAFE: Check Environment Variables if DB is empty
-  const GEMINI_KEY = settings.GEMINI_KEY || process.env.GEMINI_KEY
-  const OPENAI_KEY = settings.OPENAI_KEY || process.env.OPENAI_KEY
+  // Get keys from database settings (centralized configuration)
+  const GEMINI_KEY = settings.GEMINI_KEY
+  const OPENAI_KEY = settings.OPENAI_KEY
 
   const ADMIN_PHONE = await getAdminPhone()
 

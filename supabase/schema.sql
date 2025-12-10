@@ -12,15 +12,8 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Conversation history (WhatsApp + AI interactions)
-CREATE TABLE IF NOT EXISTS conversation_history (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_phone TEXT NOT NULL,
-  user_message TEXT NOT NULL,
-  ai_response TEXT NOT NULL,
-  session_id TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- WhatsApp Conversations (replaces old conversation_history)
+-- See whatsapp_conversations and whatsapp_messages tables for WhatsApp data
 
 -- Appointments (integrated with Google Calendar)
 CREATE TABLE IF NOT EXISTS appointments (
@@ -59,9 +52,7 @@ CREATE TABLE IF NOT EXISTS signatures (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_conversation_history_user_phone ON conversation_history(user_phone);
-CREATE INDEX IF NOT EXISTS idx_conversation_history_created_at ON conversation_history(created_at DESC);
+-- Indexes for performance (WhatsApp indexes are in migration files)
 CREATE INDEX IF NOT EXISTS idx_appointments_phone ON appointments(phone);
 CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
 CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
@@ -93,7 +84,6 @@ CREATE TRIGGER update_billing_updated_at
 
 -- Enable Row Level Security
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE conversation_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE billing ENABLE ROW LEVEL SECURITY;
 ALTER TABLE signatures ENABLE ROW LEVEL SECURITY;
@@ -102,8 +92,7 @@ ALTER TABLE signatures ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "settings_service_role_all" ON settings
   FOR ALL USING (auth.role() = 'service_role');
 
-CREATE POLICY "conversation_history_service_role_all" ON conversation_history
-  FOR ALL USING (auth.role() = 'service_role');
+-- WhatsApp RLS policies are in migration files
 
 CREATE POLICY "appointments_service_role_all" ON appointments
   FOR ALL USING (auth.role() = 'service_role');

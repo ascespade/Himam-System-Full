@@ -17,15 +17,9 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Conversation history (WhatsApp + AI interactions)
-CREATE TABLE IF NOT EXISTS conversation_history (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_phone TEXT NOT NULL,
-  user_message TEXT NOT NULL,
-  ai_response TEXT NOT NULL,
-  session_id TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- WhatsApp Conversations (DEPRECATED: conversation_history removed)
+-- Use whatsapp_conversations and whatsapp_messages tables instead
+-- See migration: 20250115000000_unify_whatsapp_tables.sql
 
 -- Appointments (integrated with Google Calendar)
 CREATE TABLE IF NOT EXISTS appointments (

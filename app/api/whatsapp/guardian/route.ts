@@ -50,24 +50,82 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(successResponse({ action: 'no_patients' }))
     }
 
+    // Get or create conversation
+    let conversation = null
+    const { data: existingConversation } = await supabaseAdmin
+      .from('whatsapp_conversations')
+      .select('id')
+      .eq('phone_number', from)
+      .single()
+
+    if (existingConversation) {
+      conversation = existingConversation
+    } else {
+      const { data: newConversation } = await supabaseAdmin
+        .from('whatsapp_conversations')
+        .insert({
+          phone_number: from,
+          status: 'active',
+        })
+        .select()
+        .single()
+      conversation = newConversation
+    }
+
+    // Get conversation history
+    const { data: messages } = await supabaseAdmin
+      .from('whatsapp_messages')
+      .select('content, direction')
+      .eq('conversation_id', conversation.id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    const formattedHistory = messages
+      ? messages.reverse().flatMap((m: any) => {
+          if (m.direction === 'inbound') {
+            return [{ role: 'user' as const, content: m.content }]
+          } else {
+            return [{ role: 'assistant' as const, content: m.content }]
+          }
+        })
+      : []
+
     // Use AI to understand the message intent
     const aiResponse = await generateWhatsAppResponse(
       from,
       message,
-      undefined, // conversationHistory
+      formattedHistory,
       undefined // patientName
     )
 
     // Send AI response
-    await sendTextMessage(from, aiResponse.text)
+    const responseResult = await sendTextMessage(from, aiResponse.text)
 
-    // Log interaction
-    await supabaseAdmin.from('conversation_history').insert({
-      user_phone: from,
-      user_message: message,
-      ai_response: aiResponse.text,
-      session_id: `guardian-${guardian.id}`
+    // Save inbound message
+    await supabaseAdmin.from('whatsapp_messages').insert({
+      message_id: messageId || `guardian_${Date.now()}`,
+      from_phone: from,
+      to_phone: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+      message_type: 'text',
+      content: message,
+      direction: 'inbound',
+      status: 'delivered',
+      conversation_id: conversation.id,
     })
+
+    // Save outbound message
+    if (responseResult?.messageId) {
+      await supabaseAdmin.from('whatsapp_messages').insert({
+        message_id: responseResult.messageId,
+        from_phone: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+        to_phone: from,
+        message_type: 'text',
+        content: aiResponse.text,
+        direction: 'outbound',
+        status: 'sent',
+        conversation_id: conversation.id,
+      })
+    }
 
     return NextResponse.json(successResponse({
       messageId,

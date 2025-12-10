@@ -31,6 +31,7 @@ import {
   formatAppointmentDate,
   formatAppointmentTime
 } from '@/lib/booking-parser'
+import { executeFlowsForContext } from '@/lib/flows'
 
 /**
  * Webhook verification (GET)
@@ -132,13 +133,7 @@ export async function POST(req: NextRequest) {
           
           await sendTextMessage(from || '', `تم استلام ${mediaType}. جاري المعالجة...`)
           
-          // Log explicitly
-           await supabaseAdmin.from('conversation_history').insert({
-            user_phone: from,
-            user_message: `[${message.type.toUpperCase()}] ID: ${(message as any)[message.type]?.id || 'unknown'}`,
-            ai_response: 'System: Media received', 
-            session_id: messageId || undefined,
-          })
+          // Log media message - will be saved in whatsapp_messages below
         }
 
         if (!text || !from) {
@@ -146,13 +141,30 @@ export async function POST(req: NextRequest) {
         }
 
         // Check if this is a first-time user (send welcome)
-        const { data: existingConversations } = await supabaseAdmin
-          .from('conversation_history')
-          .select('id')
-          .eq('user_phone', from)
-          .limit(1)
+        // Get or create conversation
+        let conversation = null
+        const { data: existingConversation } = await supabaseAdmin
+          .from('whatsapp_conversations')
+          .select('id, phone_number')
+          .eq('phone_number', from)
+          .single()
 
-        const isFirstMessage = !existingConversations || existingConversations.length === 0
+        if (existingConversation) {
+          conversation = existingConversation
+        } else {
+          // Create new conversation
+          const { data: newConversation } = await supabaseAdmin
+            .from('whatsapp_conversations')
+            .insert({
+              phone_number: from,
+              status: 'active',
+            })
+            .select()
+            .single()
+          conversation = newConversation
+        }
+
+        const isFirstMessage = !existingConversation
 
         if (isFirstMessage) {
           await sendWelcomeMessage(from)
@@ -236,13 +248,13 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Fetch conversation history
-        const { data: history } = await supabaseAdmin
-          .from('conversation_history')
-          .select('user_message, ai_response')
-          .eq('user_phone', from)
+        // Fetch conversation history from whatsapp_messages
+        const { data: messages } = await supabaseAdmin
+          .from('whatsapp_messages')
+          .select('content, direction')
+          .eq('conversation_id', conversation?.id)
           .order('created_at', { ascending: false })
-          .limit(5) // Get last 5 exchanges
+          .limit(10) // Get last 10 messages (5 exchanges)
 
         // Fetch Patient Profile (Memory)
         const { data: patientProfile } = await supabaseAdmin
@@ -253,12 +265,23 @@ export async function POST(req: NextRequest) {
         
         const patient = patientProfile
 
+        // Link patient to conversation if found
+        if (patient && conversation && !conversation.patient_id) {
+          await supabaseAdmin
+            .from('whatsapp_conversations')
+            .update({ patient_id: patient.id })
+            .eq('id', conversation.id)
+        }
+
         // Format history for AI
-        const formattedHistory = history
-          ? history.reverse().flatMap((h: any) => [
-              { role: 'user' as const, content: h.user_message },
-              { role: 'assistant' as const, content: h.ai_response },
-            ])
+        const formattedHistory = messages
+          ? messages.reverse().flatMap((m: any) => {
+              if (m.direction === 'inbound') {
+                return [{ role: 'user' as const, content: m.content }]
+              } else {
+                return [{ role: 'assistant' as const, content: m.content }]
+              }
+            })
           : []
 
         // Generate AI response with Patient Context
@@ -267,21 +290,24 @@ export async function POST(req: NextRequest) {
         // Check if AI extracted booking details (before saving conversation)
         const bookingDetails = parseBookingFromAI(aiResponse.text)
 
-        // Save conversation to database
-        const { data: conversationRecord } = await supabaseAdmin
-          .from('conversation_history')
-          .insert({
-            user_phone: from,
-            user_message: text,
-            ai_response: aiResponse.text,
-            session_id: messageId || undefined,
-          })
-          .select()
-          .single()
+        // Ensure conversation exists
+        if (!conversation) {
+          const { data: newConv } = await supabaseAdmin
+            .from('whatsapp_conversations')
+            .insert({
+              phone_number: from,
+              status: 'active',
+              patient_id: patient?.id || null,
+            })
+            .select()
+            .single()
+          conversation = newConv
+        }
 
         // Save inbound message to whatsapp_messages table
+        let savedMessage: any = null
         try {
-          const { error } = await supabaseAdmin
+          const { data: msgData, error } = await supabaseAdmin
             .from('whatsapp_messages')
             .insert({
               message_id: messageId,
@@ -289,20 +315,41 @@ export async function POST(req: NextRequest) {
               to_phone: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
               message_type: message.type,
               content: text,
-              status: 'sent',
+              status: 'delivered',
               direction: 'inbound',
               session_id: messageId,
-              conversation_id: conversationRecord?.id,
+              conversation_id: conversation.id,
               patient_id: patient?.id || null,
             })
+            .select()
+            .single()
           if (error) console.error('Error saving WhatsApp message:', error)
+          savedMessage = msgData
         } catch (err) {
           console.error('Error saving WhatsApp message:', err)
         }
 
+        // Execute flows for WhatsApp message context (non-blocking)
+        if (conversation?.id) {
+          executeFlowsForContext({
+            context_type: 'whatsapp_conversation',
+            context_id: conversation.id,
+            input_data: {
+              message: text,
+              message_id: messageId,
+              from: from,
+              patient_id: patient?.id,
+              patient_name: patient?.name,
+            },
+            triggered_by_type: 'webhook',
+          }).catch(err => {
+            console.error('Error executing flows for WhatsApp message:', err)
+          })
+        }
+
         // Create notification for new message (notify admin and reception)
         // Only notify for non-booking messages to avoid spam
-        if (conversationRecord && !bookingDetails?.isComplete) {
+        if (conversation && !bookingDetails?.isComplete) {
           try {
             const { createNotificationForRole, NotificationTemplates } = await import('@/lib/notifications')
             
@@ -473,7 +520,7 @@ export async function POST(req: NextRequest) {
                 content: cleanResponse,
                 status: 'sent',
                 direction: 'outbound',
-                conversation_id: conversationRecord?.id,
+                conversation_id: conversation.id,
                 patient_id: patient?.id || null,
               })
             if (error) console.error('Error saving outbound WhatsApp message:', error)

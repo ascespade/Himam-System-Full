@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Smartphone, MessageCircle, FileText, User, BarChart, Activity, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Smartphone, MessageCircle, FileText, User, BarChart, Activity, CheckCircle, XCircle, Clock, Settings, Zap } from 'lucide-react'
 
 interface WhatsAppStats {
   totalMessages: number
@@ -140,6 +140,19 @@ export default function WhatsAppPage() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <button
+          onClick={() => router.push('/dashboard/admin/whatsapp/settings')}
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition text-right"
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-xl bg-orange-100 text-orange-600">
+              <Settings size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">الإعدادات والربط</h3>
+          </div>
+          <p className="text-sm text-gray-500">تكوين واتساب والربط مع Meta</p>
+        </button>
+
+        <button
           onClick={() => router.push('/dashboard/admin/whatsapp/profile')}
           className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition text-right"
         >
@@ -189,6 +202,19 @@ export default function WhatsAppPage() {
             <h3 className="text-lg font-bold text-gray-900">التحليلات</h3>
           </div>
           <p className="text-sm text-gray-500">إحصائيات واتساب</p>
+        </button>
+
+        <button
+          onClick={() => router.push('/dashboard/admin/flows?module=whatsapp')}
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition text-right"
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-xl bg-indigo-100 text-indigo-600">
+              <Zap size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">التدفقات</h3>
+          </div>
+          <p className="text-sm text-gray-500">إدارة التدفقات الآلية</p>
         </button>
       </div>
     </div>

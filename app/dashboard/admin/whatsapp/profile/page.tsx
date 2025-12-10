@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Save, RefreshCw, Image as ImageIcon, Building2, Mail, Globe, MapPin } from 'lucide-react'
+import { Save, RefreshCw, Image as ImageIcon, Building2, Mail, Globe, MapPin, Shield, Star, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
 
 interface BusinessProfile {
   id: string
@@ -16,16 +17,48 @@ interface BusinessProfile {
   cover_photo_url?: string
   phone_number_id: string
   is_active: boolean
+  verification_status?: string
+  quality_rating?: string
+  quality_rating_updated_at?: string
+  business_hours?: Record<string, any>
+  two_step_verification_enabled?: boolean
+  display_phone_number?: string
+  account_type?: string
 }
 
 export default function WhatsAppBusinessProfilePage() {
   const [profile, setProfile] = useState<BusinessProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [formData, setFormData] = useState<Partial<BusinessProfile>>({})
+  const [phoneNumberDetails, setPhoneNumberDetails] = useState<any>(null)
+  const [verificationStatus, setVerificationStatus] = useState<any>(null)
 
   useEffect(() => {
     fetchProfile()
+    fetchPhoneNumberDetails()
+    fetchVerificationStatus()
+    
+    // Set up Realtime subscription
+    const channel = supabase
+      .channel('whatsapp_business_profiles_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'whatsapp_business_profiles',
+        },
+        () => {
+          fetchProfile()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const fetchProfile = async () => {
@@ -70,15 +103,43 @@ export default function WhatsAppBusinessProfilePage() {
     }
   }
 
-  const handleRefresh = async () => {
-    setIsLoading(true)
+  const fetchPhoneNumberDetails = async () => {
     try {
-      await fetchProfile()
-      toast.success('تم تحديث البروفايل من Meta')
+      const res = await fetch('/api/whatsapp/phone-number')
+      const data = await res.json()
+      if (data.success) {
+        setPhoneNumberDetails(data.data)
+      }
     } catch (error) {
-      toast.error('فشل في تحديث البروفايل')
+      console.error('Error fetching phone number details:', error)
+    }
+  }
+
+  const fetchVerificationStatus = async () => {
+    try {
+      const res = await fetch('/api/whatsapp/business-verification')
+      const data = await res.json()
+      if (data.success) {
+        setVerificationStatus(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching verification status:', error)
+    }
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await Promise.all([
+        fetchProfile(),
+        fetchPhoneNumberDetails(),
+        fetchVerificationStatus(),
+      ])
+      toast.success('تم تحديث جميع البيانات من Meta')
+    } catch (error) {
+      toast.error('فشل في تحديث البيانات')
     } finally {
-      setIsLoading(false)
+      setIsRefreshing(false)
     }
   }
 
@@ -99,10 +160,11 @@ export default function WhatsAppBusinessProfilePage() {
         </div>
         <button
           onClick={handleRefresh}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          disabled={isRefreshing}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
         >
-          <RefreshCw size={18} />
-          تحديث من Meta
+          <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+          {isRefreshing ? 'جارٍ التحديث...' : 'تحديث من Meta'}
         </button>
       </div>
 
@@ -220,6 +282,97 @@ export default function WhatsAppBusinessProfilePage() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Account Status & Verification */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Shield size={24} className="text-primary" />
+          حالة الحساب والتحقق
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Verification Status */}
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield size={18} className="text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">حالة التحقق</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {verificationStatus?.verification_status === 'verified' ? (
+                <>
+                  <CheckCircle size={20} className="text-green-500" />
+                  <span className="text-green-700 font-bold">متحقق</span>
+                </>
+              ) : verificationStatus?.verification_status === 'pending' ? (
+                <>
+                  <AlertCircle size={20} className="text-yellow-500" />
+                  <span className="text-yellow-700 font-bold">قيد المراجعة</span>
+                </>
+              ) : (
+                <>
+                  <XCircle size={20} className="text-red-500" />
+                  <span className="text-red-700 font-bold">غير متحقق</span>
+                </>
+              )}
+            </div>
+            {verificationStatus?.account_review_status && (
+              <p className="text-xs text-gray-500 mt-1">
+                الحالة: {verificationStatus.account_review_status}
+              </p>
+            )}
+          </div>
+
+          {/* Quality Rating */}
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <Star size={18} className="text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">تقييم الجودة</span>
+            </div>
+            {phoneNumberDetails?.quality_rating?.code ? (
+              <div>
+                <span className="text-lg font-bold text-gray-900">
+                  {phoneNumberDetails.quality_rating.code === 'GREEN' ? '🟢' : 
+                   phoneNumberDetails.quality_rating.code === 'YELLOW' ? '🟡' : '🔴'}
+                  {' '}
+                  {phoneNumberDetails.quality_rating.code}
+                </span>
+                {phoneNumberDetails.quality_rating.timestamp && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    آخر تحديث: {new Date(phoneNumberDetails.quality_rating.timestamp * 1000).toLocaleDateString('ar-SA')}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <span className="text-gray-500">غير متوفر</span>
+            )}
+          </div>
+
+          {/* Phone Number */}
+          {phoneNumberDetails?.display_phone_number && (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Mail size={18} className="text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">رقم الهاتف</span>
+              </div>
+              <span className="text-lg font-bold text-gray-900" dir="ltr">
+                {phoneNumberDetails.display_phone_number}
+              </span>
+            </div>
+          )}
+
+          {/* Account Type */}
+          {phoneNumberDetails?.account_type && (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Building2 size={18} className="text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">نوع الحساب</span>
+              </div>
+              <span className="text-lg font-bold text-gray-900">
+                {phoneNumberDetails.account_type}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

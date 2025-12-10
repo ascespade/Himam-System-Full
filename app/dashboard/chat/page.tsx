@@ -77,39 +77,50 @@ export default function ChatPage() {
   useEffect(() => {
     if (!selectedPhone) return
 
-    // Subscribe to new messages for the selected phone
-    const channel = supabase
-      .channel(`conversation:${selectedPhone}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'conversation_history',
-          filter: `user_phone=eq.${selectedPhone}`
-        },
-        (payload) => {
-          const newMessage = payload.new as Message
-          setMessages((prev) => {
-            // Check if message already exists to avoid duplicates
-            if (prev.some(m => m.id === newMessage.id)) {
-              return prev
+    let channel: any = null
+
+    // Subscribe to new messages in whatsapp_messages table
+    // First, we need to get the conversation ID
+    const setupSubscription = async () => {
+      try {
+        // Get conversation ID for this phone
+        const convRes = await fetch('/api/chat/conversations')
+        const convData = await convRes.json()
+        if (!convData.success) return
+
+        const conversation = convData.data.find((c: any) => c.phone === selectedPhone)
+        if (!conversation || !conversation.id) return
+
+        // Subscribe to new messages for this conversation
+        channel = supabase
+          .channel(`whatsapp_messages_${conversation.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'whatsapp_messages',
+              filter: `conversation_id=eq.${conversation.id}`
+            },
+            () => {
+              // Refetch messages when new one arrives
+              fetchMessages(selectedPhone)
             }
-            const updated = [...prev, newMessage]
-            // Scroll to bottom when new message arrives
-            setTimeout(() => {
-              scrollToBottom(true)
-            }, 50)
-            return updated
-          })
-        }
-      )
-      .subscribe()
+          )
+          .subscribe()
+      } catch (error) {
+        console.error('Error setting up subscription:', error)
+      }
+    }
+
+    setupSubscription()
 
     return () => {
-      supabase.removeChannel(channel)
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
-  }, [selectedPhone, supabase])
+  }, [selectedPhone])
 
   return (
     <div className="flex h-[calc(100vh-64px)] bg-white overflow-hidden">
