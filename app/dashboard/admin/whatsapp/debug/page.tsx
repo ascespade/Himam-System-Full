@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Button, Card } from '@/shared/components/ui'
+import { CheckCircle2, Clock, MessageCircle, RefreshCw, Send, XCircle } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { RefreshCw, MessageCircle, Send, CheckCircle2, XCircle, Clock } from 'lucide-react'
 
 interface Message {
   id: string
@@ -305,4 +304,5 @@ export default function WhatsAppDebugPage() {
     </div>
   )
 }
+
 

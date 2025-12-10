@@ -68,10 +68,15 @@ export async function sendButtonMessage(
 
   if (!response.ok) {
     const error = await response.json()
+    console.error('WhatsApp API Error:', error)
     throw new Error(error.error?.message || 'Failed to send button message')
   }
 
-  return response.json()
+  const result = await response.json()
+  return {
+    success: true,
+    messageId: result.messages?.[0]?.id || null
+  }
 }
 
 /**
@@ -122,10 +127,15 @@ export async function sendListMessage(
 
   if (!response.ok) {
     const error = await response.json()
+    console.error('WhatsApp API Error:', error)
     throw new Error(error.error?.message || 'Failed to send list message')
   }
 
-  return response.json()
+  const result = await response.json()
+  return {
+    success: true,
+    messageId: result.messages?.[0]?.id || null
+  }
 }
 
 /**
@@ -160,10 +170,16 @@ export async function sendTextMessage(
 
   if (!response.ok) {
     const error = await response.json()
+    console.error('WhatsApp API Error:', error)
     throw new Error(error.error?.message || 'Failed to send text message')
   }
 
-  return response.json()
+  const result = await response.json()
+  // Meta API returns: { messages: [{ id: "wamid.xxx" }] }
+  return {
+    success: true,
+    messageId: result.messages?.[0]?.id || null
+  }
 }
 
 /**
@@ -278,10 +294,15 @@ export async function sendImageMessage(
 
   if (!response.ok) {
     const error = await response.json()
+    console.error('WhatsApp API Error:', error)
     throw new Error(error.error?.message || 'Failed to send image message')
   }
 
-  return response.json()
+  const result = await response.json()
+  return {
+    success: true,
+    messageId: result.messages?.[0]?.id || null
+  }
 }
 
 /**
@@ -380,10 +401,15 @@ export async function sendDocumentMessage(
 
   if (!response.ok) {
     const error = await response.json()
+    console.error('WhatsApp API Error:', error)
     throw new Error(error.error?.message || 'Failed to send document message')
   }
 
-  return response.json()
+  const result = await response.json()
+  return {
+    success: true,
+    messageId: result.messages?.[0]?.id || null
+  }
 }
 
 /**
@@ -431,10 +457,15 @@ export async function sendTemplateMessage(
 
   if (!response.ok) {
     const error = await response.json()
+    console.error('WhatsApp API Error:', error)
     throw new Error(error.error?.message || 'Failed to send template message')
   }
 
-  return response.json()
+  const result = await response.json()
+  return {
+    success: true,
+    messageId: result.messages?.[0]?.id || null
+  }
 }
 
 /**
@@ -471,8 +502,13 @@ export async function sendAudioMessage(
 
   if (!response.ok) {
     const error = await response.json()
+    console.error('WhatsApp API Error:', error)
     throw new Error(error.error?.message || 'Failed to send audio message')
   }
 
-  return response.json()
+  const result = await response.json()
+  return {
+    success: true,
+    messageId: result.messages?.[0]?.id || null
+  }
 }
