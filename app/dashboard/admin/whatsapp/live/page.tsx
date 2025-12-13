@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { MessageSquare, Send, Check, CheckCheck, Clock, AlertCircle, Search, Filter } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ar } from 'date-fns/locale'
+import { logError } from '@/shared/utils/logger'
 
 interface WhatsAppMessage {
   id: string
@@ -49,11 +50,11 @@ export default function WhatsAppLiveLogPage() {
           setSelectedConversation(data.data[0].id)
         }
       } else {
-        console.error('Failed to fetch conversations:', data.error)
+        logError('Failed to fetch conversations', new Error(data.error || 'Unknown error'), { endpoint: '/api/whatsapp/conversations' })
         setConversations([])
       }
     } catch (error) {
-      console.error('Error fetching conversations:', error)
+      logError('Error fetching conversations', error, { endpoint: '/api/whatsapp/conversations' })
       setConversations([])
     } finally {
       setIsLoading(false)
@@ -67,11 +68,11 @@ export default function WhatsAppLiveLogPage() {
       if (data.success) {
         setMessages(data.data.messages || [])
       } else {
-        console.error('Failed to fetch messages:', data.error)
+        logError('Failed to fetch messages', new Error(data.error || 'Unknown error'), { conversationId, endpoint: '/api/whatsapp/conversations' })
         setMessages([])
       }
     } catch (error) {
-      console.error('Error fetching messages:', error)
+      logError('Error fetching messages', error, { conversationId, endpoint: '/api/whatsapp/conversations' })
       setMessages([])
     }
   }, [])

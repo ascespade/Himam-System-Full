@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react'
 import type SignaturePad from 'signature_pad'
 import Footer from '../../components/Footer'
+import { toastError } from '@/shared/utils/toast'
 
 export default function SignaturePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -52,7 +53,7 @@ export default function SignaturePage() {
 
   const handleSave = async () => {
     if (!signaturePadRef.current || signaturePadRef.current.isEmpty()) {
-      alert('يرجى التوقيع أولاً')
+      toastError('يرجى التوقيع أولاً')
       return
     }
 

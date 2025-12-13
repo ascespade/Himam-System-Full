@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from '@/shared/utils/toast'
 import { createBrowserClient } from '@supabase/ssr'
+import { logError } from '@/shared/utils/logger'
 
 interface QueueItem {
   id: string
@@ -64,7 +65,7 @@ export default function QueuePage() {
         setDoctors(data.data || [])
       }
     } catch (error) {
-      console.error('Error fetching doctors:', error)
+      logError('Error fetching doctors', error, { endpoint: '/api/users?role=doctor' })
     }
   }
 
@@ -77,7 +78,7 @@ export default function QueuePage() {
         setQueue(data.data || [])
       }
     } catch (error) {
-      console.error('Error fetching queue:', error)
+      logError('Error fetching queue', error, { endpoint: '/api/reception/queue' })
       toast.error('فشل تحميل الطابور')
     } finally {
       setLoading(false)
@@ -127,7 +128,7 @@ export default function QueuePage() {
         toast.error(data.error || 'فشل تحديث الحالة')
       }
     } catch (error) {
-      console.error('Error updating queue:', error)
+      logError('Error updating queue', error, { queueId: id, status, endpoint: '/api/reception/queue' })
       toast.error('حدث خطأ أثناء التحديث')
     }
   }
@@ -161,7 +162,7 @@ export default function QueuePage() {
         await confirmToDoctor(queueItem.id, doctorId)
       }
     } catch (error) {
-      console.error('Error checking payment:', error)
+      logError('Error checking payment', error, { patientId: queueItem.patient_id, endpoint: '/api/reception/payment/verify' })
       // Continue anyway (graceful degradation)
       await confirmToDoctor(queueItem.id, doctorId)
     }
@@ -193,7 +194,7 @@ export default function QueuePage() {
         }
       }
     } catch (error) {
-      console.error('Error confirming to doctor:', error)
+      logError('Error confirming to doctor', error, { queueId, doctorId, endpoint: '/api/reception/queue/confirm-to-doctor' })
       toast.error('حدث خطأ أثناء التأكيد')
     } finally {
       setConfirmingToDoctor(null)

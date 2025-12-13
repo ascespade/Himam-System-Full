@@ -61,6 +61,7 @@ For detailed step-by-step instructions, troubleshooting, and post-deployment ver
 - [Enterprise System Guide](./docs/ENTERPRISE_SYSTEM_README.md)
 - [Flow Diagram](./docs/FLOW_DIAGRAM.md)
 - [WhatsApp Integration](./docs/WHATSAPP_INTEGRATION_GUIDE.md)
+- [Architecture Decision Records (ADRs)](./docs/adr/) - Key architectural decisions
 
 ## ✨ Features
 
