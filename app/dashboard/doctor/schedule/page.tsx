@@ -3,6 +3,8 @@
 import { Clock, Plus, Save, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import { logError } from '@/shared/utils/logger'
+import { toastError } from '@/shared/utils/toast'
 
 interface Schedule {
   id: string
@@ -58,7 +60,7 @@ export default function DoctorSchedulePage() {
         setSchedules(data.data || [])
       }
     } catch (error) {
-      console.error('Error fetching schedules:', error)
+      logError('Error fetching schedules', error, { endpoint: '/api/doctor/schedule' })
     } finally {
       setLoading(false)
     }
@@ -90,11 +92,13 @@ export default function DoctorSchedulePage() {
           is_active: true
         })
       } else {
-        alert('فشل في حفظ الجدول: ' + (data.error || 'خطأ غير معروف'))
+        const errorMessage = data.error || 'خطأ غير معروف'
+        logError('Failed to save schedule', new Error(errorMessage), { endpoint: '/api/doctor/schedule' })
+        toastError('فشل في حفظ الجدول: ' + errorMessage)
       }
     } catch (error) {
-      console.error('Error saving schedule:', error)
-      alert('حدث خطأ أثناء حفظ الجدول')
+      logError('Error saving schedule', error, { endpoint: '/api/doctor/schedule' })
+      toastError('حدث خطأ أثناء حفظ الجدول')
     }
   }
 
@@ -110,11 +114,13 @@ export default function DoctorSchedulePage() {
       if (data.success) {
         await fetchSchedules()
       } else {
-        alert('فشل في حذف الجدول: ' + (data.error || 'خطأ غير معروف'))
+        const errorMessage = data.error || 'خطأ غير معروف'
+        logError('Failed to delete schedule', new Error(errorMessage), { endpoint: '/api/doctor/schedule' })
+        toastError('فشل في حذف الجدول: ' + errorMessage)
       }
     } catch (error) {
-      console.error('Error deleting schedule:', error)
-      alert('حدث خطأ أثناء حذف الجدول')
+      logError('Error deleting schedule', error, { endpoint: '/api/doctor/schedule' })
+      toastError('حدث خطأ أثناء حذف الجدول')
     }
   }
 

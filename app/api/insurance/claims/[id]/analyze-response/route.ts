@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextRequest, NextResponse } from 'next/server'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,13 +9,10 @@ export const dynamic = 'force-dynamic'
  * Analyze insurance company response using AI
  * يحلل رد شركة التأمين ويحدد الإجراء المطلوب
  */
-export async function POST(
+export const POST = withRateLimit(async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const body = await req.json()
     const { response_text } = body
@@ -76,15 +73,13 @@ export async function POST(
       await handleInfoRequest(params.id, analysis)
     }
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data: {
         analysis,
         claim_id: params.id
       }
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
 
@@ -94,7 +89,7 @@ export async function POST(
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * Analyze insurance response using AI

@@ -3,6 +3,8 @@
 import { FileText, Plus, Search, Edit, Trash2, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { logError } from '@/shared/utils/logger'
+import { toastError as toastErrorUtil } from '@/shared/utils/toast'
 
 interface Template {
   id: string
@@ -40,11 +42,11 @@ export default function TemplatesPage() {
       if (data.success) {
         setTemplates(data.data || [])
       } else {
-        console.error('Error fetching templates:', data.error)
+        logError('Error fetching templates', new Error(data.error || 'Unknown error'), { endpoint: '/api/doctor/notes-templates' })
         setTemplates([])
       }
     } catch (error) {
-      console.error('Error fetching templates:', error)
+      logError('Error fetching templates', error, { endpoint: '/api/doctor/notes-templates' })
       setTemplates([])
     } finally {
       setLoading(false)
@@ -65,8 +67,8 @@ export default function TemplatesPage() {
 
   const handleEdit = async (template: Template) => {
     // Open edit modal or navigate to edit page
-    // For now, show alert - can be enhanced with modal later
-    alert(`تعديل القالب: ${template.name}\n\nسيتم إضافة نافذة التعديل قريباً`)
+    // For now, show toast - can be enhanced with modal later
+    toastErrorUtil(`تعديل القالب: ${template.name}\n\nسيتم إضافة نافذة التعديل قريباً`)
   }
 
   const handleCopy = async (template: Template) => {
@@ -88,7 +90,7 @@ export default function TemplatesPage() {
         toast.error('فشل نسخ القالب: ' + (data.error || 'خطأ غير معروف'))
       }
     } catch (error) {
-      console.error('Error copying template:', error)
+      logError('Error copying template', error, { endpoint: '/api/doctor/notes-templates' })
       toast.error('حدث خطأ أثناء نسخ القالب')
     }
   }
@@ -108,7 +110,7 @@ export default function TemplatesPage() {
         toast.error('فشل حذف القالب: ' + (data.error || 'خطأ غير معروف'))
       }
     } catch (error) {
-      console.error('Error deleting template:', error)
+      logError('Error deleting template', error, { endpoint: '/api/doctor/notes-templates' })
       toast.error('حدث خطأ أثناء حذف القالب')
     }
   }

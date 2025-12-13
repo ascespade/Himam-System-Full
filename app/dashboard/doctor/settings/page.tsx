@@ -3,6 +3,8 @@
 import { Save, User, Mail, Phone, Calendar, GraduationCap, Award, Globe } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import { logError } from '@/shared/utils/logger'
+import { toastError, toastSuccess } from '@/shared/utils/toast'
 
 interface DoctorProfile {
   id: string
@@ -73,7 +75,7 @@ export default function DoctorSettingsPage() {
         })
       }
     } catch (error) {
-      console.error('Error fetching profile:', error)
+      logError('Error fetching profile', error, { endpoint: '/api/doctors/profiles' })
     } finally {
       setLoading(false)
     }
@@ -94,14 +96,16 @@ export default function DoctorSettingsPage() {
 
       const data = await res.json()
       if (data.success) {
-        alert('تم حفظ التغييرات بنجاح')
+        toastSuccess('تم حفظ التغييرات بنجاح')
         await fetchProfile()
       } else {
-        alert('فشل في حفظ التغييرات: ' + (data.error || 'خطأ غير معروف'))
+        const errorMessage = data.error || 'خطأ غير معروف'
+        logError('Failed to save profile', new Error(errorMessage), { endpoint: '/api/doctors/profiles' })
+        toastError('فشل في حفظ التغييرات: ' + errorMessage)
       }
     } catch (error) {
-      console.error('Error saving profile:', error)
-      alert('حدث خطأ أثناء حفظ التغييرات')
+      logError('Error saving profile', error, { endpoint: '/api/doctors/profiles' })
+      toastError('حدث خطأ أثناء حفظ التغييرات')
     } finally {
       setSaving(false)
     }

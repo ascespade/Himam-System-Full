@@ -8,6 +8,8 @@
 
 import { useEffect, useState } from 'react'
 import { Save, Plus, Trash2, Settings, RefreshCw } from 'lucide-react'
+import { logError } from '@/shared/utils/logger'
+import { toastError, toastSuccess } from '@/shared/utils/toast'
 
 interface Configuration {
   id: string
@@ -56,7 +58,7 @@ export default function SettingsPage() {
         setConfigs(configArray)
       }
     } catch (error) {
-      console.error('Error loading configurations:', error)
+      logError('Error loading configurations', error, { endpoint: '/api/settings' })
     } finally {
       setLoading(false)
     }
@@ -79,12 +81,16 @@ export default function SettingsPage() {
       const data = await res.json()
       if (data.success) {
         await loadConfigurations()
-        alert('تم حفظ الإعدادات بنجاح')
+        toastSuccess('تم حفظ الإعدادات بنجاح')
       } else {
-        alert('فشل في حفظ الإعدادات: ' + data.error)
+        const errorMessage = data.error || 'خطأ غير معروف'
+        logError('Failed to save settings', new Error(errorMessage), { endpoint: '/api/settings' })
+        toastError('فشل في حفظ الإعدادات: ' + errorMessage)
       }
-    } catch (error: any) {
-      alert('حدث خطأ: ' + error.message)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف'
+      logError('Error saving settings', error, { endpoint: '/api/settings' })
+      toastError('حدث خطأ: ' + errorMessage)
     } finally {
       setSaving(false)
     }
@@ -93,7 +99,7 @@ export default function SettingsPage() {
   const handleAdd = async () => {
     try {
       if (!newConfig.category || !newConfig.key || !newConfig.value) {
-        alert('يرجى ملء جميع الحقول المطلوبة')
+        toastError('يرجى ملء جميع الحقول المطلوبة')
         return
       }
 
@@ -113,12 +119,16 @@ export default function SettingsPage() {
         await loadConfigurations()
         setShowAddForm(false)
         setNewConfig({ category: '', key: '', value: '', description: '' })
-        alert('تم إضافة الإعداد بنجاح')
+        toastSuccess('تم إضافة الإعداد بنجاح')
       } else {
-        alert('فشل في إضافة الإعداد: ' + data.error)
+        const errorMessage = data.error || 'خطأ غير معروف'
+        logError('Failed to add configuration', new Error(errorMessage), { endpoint: '/api/settings' })
+        toastError('فشل في إضافة الإعداد: ' + errorMessage)
       }
-    } catch (error: any) {
-      alert('حدث خطأ: ' + error.message)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف'
+      logError('Error adding configuration', error, { endpoint: '/api/settings' })
+      toastError('حدث خطأ: ' + errorMessage)
     }
   }
 

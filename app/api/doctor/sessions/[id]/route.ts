@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,13 +9,10 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/sessions/[id]
  * Get session details
  */
-export async function GET(
+export const GET = withRateLimit(async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -72,19 +69,16 @@ export async function GET(
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * PUT /api/doctor/sessions/[id]
  * Update session
  */
-export async function PUT(
+export const PUT = withRateLimit(async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -144,12 +138,10 @@ export async function PUT(
 
     if (error) throw error
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -161,19 +153,16 @@ export async function PUT(
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * DELETE /api/doctor/sessions/[id]
  * Delete session
  */
-export async function DELETE(
+export const DELETE = withRateLimit(async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -212,11 +201,9 @@ export async function DELETE(
 
     if (error) throw error
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -228,5 +215,5 @@ export async function DELETE(
       { status: 500 }
     )
   }
-}
+}, 'api')
 

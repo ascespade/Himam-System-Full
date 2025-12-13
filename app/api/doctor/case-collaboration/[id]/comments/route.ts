@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,13 +12,10 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/case-collaboration/[id]/comments
  * Get comments for a case
  */
-export async function GET(
+export const GET = withRateLimit(async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -72,9 +69,7 @@ export async function GET(
 
     if (error) throw error
 
-    const response = NextResponse.json({ success: true, data: data || [] })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
+    return NextResponse.json({ success: true, data: data || [] })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -86,19 +81,16 @@ export async function GET(
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/doctor/case-collaboration/[id]/comments
  * Add a comment to a case
  */
-export async function POST(
+export const POST = withRateLimit(async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -191,9 +183,7 @@ export async function POST(
       logError('Failed to notify doctors', e, { caseId: params.id, endpoint: '/api/doctor/case-collaboration/[id]/comments' })
     }
 
-    const response = NextResponse.json({ success: true, data }, { status: 201 })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
+    return NextResponse.json({ success: true, data }, { status: 201 })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -205,5 +195,5 @@ export async function POST(
       { status: 500 }
     )
   }
-}
+}, 'api')
 
