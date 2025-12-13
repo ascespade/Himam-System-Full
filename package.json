@@ -16,6 +16,10 @@
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:unit:coverage": "vitest run --coverage",
+    "test:all": "npm run test:unit && npm run test",
     "migration:apply": "node scripts/apply-migration.js",
     "migration:auto": "node scripts/apply-migrations-auto.js",
     "migration:mcp": "node scripts/apply-migrations-mcp.js",
@@ -75,6 +79,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.49.0",
     "@typescript-eslint/parser": "^8.49.0",
+    "@vitest/coverage-v8": "4.0.15",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.33",
     "husky": "^9.1.7",
@@ -82,6 +87,7 @@
     "pg": "^8.13.1",
     "playwright": "^1.49.1",
     "tsc-files": "^1.1.4",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "4.0.15"
   }
 }
