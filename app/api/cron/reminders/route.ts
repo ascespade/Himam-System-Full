@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib'
 import { sendTextMessage } from '@/lib/whatsapp-messaging'
 import { formatAppointmentTime } from '@/lib/booking-parser'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 // Verify cron secret to prevent unauthorized access
 function verifyCron(req: NextRequest) {
@@ -17,7 +18,7 @@ function verifyCron(req: NextRequest) {
   return true
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   // Check for specialized Vercel Cron header or custom secret
   // Vercel automatically adds 'Authorization' header if CRON_SECRET is set in project settings
   if (process.env.NODE_ENV === 'production' && !verifyCron(req)) {
@@ -92,4 +93,4 @@ export async function GET(req: NextRequest) {
     
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
-}
+}, 'none')

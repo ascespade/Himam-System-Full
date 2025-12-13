@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { BaseService, ServiceException, type ServiceResult } from './base.service'
 
 // Create a concrete implementation for testing

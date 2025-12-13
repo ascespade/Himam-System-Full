@@ -9,6 +9,7 @@ import { successResponse, errorResponse, handleApiError } from '@/shared/utils/a
 import { HTTP_STATUS } from '@/shared/constants'
 import { guardianRepository, patientRepository } from '@/infrastructure/supabase/repositories'
 import { supabaseAdmin } from '@/lib'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/guardian/patients
  * Get all patients linked to the authenticated guardian
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -78,4 +79,4 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')

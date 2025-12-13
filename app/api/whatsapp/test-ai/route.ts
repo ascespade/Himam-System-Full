@@ -8,10 +8,11 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { supabaseAdmin } from '@/lib/supabase'
 import { generateWhatsAppResponse } from '@/lib/ai'
 import { getSettings } from '@/lib/config'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(

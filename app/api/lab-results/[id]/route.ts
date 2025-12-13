@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * PUT /api/lab-results/[id]
  * Update lab result status
  */
-export async function PUT(
+export const PUT = withRateLimit(async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -108,5 +109,5 @@ export async function PUT(
       { status: 500 }
     )
   }
-}
+}, 'api')
 

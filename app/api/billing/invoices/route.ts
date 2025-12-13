@@ -33,6 +33,9 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams
     const status = searchParams.get('status')
     const patientId = searchParams.get('patient_id')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
 
     // Select specific columns for better performance
     let query = supabaseAdmin
@@ -44,7 +47,7 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
           name,
           phone
         )
-      `)
+      `, { count: 'exact' })
       .order('created_at', { ascending: false })
 
     if (status && status !== 'all') {
@@ -55,7 +58,7 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       query = query.eq('patient_id', patientId)
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query.range(offset, offset + limit - 1)
 
     if (error) throw error
 
@@ -68,9 +71,20 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       }
     })
 
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
+
     return NextResponse.json({
       success: true,
-      data: transformed
+      data: transformed,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
     })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب الفواتير'

@@ -14,6 +14,7 @@ import { guardianRepository } from "@/infrastructure/supabase/repositories";
 import { sendTextMessage } from "@/lib/whatsapp-messaging";
 import { generateWhatsAppResponse } from "@/lib/ai";
 import { supabaseAdmin } from "@/lib";
+import { withRateLimit } from '@/core/api/middleware/withRateLimit';
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export const dynamic = "force-dynamic";
  * POST /api/whatsapp/guardian
  * Handle WhatsApp messages from guardians
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { from, message, messageId } = body;
@@ -157,4 +158,4 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error);
   }
-}
+}, 'api')

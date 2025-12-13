@@ -9,8 +9,9 @@ import { getSettings } from '@/lib/config'
 import { successResponse, errorResponse } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
 import { logError, logWarn, logInfo } from '@/shared/utils/logger'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { action, patientId, sessionId, data } = body
@@ -80,4 +81,4 @@ export async function POST(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')

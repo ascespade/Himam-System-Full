@@ -17,6 +17,18 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
     const offset = (page - 1) * limit
 
+    // Cache key (only cache if no search query)
+    const cacheKey = !search ? `specialists:${page}:${limit}` : null
+
+    // Try cache first
+    if (cacheKey) {
+      const { getCache, setCache } = await import('@/lib/redis')
+      const cached = await getCache(cacheKey)
+      if (cached) {
+        return NextResponse.json(successResponse(cached))
+      }
+    }
+
     let query = supabaseAdmin
       .from('specialists')
       .select('id, name, specialty, nationality, email, phone, created_at, updated_at', { count: 'exact' })
@@ -34,7 +46,7 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const total = count || 0
     const totalPages = Math.ceil(total / limit)
 
-    return NextResponse.json(successResponse({
+    const responseData = {
       data: specialists || [],
       pagination: {
         page,
@@ -44,7 +56,17 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
         hasNext: page < totalPages,
         hasPrev: page > 1,
       },
-    }))
+    }
+
+    // Cache for 10 minutes (specialists don't change often)
+    if (cacheKey) {
+      const { setCache } = await import('@/lib/redis')
+      setCache(cacheKey, responseData, 600).catch(() => {
+        // Cache set failed, continue without caching
+      })
+    }
+
+    return NextResponse.json(successResponse(responseData))
   } catch (error: unknown) {
     return handleApiError(error)
   }

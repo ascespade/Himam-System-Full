@@ -9,6 +9,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { getSettings } from '@/lib/config'
 import { successResponse, errorResponse } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/whatsapp/status
  * Get WhatsApp connection status
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -140,5 +141,5 @@ export async function GET(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')
 

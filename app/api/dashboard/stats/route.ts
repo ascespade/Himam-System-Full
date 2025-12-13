@@ -37,6 +37,16 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const requestedRole = searchParams.get('role') || role
 
+    // Cache key based on user and role
+    const cacheKey = `dashboard:stats:${user.id}:${requestedRole}`
+
+    // Try cache first (1 minute TTL)
+    const { getCache, setCache } = await import('@/lib/redis')
+    const cached = await getCache(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
+
     // Get today's date range
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -199,7 +209,7 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       data: {
         ...roleStats,
@@ -212,7 +222,14 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
           unread: unreadNotifications || 0
         }
       }
+    }
+
+    // Cache for 1 minute
+    setCache(cacheKey, responseData, 60).catch(() => {
+      // Cache set failed, continue without caching
     })
+
+    return NextResponse.json(responseData)
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

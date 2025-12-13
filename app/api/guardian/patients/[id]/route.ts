@@ -9,6 +9,7 @@ import { successResponse, errorResponse, handleApiError } from '@/shared/utils/a
 import { HTTP_STATUS } from '@/shared/constants'
 import { guardianRepository, patientRepository } from '@/infrastructure/supabase/repositories'
 import { supabaseAdmin } from '@/lib'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/guardian/patients/[id]
  * Get patient details (limited based on permissions)
  */
-export async function GET(
+export const GET = withRateLimit(async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -105,4 +106,4 @@ export async function GET(
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')

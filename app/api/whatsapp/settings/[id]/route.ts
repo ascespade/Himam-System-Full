@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { whatsappSettingsRepository } from '@/infrastructure/supabase/repositories'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 /**
  * GET /api/whatsapp/settings/[id]
  * Get specific WhatsApp settings by ID
  */
-export async function GET(
+export const GET = withRateLimit(async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -48,13 +49,13 @@ export async function GET(
       { status: 500 }
     )
   }
-}
+}, 'strict')
 
 /**
  * PUT /api/whatsapp/settings/[id]
  * Update WhatsApp settings
  */
-export async function PUT(
+export const PUT = withRateLimit(async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -137,13 +138,13 @@ export async function PUT(
       { status: 500 }
     )
   }
-}
+}, 'strict')
 
 /**
  * DELETE /api/whatsapp/settings/[id]
  * Delete WhatsApp settings
  */
-export async function DELETE(
+export const DELETE = withRateLimit(async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -178,7 +179,6 @@ export async function DELETE(
     const { logError } = await import('@/shared/utils/logger')
     logError('Error', error, { endpoint: '/api/whatsapp/settings/[id]' })
 
-    
     return NextResponse.json(
       {
         success: false,
@@ -190,5 +190,5 @@ export async function DELETE(
       { status: 500 }
     )
   }
-}
+}, 'strict')
 

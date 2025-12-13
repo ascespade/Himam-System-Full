@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { whatsappSettingsRepository } from '@/infrastructure/supabase/repositories'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 /**
  * GET /api/whatsapp/settings/active
  * Get active WhatsApp settings
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const settings = await whatsappSettingsRepository.getActiveSettings()
 
@@ -43,5 +44,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'strict')
 

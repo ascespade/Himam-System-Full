@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 /**
  * GET /api/chat/conversations
  * Get all WhatsApp conversations from whatsapp_conversations table
  * Same data source as /api/whatsapp/conversations but without auth requirement
  */
-export async function GET() {
+export const GET = withRateLimit(async function GET() {
   try {
     const { data, error } = await supabaseAdmin
       .from('whatsapp_conversations')
@@ -48,4 +49,4 @@ export async function GET() {
     
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
-}
+}, 'api')

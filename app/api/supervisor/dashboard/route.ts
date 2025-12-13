@@ -8,6 +8,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
 import { supabaseAdmin } from '@/lib'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/supervisor/dashboard
  * Get comprehensive dashboard statistics
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -126,4 +127,4 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'strict')
