@@ -4,10 +4,11 @@
  */
 
 import { BaseService, ServiceException } from './base.service'
-import { supabaseAdmin } from '@/lib'
 import { logError } from '@/shared/utils/logger'
 import { createPatientSchema, updatePatientSchema, type CreatePatientInput, type UpdatePatientInput } from '@/core/validations/schemas'
 import type { Patient } from '@/shared/types'
+import { patientRepository } from '@/infrastructure/supabase/repositories/patient.repository'
+import type { CreatePatientInput as RepoCreateInput } from '@/core/interfaces/repositories/patient.repository.interface'
 
 export class PatientService extends BaseService {
   /**
@@ -17,45 +18,45 @@ export class PatientService extends BaseService {
     const validated = createPatientSchema.parse(input)
 
     // Check if patient with same phone exists
-    const { data: existing } = await supabaseAdmin
-      .from('patients')
-      .select('id')
-      .eq('phone', validated.phone)
-      .single()
+    const existing = await patientRepository.findByPhone(validated.phone || '')
 
     if (existing) {
       throw new ServiceException('Patient with this phone number already exists', 'PATIENT_EXISTS')
     }
 
-    // Create patient
-    const { data: patient, error } = await supabaseAdmin
-      .from('patients')
-      .insert({
+    try {
+      // Map service input to repository input
+      const repoInput: RepoCreateInput = {
         name: validated.name,
-        email: validated.email,
-        phone: validated.phone,
-        date_of_birth: validated.date_of_birth,
-        gender: validated.gender,
-        address: validated.address,
-        emergency_contact: validated.emergency_contact,
-        emergency_phone: validated.emergency_phone,
-        medical_history: validated.medical_history,
-        allergies: validated.allergies,
-        created_at: new Date().toISOString(),
-      })
-      .select('id, name, email, phone, date_of_birth, gender, address, emergency_contact, emergency_phone, medical_history, allergies, created_at, updated_at')
-      .single()
+        email: validated.email || null,
+        phone: validated.phone || null,
+        date_of_birth: validated.date_of_birth || null,
+        gender: validated.gender || null,
+        address: validated.address || null,
+        emergency_contact_name: validated.emergency_contact || null,
+        emergency_contact_phone: validated.emergency_phone || null,
+        allergies: validated.allergies || [],
+        notes: validated.medical_history || null,
+        status: 'active',
+      }
 
-    if (error) {
+      const repoPatient = await patientRepository.create(repoInput)
+
+      // Map repository patient to service patient type
+      return {
+        id: repoPatient.id,
+        name: repoPatient.name,
+        email: repoPatient.email || '',
+        phone: repoPatient.phone || '',
+        dateOfBirth: repoPatient.date_of_birth || undefined,
+        nationality: repoPatient.nationality || undefined,
+        createdAt: repoPatient.created_at,
+        updatedAt: repoPatient.updated_at || undefined,
+      } as Patient
+    } catch (error) {
       logError('Error creating patient', error, { input: validated })
       throw new ServiceException('Failed to create patient', 'PATIENT_CREATE_ERROR')
     }
-
-    if (!patient) {
-      throw new ServiceException('Failed to create patient', 'PATIENT_CREATE_ERROR')
-    }
-
-    return patient as Patient
   }
 
   /**
@@ -66,96 +67,126 @@ export class PatientService extends BaseService {
 
     // Check phone uniqueness if phone is being updated
     if (validated.phone) {
-      const { data: existing } = await supabaseAdmin
-        .from('patients')
-        .select('id')
-        .eq('phone', validated.phone)
-        .neq('id', patientId)
-        .single()
-
-      if (existing) {
+      const existing = await patientRepository.findByPhone(validated.phone)
+      if (existing && existing.id !== patientId) {
         throw new ServiceException('Patient with this phone number already exists', 'PATIENT_EXISTS')
       }
     }
 
-    const { data: patient, error } = await supabaseAdmin
-      .from('patients')
-      .update(validated)
-      .eq('id', patientId)
-      .select('id, name, email, phone, date_of_birth, gender, address, emergency_contact, emergency_phone, medical_history, allergies, created_at, updated_at')
-      .single()
+    try {
+      // Map service input to repository input
+      const repoInput: Partial<RepoCreateInput> = {}
+      if (validated.name !== undefined) repoInput.name = validated.name
+      if (validated.email !== undefined) repoInput.email = validated.email || null
+      if (validated.phone !== undefined) repoInput.phone = validated.phone || null
+      if (validated.date_of_birth !== undefined) repoInput.date_of_birth = validated.date_of_birth || null
+      if (validated.gender !== undefined) repoInput.gender = validated.gender || null
+      if (validated.address !== undefined) repoInput.address = validated.address || null
+      if (validated.emergency_contact !== undefined) repoInput.emergency_contact_name = validated.emergency_contact || null
+      if (validated.emergency_phone !== undefined) repoInput.emergency_contact_phone = validated.emergency_phone || null
+      if (validated.allergies !== undefined) repoInput.allergies = validated.allergies || []
+      if (validated.medical_history !== undefined) repoInput.notes = validated.medical_history || null
 
-    if (error) {
+      const repoPatient = await patientRepository.update(patientId, repoInput)
+
+      // Map repository patient to service patient type
+      return {
+        id: repoPatient.id,
+        name: repoPatient.name,
+        email: repoPatient.email || '',
+        phone: repoPatient.phone || '',
+        dateOfBirth: repoPatient.date_of_birth || undefined,
+        nationality: repoPatient.nationality || undefined,
+        createdAt: repoPatient.created_at,
+        updatedAt: repoPatient.updated_at || undefined,
+      } as Patient
+    } catch (error) {
       logError('Error updating patient', error, { patientId, input: validated })
       throw new ServiceException('Failed to update patient', 'PATIENT_UPDATE_ERROR')
     }
-
-    if (!patient) {
-      throw new ServiceException('Patient not found', 'NOT_FOUND')
-    }
-
-    return patient as Patient
   }
 
   /**
    * Finds a patient by ID
    */
   async findById(patientId: string): Promise<Patient | null> {
-    const { data, error } = await supabaseAdmin
-      .from('patients')
-      .select('id, name, email, phone, date_of_birth, gender, address, emergency_contact, emergency_phone, medical_history, allergies, created_at, updated_at')
-      .eq('id', patientId)
-      .single()
+    try {
+      const repoPatient = await patientRepository.findById(patientId)
+      if (!repoPatient) return null
 
-    if (error) {
-      if (error.code === 'PGRST116') return null
+      // Map repository patient to service patient type
+      return {
+        id: repoPatient.id,
+        name: repoPatient.name,
+        email: repoPatient.email || '',
+        phone: repoPatient.phone || '',
+        dateOfBirth: repoPatient.date_of_birth || undefined,
+        nationality: repoPatient.nationality || undefined,
+        createdAt: repoPatient.created_at,
+        updatedAt: repoPatient.updated_at || undefined,
+      } as Patient
+    } catch (error) {
       logError('Error finding patient by ID', error, { patientId })
       throw new ServiceException('Failed to find patient', 'PATIENT_FETCH_ERROR')
     }
-
-    return data
   }
 
   /**
    * Finds a patient by phone
    */
   async findByPhone(phone: string): Promise<Patient | null> {
-    const { data, error } = await supabaseAdmin
-      .from('patients')
-      .select('id, name, email, phone, date_of_birth, gender, address, emergency_contact, emergency_phone, medical_history, allergies, created_at, updated_at')
-      .eq('phone', phone)
-      .single()
+    try {
+      const repoPatient = await patientRepository.findByPhone(phone)
+      if (!repoPatient) return null
 
-    if (error) {
-      if (error.code === 'PGRST116') return null
+      // Map repository patient to service patient type
+      return {
+        id: repoPatient.id,
+        name: repoPatient.name,
+        email: repoPatient.email || '',
+        phone: repoPatient.phone || '',
+        dateOfBirth: repoPatient.date_of_birth || undefined,
+        nationality: repoPatient.nationality || undefined,
+        createdAt: repoPatient.created_at,
+        updatedAt: repoPatient.updated_at || undefined,
+      } as Patient
+    } catch (error) {
       logError('Error finding patient by phone', error, { phone })
       throw new ServiceException('Failed to find patient', 'PATIENT_FETCH_ERROR')
     }
-
-    return data
   }
 
   /**
    * Searches patients by name, phone, or email
    */
   async search(query: string, page = 1, limit = 50): Promise<{ data: Patient[]; total: number }> {
-    const offset = (page - 1) * limit
+    try {
+      const offset = (page - 1) * limit
+      const result = await patientRepository.search({
+        search: query,
+        limit,
+        offset,
+      })
 
-    const { data, error, count } = await supabaseAdmin
-      .from('patients')
-      .select('id, name, email, phone, date_of_birth, gender, address, emergency_contact, emergency_phone, medical_history, allergies, created_at, updated_at', { count: 'exact' })
-      .or(`name.ilike.%${query}%,phone.ilike.%${query}%,email.ilike.%${query}%`)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+      // Map repository patients to service patient type
+      const patients: Patient[] = result.patients.map((repoPatient) => ({
+        id: repoPatient.id,
+        name: repoPatient.name,
+        email: repoPatient.email || '',
+        phone: repoPatient.phone || '',
+        dateOfBirth: repoPatient.date_of_birth || undefined,
+        nationality: repoPatient.nationality || undefined,
+        createdAt: repoPatient.created_at,
+        updatedAt: repoPatient.updated_at || undefined,
+      } as Patient))
 
-    if (error) {
+      return {
+        data: patients,
+        total: result.total,
+      }
+    } catch (error) {
       logError('Error searching patients', error, { query, page, limit })
       throw new ServiceException('Failed to search patients', 'PATIENT_SEARCH_ERROR')
-    }
-
-    return {
-      data: data || [],
-      total: count || 0,
     }
   }
 }

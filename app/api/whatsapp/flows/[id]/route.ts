@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { successResponse, errorResponse } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,13 +15,10 @@ export const dynamic = 'force-dynamic'
  * GET /api/whatsapp/flows/[id]
  * Get flow by ID
  */
-export async function GET(
+export const GET = withRateLimit(async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -76,12 +73,10 @@ export async function GET(
       throw error
     }
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data: flow,
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -93,19 +88,16 @@ export async function GET(
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')
 
 /**
  * PUT /api/whatsapp/flows/[id]
  * Update flow
  */
-export async function PUT(
+export const PUT = withRateLimit(async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -172,12 +164,10 @@ export async function PUT(
 
     if (error) throw error
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data,
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -189,19 +179,16 @@ export async function PUT(
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')
 
 /**
  * DELETE /api/whatsapp/flows/[id]
  * Delete flow
  */
-export async function DELETE(
+export const DELETE = withRateLimit(async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -247,12 +234,10 @@ export async function DELETE(
 
     if (error) throw error
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       message: 'Flow deleted successfully',
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -264,4 +249,4 @@ export async function DELETE(
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')

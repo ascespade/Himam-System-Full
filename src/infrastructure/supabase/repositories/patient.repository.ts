@@ -13,11 +13,13 @@ import type {
 } from '../../../core/interfaces/repositories/patient.repository.interface'
 import { DatabaseError } from '../../../core/errors'
 
+const PATIENT_SELECT_FIELDS = 'id, name, phone, email, date_of_birth, gender, national_id, nationality, address, blood_type, allergies, chronic_diseases, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, status, notes, created_at, updated_at'
+
 export class PatientRepository implements IPatientRepository {
   async findById(id: string): Promise<Patient | null> {
     const { data, error } = await supabaseAdmin
       .from('patients')
-      .select('*')
+      .select(PATIENT_SELECT_FIELDS)
       .eq('id', id)
       .single()
 
@@ -32,7 +34,7 @@ export class PatientRepository implements IPatientRepository {
   async findByPhone(phone: string): Promise<Patient | null> {
     const { data, error } = await supabaseAdmin
       .from('patients')
-      .select('*')
+      .select(PATIENT_SELECT_FIELDS)
       .eq('phone', phone)
       .single()
 
@@ -47,7 +49,7 @@ export class PatientRepository implements IPatientRepository {
   async findByNationalId(nationalId: string): Promise<Patient | null> {
     const { data, error } = await supabaseAdmin
       .from('patients')
-      .select('*')
+      .select(PATIENT_SELECT_FIELDS)
       .eq('national_id', nationalId)
       .single()
 
@@ -62,7 +64,7 @@ export class PatientRepository implements IPatientRepository {
   async findByEmail(email: string): Promise<Patient | null> {
     const { data, error } = await supabaseAdmin
       .from('patients')
-      .select('*')
+      .select(PATIENT_SELECT_FIELDS)
       .eq('email', email)
       .single()
 
@@ -75,7 +77,7 @@ export class PatientRepository implements IPatientRepository {
   }
 
   async search(filters: PatientSearchFilters): Promise<{ patients: Patient[]; total: number }> {
-    let query = supabaseAdmin.from('patients').select('*', { count: 'exact' })
+    let query = supabaseAdmin.from('patients').select(PATIENT_SELECT_FIELDS, { count: 'exact' })
 
     if (filters.search) {
       query = query.or(`name.ilike.%${filters.search}%,phone.ilike.%${filters.search}%,national_id.ilike.%${filters.search}%`)
@@ -132,7 +134,7 @@ export class PatientRepository implements IPatientRepository {
         notes: input.notes,
         status: input.status || 'active',
       })
-      .select()
+      .select(PATIENT_SELECT_FIELDS)
       .single()
 
     if (error) {
@@ -168,7 +170,7 @@ export class PatientRepository implements IPatientRepository {
       .from('patients')
       .update(updateData)
       .eq('id', id)
-      .select()
+      .select(PATIENT_SELECT_FIELDS)
       .single()
 
     if (error) {
@@ -192,9 +194,9 @@ export class PatientRepository implements IPatientRepository {
   async getMedicalHistory(patientId: string): Promise<unknown[]> {
     // Get comprehensive medical history including sessions, appointments, records, etc.
     const [sessions, appointments, records] = await Promise.all([
-      supabaseAdmin.from('sessions').select('*').eq('patient_id', patientId).order('date', { ascending: false }),
-      supabaseAdmin.from('appointments').select('*').eq('patient_id', patientId).order('date', { ascending: false }),
-      supabaseAdmin.from('medical_records').select('*').eq('patient_id', patientId).order('date', { ascending: false }),
+      supabaseAdmin.from('sessions').select('id, patient_id, specialist_id, date, notes, status, created_at, updated_at').eq('patient_id', patientId).order('date', { ascending: false }),
+      supabaseAdmin.from('appointments').select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, created_at, updated_at').eq('patient_id', patientId).order('date', { ascending: false }),
+      supabaseAdmin.from('medical_records').select('id, patient_id, doctor_id, date, record_type, chief_complaint, history, examination, assessment, plan, notes, created_at, updated_at').eq('patient_id', patientId).order('date', { ascending: false }),
     ])
 
     return [

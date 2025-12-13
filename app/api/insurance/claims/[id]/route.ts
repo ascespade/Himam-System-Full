@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 /**
  * PUT /api/insurance/claims/[id]
  * Update insurance claim status
  */
-export async function PUT(
+export const PUT = withRateLimit(async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const body = await req.json()
     const { status, rejection_reason } = body
@@ -74,12 +71,10 @@ export async function PUT(
       }
     }
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -91,5 +86,5 @@ export async function PUT(
       { status: 500 }
     )
   }
-}
+}, 'api')
 

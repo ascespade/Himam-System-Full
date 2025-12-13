@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,13 +12,10 @@ export const dynamic = 'force-dynamic'
  * PUT /api/whatsapp/templates/[id]
  * Update a WhatsApp template
  */
-export async function PUT(
+export const PUT = withRateLimit(async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -75,9 +72,7 @@ export async function PUT(
 
     if (error) throw error
 
-    const response = NextResponse.json({ success: true, data })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
+    return NextResponse.json({ success: true, data })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -89,19 +84,16 @@ export async function PUT(
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * DELETE /api/whatsapp/templates/[id]
  * Delete a WhatsApp template
  */
-export async function DELETE(
+export const DELETE = withRateLimit(async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -147,13 +139,11 @@ export async function DELETE(
 
     if (error) throw error
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       message: 'Template deleted successfully',
       data,
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -165,5 +155,5 @@ export async function DELETE(
       { status: 500 }
     )
   }
-}
+}, 'api')
 

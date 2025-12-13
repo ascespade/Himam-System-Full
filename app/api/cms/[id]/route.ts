@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 /**
  * GET /api/cms/[id]
  * Get a single content item by ID
  */
-export async function GET(
+export const GET = withRateLimit(async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(request, 'api')
-  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { data, error } = await supabaseAdmin
@@ -31,27 +28,22 @@ export async function GET(
       throw error
     }
 
-    const response = NextResponse.json({ success: true, data })
-    addRateLimitHeadersToResponse(response, request, 'api')
-    return response
+    return NextResponse.json({ success: true, data })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
 
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
-}
+}, 'api')
 
 /**
  * PUT /api/cms/[id]
  * Update a content item
  */
-export async function PUT(
+export const PUT = withRateLimit(async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(request, 'api')
-  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const body = await request.json()
@@ -77,27 +69,22 @@ export async function PUT(
 
     if (error) throw error
 
-    const response = NextResponse.json({ success: true, data })
-    addRateLimitHeadersToResponse(response, request, 'api')
-    return response
+    return NextResponse.json({ success: true, data })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
 
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
-}
+}, 'api')
 
 /**
  * DELETE /api/cms/[id]
  * Delete a content item
  */
-export async function DELETE(
+export const DELETE = withRateLimit(async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(request, 'api')
-  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { error } = await supabaseAdmin
@@ -106,12 +93,10 @@ export async function DELETE(
       .eq('id', params.id)
 
     if (error) throw error
-    const response = NextResponse.json({ success: true })
-    addRateLimitHeadersToResponse(response, request, 'api')
-    return response
+    return NextResponse.json({ success: true })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
 
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
-}
+}, 'api')
