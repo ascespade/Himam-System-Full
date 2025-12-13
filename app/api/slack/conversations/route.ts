@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { withRateLimit } from '@/core/api/middleware/withRateLimit'
+import { paginatedResponse } from '@/shared/utils/api'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,21 +57,7 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       }
     })
 
-    const total = count || 0
-    const totalPages = Math.ceil(total / limit)
-
-    return NextResponse.json({
-      success: true,
-      data: transformed,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-      },
-    })
+    return NextResponse.json(paginatedResponse(transformed, page, limit, count || 0))
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

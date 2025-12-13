@@ -111,5 +111,5 @@ export const GET = withRateLimit(async function GET() {
       { status: 500 }
     )
   }
-}
+}, 'strict')
 

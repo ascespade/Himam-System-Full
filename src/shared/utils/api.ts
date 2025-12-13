@@ -49,6 +49,7 @@ export function paginatedResponse<T>(
   limit: number,
   total: number
 ): PaginatedResponse<T> {
+  const totalPages = Math.ceil(total / limit)
   return {
     success: true,
     data,
@@ -56,7 +57,9 @@ export function paginatedResponse<T>(
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
     },
   }
 }

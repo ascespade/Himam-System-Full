@@ -23,6 +23,8 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
     limit: number
     total: number
     totalPages: number
+    hasNext?: boolean
+    hasPrev?: boolean
   }
 }
 
