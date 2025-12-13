@@ -95,10 +95,14 @@ export async function GET(req: NextRequest) {
         }
       }
     })
-  } catch (error: any) {
-    console.error('Error fetching AI agent data:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/insurance/ai-agent' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -382,10 +386,14 @@ ${service_description}
         autoSubmitted: validationResult.confidence >= 90
       }
     }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error in AI agent claim submission:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/insurance/ai-agent' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -448,7 +456,7 @@ export async function PUT(req: NextRequest) {
       .eq('claim_type', claim.claim_type)
       .single()
 
-    const patternUpdates: any = {
+    const patternUpdates: Record<string, unknown> = {
       insurance_provider: claim.insurance_provider || '',
       claim_type: claim.claim_type,
       updated_at: new Date().toISOString()
@@ -555,10 +563,14 @@ export async function PUT(req: NextRequest) {
       success: true,
       message: 'تم تحديث أنماط التعلم بنجاح'
     })
-  } catch (error: any) {
-    console.error('Error in learning update:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/insurance/ai-agent' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

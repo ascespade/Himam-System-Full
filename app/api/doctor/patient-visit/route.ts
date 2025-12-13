@@ -133,10 +133,14 @@ export async function GET(req: NextRequest) {
         should_auto_select: true // Frontend will use this to auto-select patient
       }
     })
-  } catch (error: any) {
-    console.error('Error fetching patient visit:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/patient-visit' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -173,7 +177,7 @@ export async function PUT(
     const body = await req.json()
     const { status, notes } = body
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString()
     }
 
@@ -202,10 +206,14 @@ export async function PUT(
       success: true,
       data
     })
-  } catch (error: any) {
-    console.error('Error updating patient visit:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/patient-visit' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

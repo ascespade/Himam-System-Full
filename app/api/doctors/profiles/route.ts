@@ -54,10 +54,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: profilesWithCounts
     })
-  } catch (error: any) {
-    console.error('Error fetching doctor profiles:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctors/profiles' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -115,10 +119,14 @@ export async function POST(req: NextRequest) {
       success: true,
       data
     }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating doctor profile:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctors/profiles' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

@@ -75,10 +75,14 @@ export async function POST(req: NextRequest) {
         ? 'تم إرسال المطالبة تلقائياً بنجاح' 
         : 'تم إنشاء المطالبة، تحتاج مراجعة قبل الإرسال'
     })
-  } catch (error: any) {
-    console.error('Error in auto-submit:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/insurance/claims/auto-submit' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

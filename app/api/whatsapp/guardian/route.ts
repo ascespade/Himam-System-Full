@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       .limit(10)
 
         const formattedHistory = messages
-          ? messages.reverse().map((m: any) => {
+          ? messages.reverse().map((m: Record<string, unknown>) => {
               if (m.direction === 'inbound') {
                 return { role: 'user' as const, content: m.content }
               } else {

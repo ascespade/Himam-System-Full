@@ -103,10 +103,14 @@ export async function GET(req: NextRequest) {
         meta: metaTemplates,
       },
     })
-  } catch (error: any) {
-    console.error('Error fetching WhatsApp templates:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/templates' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -196,10 +200,14 @@ export async function POST(req: NextRequest) {
     // This is a placeholder for future implementation
 
     return NextResponse.json({ success: true, data }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating WhatsApp template:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/templates' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

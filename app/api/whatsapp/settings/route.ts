@@ -16,14 +16,18 @@ export async function GET(req: NextRequest) {
       success: true,
       data: settingsArray,
     })
-  } catch (error: any) {
-    console.error('Error fetching WhatsApp settings:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/settings' })
+
+    
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch WhatsApp settings',
+          message: errorMessage || 'Failed to fetch WhatsApp settings',
         },
       },
       { status: 500 }
@@ -96,14 +100,18 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 }
     )
-  } catch (error: any) {
-    console.error('Error creating WhatsApp settings:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/settings' })
+
+    
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'CREATE_ERROR',
-          message: error.message || 'Failed to create WhatsApp settings',
+          message: errorMessage || 'Failed to create WhatsApp settings',
         },
       },
       { status: 500 }

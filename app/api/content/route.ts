@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Transform to a generic shape expected by the UI
-  const items = (data || []).map((item: any) => ({
+  const items = (data || []).map((item: Record<string, unknown>) => ({
     id: item.id,
     title: item.title_ar ?? item.title_en ?? 'بدون عنوان',
     category: item.type ?? 'غير مصنف',

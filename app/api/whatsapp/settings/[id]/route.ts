@@ -31,14 +31,18 @@ export async function GET(
       success: true,
       data: settings,
     })
-  } catch (error: any) {
-    console.error('Error fetching WhatsApp settings:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/settings/[id]' })
+
+    
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch WhatsApp settings',
+          message: errorMessage || 'Failed to fetch WhatsApp settings',
         },
       },
       { status: 500 }
@@ -70,7 +74,7 @@ export async function PUT(
     } = body
 
     // Build update object (only include provided fields)
-    const updates: any = {}
+    const updates: Record<string, unknown> = {}
     if (name !== undefined) updates.name = name
     if (verify_token !== undefined) updates.verify_token = verify_token
     if (access_token !== undefined) updates.access_token = access_token
@@ -116,14 +120,18 @@ export async function PUT(
       success: true,
       data: updatedSettings,
     })
-  } catch (error: any) {
-    console.error('Error updating WhatsApp settings:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/settings/[id]' })
+
+    
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'UPDATE_ERROR',
-          message: error.message || 'Failed to update WhatsApp settings',
+          message: errorMessage || 'Failed to update WhatsApp settings',
         },
       },
       { status: 500 }
@@ -165,14 +173,18 @@ export async function DELETE(
       success: true,
       message: 'WhatsApp settings deactivated successfully',
     })
-  } catch (error: any) {
-    console.error('Error deleting WhatsApp settings:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/settings/[id]' })
+
+    
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'DELETE_ERROR',
-          message: error.message || 'Failed to delete WhatsApp settings',
+          message: errorMessage || 'Failed to delete WhatsApp settings',
         },
       },
       { status: 500 }

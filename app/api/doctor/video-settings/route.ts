@@ -52,10 +52,14 @@ export async function GET(req: NextRequest) {
     const settings = clinicSettings?.video_settings || defaultSettings
 
     return NextResponse.json({ success: true, data: settings })
-  } catch (error: any) {
-    console.error('Error fetching video settings:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/video-settings' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -125,10 +129,14 @@ export async function PUT(req: NextRequest) {
 
       return NextResponse.json({ success: true, data: data.video_settings })
     }
-  } catch (error: any) {
-    console.error('Error updating video settings:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/video-settings' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

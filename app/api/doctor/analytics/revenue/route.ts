@@ -121,10 +121,14 @@ export async function GET(req: NextRequest) {
         growth,
       },
     })
-  } catch (error: any) {
-    console.error('Error fetching revenue analytics:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/analytics/revenue' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

@@ -53,10 +53,14 @@ export async function GET(
       success: true,
       data
     })
-  } catch (error: any) {
-    console.error('Error fetching treatment plan:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/treatment-plans/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -102,7 +106,7 @@ export async function PUT(
     }
 
     const body = await req.json()
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
 
     if (body.title !== undefined) updateData.title = body.title
     if (body.description !== undefined) updateData.description = body.description
@@ -112,7 +116,7 @@ export async function PUT(
     if (body.goals !== undefined) {
       updateData.goals = body.goals
       // Recalculate progress
-      const completedGoals = body.goals.filter((g: any) => g.status === 'completed').length
+      const completedGoals = body.goals.filter((g: Record<string, unknown>) => g.status === 'completed').length
       updateData.progress_percentage = body.goals.length > 0 
         ? Math.round((completedGoals / body.goals.length) * 100)
         : 0
@@ -137,10 +141,14 @@ export async function PUT(
       success: true,
       data
     })
-  } catch (error: any) {
-    console.error('Error updating treatment plan:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/treatment-plans/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

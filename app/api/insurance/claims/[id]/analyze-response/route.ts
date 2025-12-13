@@ -79,10 +79,12 @@ export async function POST(
         claim_id: params.id
       }
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
     // Error analyzing response (error logged via logger if needed)
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -117,7 +119,7 @@ async function analyzeInsuranceResponse(
     .order('created_at', { ascending: false })
     .limit(20)
 
-  const learningContext = learningData?.map((log: any) => log.lesson_learned).join('\n') || ''
+  const learningContext = learningData?.map((log: Record<string, unknown>) => log.lesson_learned).join('\n') || ''
 
   // Build prompt
   const prompt = `أنت مساعد ذكي لتحليل ردود شركات التأمين الصحي.

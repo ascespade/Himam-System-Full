@@ -25,8 +25,12 @@ async function generateEmbedding(text: string): Promise<number[]> {
       input: text
     })
     return response.data[0].embedding
-  } catch (error: any) {
-    console.error('Error generating embedding:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
+
+    
     // Fallback: return empty embedding or use alternative method
     throw new Error('Failed to generate embedding')
   }
@@ -173,10 +177,10 @@ export async function POST(req: NextRequest) {
         similar_patterns: similarSuccessful
       }
     })
-  } catch (error: any) {
-    console.error('Error in similarity check:', error)
+  } catch (error: unknown) {
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -337,10 +341,14 @@ export async function PUT(req: NextRequest) {
         vector_storage_enabled: !!claimEmbedding
       }
     })
-  } catch (error: any) {
-    console.error('Error storing embeddings:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

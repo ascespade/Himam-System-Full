@@ -68,10 +68,14 @@ export async function GET(
     if (error) throw error
 
     return NextResponse.json({ success: true, data: data || [] })
-  } catch (error: any) {
-    console.error('Error fetching case comments:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/case-collaboration/[id]/comments' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -176,10 +180,14 @@ export async function POST(
     }
 
     return NextResponse.json({ success: true, data }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error adding case comment:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/case-collaboration/[id]/comments' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

@@ -48,10 +48,14 @@ export async function POST(req: NextRequest) {
       data: data || { is_open: false },
       message: 'تم إغلاق العيادة بنجاح'
     })
-  } catch (error: any) {
-    console.error('Error closing clinic:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/clinic/close' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

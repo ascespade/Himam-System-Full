@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
           .select('patient_id')
           .gte('date', new Date().toISOString())
 
-        const patientIds = [...new Set(appointments?.map((a: any) => a.patient_id) || [])]
+        const patientIds = [...new Set(appointments?.map((a: Record<string, unknown>) => a.patient_id) || [])]
         query = query.in('id', patientIds)
       }
 
@@ -128,9 +128,11 @@ export async function POST(req: NextRequest) {
             await sendTextMessage(phone, message_text)
           }
           results.sent++
-        } catch (error: any) {
+        } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
           results.failed++
-          results.errors.push({ phone, error: error.message })
+          results.errors.push({ phone, error: errorMessage })
         }
       })
 
@@ -161,10 +163,14 @@ export async function POST(req: NextRequest) {
       success: true,
       data: results,
     })
-  } catch (error: any) {
-    console.error('Error sending bulk messages:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/bulk-send' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

@@ -46,10 +46,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: healthData
     })
-  } catch (error: any) {
-    console.error('Error checking system health:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/system/health' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -74,11 +78,13 @@ async function checkDatabaseHealth(): Promise<any> {
       },
       last_check_at: new Date().toISOString()
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
     return {
       component: 'database',
       status: 'down',
-      metrics: { error: error.message },
+      metrics: { error: errorMessage },
       last_check_at: new Date().toISOString()
     }
   }

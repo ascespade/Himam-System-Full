@@ -25,7 +25,7 @@ export async function GET() {
     if (error) throw error
 
     // Transform to match the expected format
-    const conversations = (data || []).map((conv: any) => ({
+    const conversations = (data || []).map((conv: Record<string, unknown>) => ({
       id: conv.id,
       phone: conv.phone_number,
       lastMessage: '', // Will be populated from messages if needed
@@ -40,8 +40,12 @@ export async function GET() {
     }))
 
     return NextResponse.json({ success: true, data: conversations })
-  } catch (error: any) {
-    console.error('Error fetching conversations:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/chat/conversations' })
+
+    
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }

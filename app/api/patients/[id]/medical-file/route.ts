@@ -82,17 +82,19 @@ export async function GET(
         lab_results: labResults || [],
         imaging_results: imagingResults || [],
         vital_signs: vitalSigns || [],
-        doctors: (doctors || []).map((d: any) => ({
+        doctors: (doctors || []).map((d: Record<string, unknown>) => ({
           ...d,
-          doctor_name: d.users?.name,
-          doctor_email: d.users?.email
+          doctor_name: (d.users as Record<string, unknown>)?.name,
+          doctor_email: (d.users as Record<string, unknown>)?.email
         }))
       }
     })
-  } catch (error: any) {
-    console.error('Error fetching medical file:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب الملف الطبي'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching medical file', error, { endpoint: '/api/patients/[id]/medical-file', patientId: params.id })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

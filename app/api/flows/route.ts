@@ -87,10 +87,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: data || [],
     })
-  } catch (error: any) {
-    console.error('Error fetching flows:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/flows' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
@@ -208,10 +212,14 @@ export async function POST(req: NextRequest) {
       success: true,
       data,
     }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating flow:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/flows' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }

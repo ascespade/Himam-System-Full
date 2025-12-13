@@ -59,10 +59,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: data || []
     })
-  } catch (error: any) {
-    console.error('Error fetching working hours:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/schedule/working-hours' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -113,7 +117,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Insert new working hours
-    const hoursToInsert = workingHours.map((hour: any) => ({
+    const hoursToInsert = workingHours.map((hour: Record<string, unknown>) => ({
       doctor_id: user.id,
       day_of_week: hour.day_of_week,
       start_time: hour.start_time,
@@ -141,10 +145,14 @@ export async function POST(req: NextRequest) {
       data,
       message: 'تم حفظ أوقات العمل بنجاح'
     })
-  } catch (error: any) {
-    console.error('Error saving working hours:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/schedule/working-hours' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

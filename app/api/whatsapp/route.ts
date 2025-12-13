@@ -353,7 +353,7 @@ export async function POST(req: NextRequest) {
 
         // Format history for AI
         const formattedHistory = messages
-          ? messages.reverse().map((m: any) => {
+          ? messages.reverse().map((m: Record<string, unknown>) => {
               if (m.direction === 'inbound') {
                 return { role: 'user' as const, content: m.content }
               } else {

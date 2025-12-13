@@ -66,10 +66,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: key && category ? config[category]?.[key]?.value : config
     })
-  } catch (error: any) {
-    console.error('Error fetching config:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/system/config' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -159,10 +163,14 @@ export async function PUT(req: NextRequest) {
       data,
       message: 'تم تحديث الإعدادات بنجاح'
     })
-  } catch (error: any) {
-    console.error('Error updating config:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/system/config' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

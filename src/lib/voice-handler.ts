@@ -62,7 +62,7 @@ export async function transcribeAudio(mediaId: string): Promise<string> {
     try { fs.unlinkSync(filePath) } catch (e) {}
 
     return transcription.text
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Transcription Error:', error)
     return '' // Fallback to empty text
   }

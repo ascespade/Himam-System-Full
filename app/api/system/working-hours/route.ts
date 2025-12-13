@@ -41,10 +41,14 @@ export async function GET(req: NextRequest) {
     if (error) throw error
 
     return NextResponse.json({ success: true, data: data || [] })
-  } catch (error: any) {
-    console.error('Error fetching working hours:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/system/working-hours' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -118,10 +122,14 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Working hours updated successfully',
     })
-  } catch (error: any) {
-    console.error('Error updating working hours:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/system/working-hours' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

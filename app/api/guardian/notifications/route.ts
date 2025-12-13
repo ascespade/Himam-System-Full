@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
     let filteredNotifications = notifications || []
     if (type === 'approval') {
       // Filter for approval-related notifications
-      filteredNotifications = filteredNotifications.filter((n: any) => 
+      filteredNotifications = filteredNotifications.filter((n: Record<string, unknown>) => 
         n.type === 'approval_request' || 
         n.type === 'procedure_approval' ||
         n.type === 'approval' ||

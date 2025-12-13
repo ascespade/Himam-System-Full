@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    const transformed = (data || []).map((item: any) => ({
+    const transformed = (data || []).map((item: Record<string, unknown>) => ({
       ...item,
       title: item.chief_complaint || item.record_type, // Fallback title
       patient_name: item.patients?.name || 'غير معروف'
@@ -68,10 +68,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: transformed
     })
-  } catch (error: any) {
-    console.error('Error fetching medical records:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/medical-records' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    const results: any = {
+    const results: Record<string, unknown> = {
       patients: [],
       sessions: [],
       medical_records: [],
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
       }
 
       const { data: patientRels } = await patientQuery
-      results.patients = patientRels?.map((rel: any) => rel.patients).filter(Boolean) || []
+      results.patients = patientRels?.map((rel: Record<string, unknown>) => rel.patients).filter(Boolean) || []
     }
 
     // Search sessions
@@ -166,10 +166,14 @@ export async function GET(req: NextRequest) {
         offset,
       },
     })
-  } catch (error: any) {
-    console.error('Error performing search:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/search' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

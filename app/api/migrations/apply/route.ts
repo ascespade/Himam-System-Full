@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
           '4. Verify the tables were created'
         ]
       })
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return NextResponse.json(
           { success: false, error: `Migration file not found: ${migrationFile}` },
           { status: 404 }
@@ -60,10 +60,12 @@ export async function POST(req: NextRequest) {
       }
       throw error
     }
-  } catch (error: any) {
-    console.error('Error reading migration:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء قراءة ملف الترحيل'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error reading migration', error, { endpoint: '/api/migrations/apply' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -99,10 +101,12 @@ export async function GET() {
       migrations,
       message: 'Available migrations retrieved. Use POST /api/migrations/apply with migrationFile to get SQL.'
     })
-  } catch (error: any) {
-    console.error('Error listing migrations:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء سرد ملفات الترحيل'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error listing migrations', error, { endpoint: '/api/migrations/apply' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

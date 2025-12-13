@@ -62,13 +62,17 @@ export async function GET(
         user_name: data.users?.name || 'غير معروف',
         user_email: data.users?.email || '',
         patient_count: count || 0,
-        patients: (relationships || []).map((r: any) => r.patients).filter(Boolean)
+        patients: (relationships || []).map((r: Record<string, unknown>) => r.patients).filter(Boolean)
       }
     })
-  } catch (error: any) {
-    console.error('Error fetching doctor profile:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctors/profiles/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -97,7 +101,7 @@ export async function PUT(
       image_url
     } = body
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString()
     }
 
@@ -125,10 +129,14 @@ export async function PUT(
       success: true,
       data
     })
-  } catch (error: any) {
-    console.error('Error updating doctor profile:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctors/profiles/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

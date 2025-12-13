@@ -75,10 +75,14 @@ export async function POST(req: NextRequest) {
         status: 'running',
       },
     })
-  } catch (error: any) {
-    console.error('Error executing flow:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/flows/execute' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
@@ -251,14 +255,19 @@ async function executeFlowAsync(
       })
       .eq('id', executionId)
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
     // Mark execution as failed
+    const errorMessage = error instanceof Error ? error.message : 'Flow execution failed'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    
     await supabaseAdmin
       .from('flow_executions')
       .update({
         status: 'failed',
-        error_message: error.message,
-        error_stack: error.stack,
+        error_message: errorMessage,
+        error_stack: errorStack,
         completed_at: new Date().toISOString(),
       })
       .eq('id', executionId)
@@ -266,8 +275,8 @@ async function executeFlowAsync(
     await supabaseAdmin.from('flow_logs').insert({
       execution_id: executionId,
       log_level: 'error',
-      message: `Flow execution failed: ${error.message}`,
-      data: { error: error.stack },
+      message: `Flow execution failed: ${errorMessage}`,
+      data: { error: errorStack },
     })
   }
 }

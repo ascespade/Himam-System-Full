@@ -113,10 +113,14 @@ export async function GET(req: NextRequest) {
         { status: 500 }
       )
     }
-  } catch (error: any) {
-    console.error('Error in phone number API:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/phone-number' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

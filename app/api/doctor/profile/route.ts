@@ -200,10 +200,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: profile
     })
-  } catch (error: any) {
-    console.error('Error fetching profile:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/profile' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -239,7 +243,7 @@ export async function PUT(req: NextRequest) {
 
     // Update user info
     if (name || phone) {
-      const userUpdate: any = {}
+      const userUpdate: Record<string, unknown> = {}
       if (name) userUpdate.name = name
       if (phone) userUpdate.phone = phone
 
@@ -250,7 +254,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Update or create doctor profile
-    const profileUpdate: any = {}
+    const profileUpdate: Record<string, unknown> = {}
     if (specialty !== undefined) profileUpdate.specialty = specialty
     if (license_number !== undefined) profileUpdate.license_number = license_number
     if (years_of_experience !== undefined) profileUpdate.years_of_experience = years_of_experience
@@ -311,10 +315,14 @@ export async function PUT(req: NextRequest) {
       success: true,
       data: profile
     })
-  } catch (error: any) {
-    console.error('Error updating profile:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/profile' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

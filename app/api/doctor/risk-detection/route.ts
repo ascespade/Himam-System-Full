@@ -62,10 +62,14 @@ export async function GET(req: NextRequest) {
       data: risks,
       count: risks.length
     })
-  } catch (error: any) {
-    console.error('Error in risk detection:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/risk-detection' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -174,7 +178,7 @@ async function detectPatientRisks(patientId: string, doctorId: string) {
       }
 
       // Check for overdue goals
-      const overdueGoals = plan.goals?.filter((g: any) => {
+      const overdueGoals = plan.goals?.filter((g: Record<string, unknown>) => {
         if (!g.target_date || g.status === 'completed') return false
         return new Date(g.target_date) < now
       })

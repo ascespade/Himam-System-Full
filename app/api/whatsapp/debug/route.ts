@@ -96,11 +96,15 @@ export async function GET(req: NextRequest) {
         accessToken: 'Must be valid and not expired',
       },
     })
-  } catch (error: any) {
-    console.error('Error in debug endpoint:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/debug' })
+
+    
     return NextResponse.json({
       success: false,
-      error: error.message,
+      error: errorMessage
     }, { status: 500 })
   }
 }

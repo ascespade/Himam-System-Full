@@ -75,10 +75,14 @@ export async function GET(
       success: true,
       data: flow,
     })
-  } catch (error: any) {
-    console.error('Error fetching flow:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/flows/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
@@ -131,7 +135,7 @@ export async function PUT(
     const { id } = params
     const body = await req.json()
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     }
 
@@ -162,10 +166,14 @@ export async function PUT(
       success: true,
       data,
     })
-  } catch (error: any) {
-    console.error('Error updating flow:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/flows/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
@@ -228,10 +236,14 @@ export async function DELETE(
       success: true,
       message: 'Flow deleted successfully',
     })
-  } catch (error: any) {
-    console.error('Error deleting flow:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/flows/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }

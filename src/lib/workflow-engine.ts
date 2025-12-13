@@ -105,7 +105,7 @@ export async function executeWorkflow(execution: WorkflowExecution) {
       .eq('id', execRecord.id)
 
     return { success: true, executionId: execRecord.id, results: stepResults }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Workflow execution error:', error)
     throw error
   }
@@ -314,7 +314,7 @@ export async function triggerWorkflowByEvent(
     )
 
     return results
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error triggering workflow by event:', error)
     throw error
   }

@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     if (hasWaUpdates) {
       const activeSettings = await whatsappSettingsRepository.getActiveSettings()
       
-      const updates: any = {}
+      const updates: Record<string, unknown> = {}
       if (body['WHATSAPP_TOKEN']) updates.access_token = body['WHATSAPP_TOKEN']
       if (body['WHATSAPP_PHONE_NUMBER_ID']) updates.phone_number_id = body['WHATSAPP_PHONE_NUMBER_ID']
       if (body['WHATSAPP_VERIFY_TOKEN']) updates.verify_token = body['WHATSAPP_VERIFY_TOKEN']

@@ -225,32 +225,43 @@ export default function InsuranceAIAgentPage() {
       )}
 
       {/* Monitoring Alerts */}
-      {monitoring && monitoring.summary.totalNeedingAttention > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="text-yellow-600" size={24} />
-              <div>
-                <h3 className="font-bold text-yellow-900">مطالبات تحتاج متابعة</h3>
-                <p className="text-sm text-yellow-700">
-                  {monitoring.summary.totalNeedingAttention} مطالبة تحتاج انتباه
-                </p>
+      {(() => {
+        if (!monitoring || !monitoring.summary || typeof monitoring.summary !== 'object') return null
+        const summary = monitoring.summary as Record<string, unknown>
+        const totalNeedingAttention = typeof summary.totalNeedingAttention === 'number' ? summary.totalNeedingAttention : 0
+        if (totalNeedingAttention <= 0) return null
+        
+        const followUpCount = typeof summary.followUpCount === 'number' ? summary.followUpCount : 0
+        const resubmissionCount = typeof summary.resubmissionCount === 'number' ? summary.resubmissionCount : 0
+        const specialCasesCount = typeof summary.specialCasesCount === 'number' ? summary.specialCasesCount : 0
+        
+        return (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="text-yellow-600" size={24} />
+                <div>
+                  <h3 className="font-bold text-yellow-900">مطالبات تحتاج متابعة</h3>
+                  <p className="text-sm text-yellow-700">
+                    {totalNeedingAttention} مطالبة تحتاج انتباه
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 text-sm">
+                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full">
+                  متابعة: {followUpCount}
+                </span>
+                <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full">
+                  إعادة إرسال: {resubmissionCount}
+                </span>
+                <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full">
+                  حالات خاصة: {specialCasesCount}
+                </span>
               </div>
             </div>
-            <div className="flex gap-2 text-sm">
-              <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full">
-                متابعة: {monitoring.summary.followUpCount}
-              </span>
-              <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full">
-                إعادة إرسال: {monitoring.summary.resubmissionCount}
-              </span>
-              <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full">
-                حالات خاصة: {monitoring.summary.specialCasesCount}
-              </span>
-            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Learning Patterns */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -265,12 +276,12 @@ export default function InsuranceAIAgentPage() {
                 أنماط التعلم من المطالبات السابقة مع تحليل الفيكتورز
               </p>
             </div>
-            {vectorStats?.enabled && (
+            {vectorStats && typeof vectorStats.enabled === 'boolean' && vectorStats.enabled ? (
               <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
                 <Sparkles size={16} />
                 Vector Search مفعّل
               </div>
-            )}
+            ) : null}
           </div>
         </div>
         <div className="p-6">
@@ -280,7 +291,7 @@ export default function InsuranceAIAgentPage() {
               <p className="text-gray-500">لا توجد أنماط تعلم بعد</p>
               <p className="text-sm text-gray-400 mt-2">
                 سيتم إنشاء الأنماط تلقائياً مع معالجة المطالبات
-                {vectorStats?.enabled && ' (باستخدام الفيكتورز)'}
+                {vectorStats && typeof vectorStats.enabled === 'boolean' && vectorStats.enabled ? ' (باستخدام الفيكتورز)' : ''}
               </p>
             </div>
           ) : (
@@ -352,11 +363,11 @@ export default function InsuranceAIAgentPage() {
             </h2>
           </div>
           <div className="p-6">
-            {monitoring.needsFollowUp && monitoring.needsFollowUp.length > 0 && (
+            {monitoring && monitoring.needsFollowUp && Array.isArray(monitoring.needsFollowUp) && monitoring.needsFollowUp.length > 0 ? (
               <div className="mb-6">
-                <h3 className="font-medium text-gray-900 mb-3">متابعة ({monitoring.needsFollowUp.length})</h3>
+                <h3 className="font-medium text-gray-900 mb-3">متابعة ({(monitoring.needsFollowUp as Claim[]).length})</h3>
                 <div className="space-y-2">
-                  {monitoring.needsFollowUp.map((claim: Claim) => (
+                  {(monitoring.needsFollowUp as Claim[]).map((claim: Claim) => (
                     <div key={claim.id} className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                       <div className="flex items-center justify-between">
                         <div>
@@ -374,13 +385,13 @@ export default function InsuranceAIAgentPage() {
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {monitoring.needsResubmission && monitoring.needsResubmission.length > 0 && (
+            {monitoring && monitoring.needsResubmission && Array.isArray(monitoring.needsResubmission) && monitoring.needsResubmission.length > 0 ? (
               <div className="mb-6">
-                <h3 className="font-medium text-gray-900 mb-3">إعادة إرسال ({monitoring.needsResubmission.length})</h3>
+                <h3 className="font-medium text-gray-900 mb-3">إعادة إرسال ({(monitoring.needsResubmission as Claim[]).length})</h3>
                 <div className="space-y-2">
-                  {monitoring.needsResubmission.map((claim: Claim) => (
+                  {(monitoring.needsResubmission as Claim[]).map((claim: Claim) => (
                     <div key={claim.id} className="p-3 bg-orange-50 rounded-lg border border-orange-200">
                       <div className="flex items-center justify-between">
                         <div>
@@ -405,13 +416,13 @@ export default function InsuranceAIAgentPage() {
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {monitoring.specialCases && monitoring.specialCases.length > 0 && (
+            {monitoring && monitoring.specialCases && Array.isArray(monitoring.specialCases) && monitoring.specialCases.length > 0 ? (
               <div>
-                <h3 className="font-medium text-gray-900 mb-3">حالات خاصة ({monitoring.specialCases.length})</h3>
+                <h3 className="font-medium text-gray-900 mb-3">حالات خاصة ({(monitoring.specialCases as Claim[]).length})</h3>
                 <div className="space-y-2">
-                  {monitoring.specialCases.map((claim: Claim) => (
+                  {(monitoring.specialCases as Claim[]).map((claim: Claim) => (
                     <div key={claim.id} className="p-3 bg-red-50 rounded-lg border border-red-200">
                       <div className="flex items-center justify-between">
                         <div>
@@ -430,15 +441,15 @@ export default function InsuranceAIAgentPage() {
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {(!monitoring.needsFollowUp || monitoring.needsFollowUp.length === 0) &&
-             (!monitoring.needsResubmission || monitoring.needsResubmission.length === 0) &&
-             (!monitoring.specialCases || monitoring.specialCases.length === 0) && (
+            {(!monitoring.needsFollowUp || !Array.isArray(monitoring.needsFollowUp) || monitoring.needsFollowUp.length === 0) &&
+             (!monitoring.needsResubmission || !Array.isArray(monitoring.needsResubmission) || monitoring.needsResubmission.length === 0) &&
+             (!monitoring.specialCases || !Array.isArray(monitoring.specialCases) || monitoring.specialCases.length === 0) && (
               <div className="text-center py-8">
                 <CheckCircle className="mx-auto text-green-500 mb-4" size={48} />
                 <p className="text-gray-500">جميع المطالبات في حالة جيدة</p>
-                {vectorStats?.enabled && (
+                {vectorStats && typeof vectorStats.enabled === 'boolean' && vectorStats.enabled && (
                   <p className="text-sm text-gray-400 mt-2">
                     نظام الفيكتورز يعمل على تحليل المطالبات وتجنب الأخطاء
                   </p>

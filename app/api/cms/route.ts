@@ -17,8 +17,10 @@ export async function GET() {
     if (error) throw error
 
     return NextResponse.json({ success: true, data })
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }
 
@@ -45,7 +47,9 @@ export async function POST(req: Request) {
     if (error) throw error
 
     return NextResponse.json({ success: true, data })
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }

@@ -74,12 +74,16 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-  } catch (error: any) {
-    console.error('Calendar API Error:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/calendar' })
+
+    
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to process calendar request',
+        error: errorMessage || 'Failed to process calendar request',
       },
       { status: 500 }
     )
@@ -98,12 +102,16 @@ export async function GET(req: NextRequest) {
       success: true,
       events,
     })
-  } catch (error: any) {
-    console.error('Calendar GET Error:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/calendar' })
+
+    
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to fetch calendar events',
+        error: errorMessage || 'Failed to fetch calendar events',
       },
       { status: 500 }
     )

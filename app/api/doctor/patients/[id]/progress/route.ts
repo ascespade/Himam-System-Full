@@ -72,7 +72,7 @@ export async function GET(
     }, 0)
     const completedGoals = activePlans.reduce((sum, plan) => {
       const goals = Array.isArray(plan.goals) ? plan.goals : []
-      return sum + goals.filter((g: any) => g.status === 'completed').length
+      return sum + goals.filter((g: Record<string, unknown>) => g.status === 'completed').length
     }, 0)
     const overallProgress = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0
 
@@ -92,10 +92,14 @@ export async function GET(
         }
       }
     })
-  } catch (error: any) {
-    console.error('Error fetching patient progress:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/patients/[id]/progress' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

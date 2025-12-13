@@ -98,8 +98,12 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, data: transformedMessages })
-  } catch (error: any) {
-    console.error('Error fetching chat history:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/chat-history' })
+
+    
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }

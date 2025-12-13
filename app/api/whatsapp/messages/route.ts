@@ -91,10 +91,14 @@ export async function GET(req: NextRequest) {
         total: count || 0,
       },
     })
-  } catch (error: any) {
-    console.error('Error fetching WhatsApp messages:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/messages' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

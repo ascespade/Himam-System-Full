@@ -181,10 +181,14 @@ export async function GET(req: NextRequest) {
         { status: 500 }
       )
     }
-  } catch (error: any) {
-    console.error('Error fetching business profile:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/business-profile' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -256,7 +260,7 @@ export async function PUT(req: NextRequest) {
       )
     }
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     }
 
@@ -311,10 +315,14 @@ export async function PUT(req: NextRequest) {
         },
       })
     }
-  } catch (error: any) {
-    console.error('Error updating business profile:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/business-profile' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

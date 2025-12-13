@@ -71,10 +71,14 @@ export async function GET(req: NextRequest) {
     if (error) throw error
 
     return NextResponse.json({ success: true, data: data || [] })
-  } catch (error: any) {
-    console.error('Error fetching scheduled messages:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/scheduled' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -164,10 +168,14 @@ export async function POST(req: NextRequest) {
     if (error) throw error
 
     return NextResponse.json({ success: true, data }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error scheduling message:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/scheduled' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -228,10 +236,14 @@ export async function DELETE(
       message: 'Scheduled message cancelled',
       data,
     })
-  } catch (error: any) {
-    console.error('Error cancelling scheduled message:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/scheduled' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

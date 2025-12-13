@@ -69,10 +69,12 @@ export async function GET(
       success: true,
       data: data || []
     })
-  } catch (error: any) {
-    console.error('Error fetching insurance:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب معلومات التأمين'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching insurance', error, { endpoint: '/api/patients/[id]/insurance', patientId: params.id })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -151,10 +153,12 @@ export async function POST(
       success: true,
       data
     })
-  } catch (error: any) {
-    console.error('Error adding insurance:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء إضافة معلومات التأمين'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error adding insurance', error, { endpoint: '/api/patients/[id]/insurance', patientId: params.id })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

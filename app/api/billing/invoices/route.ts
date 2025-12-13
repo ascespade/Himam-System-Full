@@ -57,20 +57,25 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    const transformed = (data || []).map((item: any) => ({
-      ...item,
-      patient_name: item.patients?.name || 'غير معروف',
-      patient_phone: item.patients?.phone || ''
-    }))
+    const transformed = (data || []).map((item: Record<string, unknown>) => {
+      const patients = item.patients as Record<string, unknown> | undefined
+      return {
+        ...item,
+        patient_name: patients?.name || 'غير معروف',
+        patient_phone: patients?.phone || ''
+      }
+    })
 
     return NextResponse.json({
       success: true,
       data: transformed
     })
-  } catch (error: any) {
-    console.error('Error fetching invoices:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب الفواتير'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching invoices', error, { endpoint: '/api/billing/invoices' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -118,7 +123,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate totals
-    const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
+    const subtotal = items.reduce((sum: number, item: Record<string, unknown>) => {
+      const price = typeof item.price === 'number' ? item.price : 0
+      const quantity = typeof item.quantity === 'number' ? item.quantity : 0
+      return sum + (price * quantity)
+    }, 0)
     const tax = (subtotal - discount) * tax_rate
     const total = subtotal - discount + tax
 
@@ -145,13 +154,17 @@ export async function POST(req: NextRequest) {
     if (invoiceError) throw invoiceError
 
     // 2. Create Invoice Items
-    const invoiceItems = items.map((item: any) => ({
-      invoice_id: invoice.id,
-      description: item.description,
-      quantity: item.quantity,
-      unit_price: item.price,
-      total_price: item.price * item.quantity
-    }))
+    const invoiceItems = items.map((item: Record<string, unknown>) => {
+      const price = typeof item.price === 'number' ? item.price : 0
+      const quantity = typeof item.quantity === 'number' ? item.quantity : 0
+      return {
+        invoice_id: invoice.id,
+        description: item.description,
+        quantity,
+        unit_price: price,
+        total_price: price * quantity
+      }
+    })
 
     const { error: itemsError } = await supabaseAdmin
       .from('invoice_items')
@@ -187,26 +200,30 @@ export async function POST(req: NextRequest) {
         entityType: 'invoice',
         entityId: invoice.id
       })
-    } catch (e) {
-      console.error('Failed to create notifications:', e)
+    } catch (e: unknown) {
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to create notifications', e, { invoiceId: invoice.id })
     }
 
     // Audit Log
     try {
       const { logAudit } = await import('@/lib/audit')
       await logAudit(user.id, 'create_invoice', 'invoice', invoice.id, { patient_id, total, invoice_number: invoiceNumber }, req)
-    } catch (e) {
-      console.error('Failed to log audit:', e)
+    } catch (e: unknown) {
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to log audit', e, { invoiceId: invoice.id, userId: user.id })
     }
 
     return NextResponse.json({
       success: true,
       data: invoice
     }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating invoice:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء إنشاء الفاتورة'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error creating invoice', error, { endpoint: '/api/billing/invoices' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

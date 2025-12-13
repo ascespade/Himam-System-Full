@@ -91,10 +91,14 @@ export async function GET(
         last_session: lastSession?.date || null
       }
     })
-  } catch (error: any) {
-    console.error('Error fetching quick stats:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/patients/[id]/quick-stats' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

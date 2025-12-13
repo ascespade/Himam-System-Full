@@ -142,7 +142,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Calculate statistics
-    const confirmedToday = todayAppointments.data?.filter((a: any) => a.status === 'confirmed').length || 0
+    const confirmedToday = todayAppointments.data?.filter((a: Record<string, unknown>) => a.status === 'confirmed').length || 0
     const completedSessions = weekSessions.count || 0
     const completedMonthSessions = monthSessions.count || 0
 
@@ -200,10 +200,14 @@ export async function GET(req: NextRequest) {
         },
       },
     })
-  } catch (error: any) {
-    console.error('Error fetching dashboard stats:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/dashboard/stats' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

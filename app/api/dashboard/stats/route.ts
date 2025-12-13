@@ -212,10 +212,14 @@ export async function GET(req: NextRequest) {
         }
       }
     })
-  } catch (error: any) {
-    console.error('Error fetching dashboard stats:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/dashboard/stats' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

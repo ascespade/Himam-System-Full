@@ -192,12 +192,13 @@ export async function POST(req: NextRequest) {
         }
 
         processedCount++
-      } catch (error: any) {
+      } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
         failedCount++
         errors.push({
           session_id: session.id,
-          error: error.message
-        })
+          error: errorMessage })
       }
     }
 
@@ -239,10 +240,14 @@ export async function POST(req: NextRequest) {
         errors: errors.length > 0 ? errors : undefined
       }
     })
-  } catch (error: any) {
-    console.error('Error in bulk session management:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/sessions/bulk-manage' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

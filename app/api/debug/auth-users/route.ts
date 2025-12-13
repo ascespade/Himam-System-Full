@@ -63,11 +63,14 @@ export async function GET() {
         ['doctor@himam.com', 'staff@himam.com', 'patient@himam.com'].includes(u.email || '')
       )
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
+    const errorStack = error instanceof Error ? error.stack : undefined
     return NextResponse.json({
       success: false,
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: errorMessage,
+      stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
     }, { status: 500 })
   }
 }

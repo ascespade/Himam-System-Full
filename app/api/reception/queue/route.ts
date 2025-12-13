@@ -62,22 +62,24 @@ export async function GET(req: NextRequest) {
     if (error) throw error
 
     // Transform data
-    const transformed = (data || []).map((item: any) => ({
+    const transformed = (data || []).map((item: Record<string, unknown>) => ({
       ...item,
-      patient_name: item.patients?.name || 'غير معروف',
-      patient_phone: item.patients?.phone || '',
-      appointment_time: item.appointments?.date,
-      doctor_name: item.appointments?.specialist
+      patient_name: (item.patients as Record<string, unknown>)?.name || 'غير معروف',
+      patient_phone: (item.patients as Record<string, unknown>)?.phone || '',
+      appointment_time: (item.appointments as Record<string, unknown>)?.date,
+      doctor_name: (item.appointments as Record<string, unknown>)?.specialist
     }))
 
     return NextResponse.json({
       success: true,
       data: transformed
     })
-  } catch (error: any) {
-    console.error('Error fetching queue:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب الطابور'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching queue', error, { endpoint: '/api/reception/queue' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -150,10 +152,12 @@ export async function POST(req: NextRequest) {
       success: true,
       data
     }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error adding to queue:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء إضافة عنصر للطابور'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error adding to queue', error, { endpoint: '/api/reception/queue' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

@@ -90,10 +90,13 @@ export async function POST(req: NextRequest) {
       error: 'Invalid action'
     }, { status: 400 })
 
-  } catch (error: any) {
-    console.error('Error in AI assistant:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في المساعد الطبي'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error in AI assistant', error, { endpoint: '/api/ai/doctor-assistant' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -146,14 +149,14 @@ async function generateInitialAnalysis(patientId: string, doctorId: string, aiAp
 السجلات الطبية: ${patientRecords.length}
 
 آخر 3 جلسات:
-${patientSessions.slice(0, 3).map((s: any) => `
+${patientSessions.slice(0, 3).map((s: Record<string, unknown>) => `
 - ${new Date(s.date).toLocaleDateString('ar-SA')}: ${s.session_type}
   الهدف: ${s.chief_complaint || 'غير محدد'}
   التقييم: ${s.assessment || 'غير محدد'}
 `).join('\n')}
 
 الخطط العلاجية النشطة:
-${patientPlans.map((p: any) => `
+${patientPlans.map((p: Record<string, unknown>) => `
 - ${p.title}
   الأهداف: ${p.goals?.length || 0}
   التقدم: ${p.progress_percentage || 0}%
@@ -224,7 +227,7 @@ async function generateChatResponse(
 
   const messages = [
     { role: 'system', content: systemPrompt },
-    ...history.map((h: any) => ({
+    ...history.map((h: Record<string, unknown>) => ({
       role: h.role === 'user' ? 'user' : 'assistant',
       content: h.content
     })),

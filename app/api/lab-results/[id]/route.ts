@@ -35,7 +35,7 @@ export async function PUT(
     const body = await req.json()
     const { status, results, interpretation, is_abnormal } = body
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString()
     }
 
@@ -89,8 +89,9 @@ export async function PUT(
             entityId: data.id
           })
         }
-      } catch (e) {
-        console.error('Failed to create lab result notification:', e)
+      } catch (e: unknown) {
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Failed to create lab result notification', e, { labResultId: data.id })
       }
     }
 
@@ -98,10 +99,12 @@ export async function PUT(
       success: true,
       data
     })
-  } catch (error: any) {
-    console.error('Error updating lab result:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء تحديث نتيجة المختبر'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error updating lab result', error, { endpoint: '/api/lab-results/[id]', labResultId: params.id })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

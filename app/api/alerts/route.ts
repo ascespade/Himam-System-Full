@@ -67,10 +67,12 @@ export async function GET(req: NextRequest) {
       success: true,
       data: data || []
     })
-  } catch (error: any) {
-    console.error('Error fetching alerts:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب التنبيهات'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching alerts', error, { endpoint: '/api/alerts' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

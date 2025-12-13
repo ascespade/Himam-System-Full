@@ -35,8 +35,11 @@ export async function GET(req: NextRequest) {
     if (error) throw error
 
     return NextResponse.json({ success: true, data })
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب الإشعارات'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching notifications', error, { endpoint: '/api/notifications', userId: user.id })
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }
 
@@ -63,7 +66,10 @@ export async function POST(req: NextRequest) {
     if (error) throw error
 
     return NextResponse.json({ success: true, data })
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب الإشعارات'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching notifications', error, { endpoint: '/api/notifications', userId: user.id })
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }

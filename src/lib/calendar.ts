@@ -70,9 +70,11 @@ export async function createEvent(
     }
 
     return response.data.id
-  } catch (error: any) {
-    console.error('Error creating calendar event:', error)
-    throw new Error(`Failed to create calendar event: ${error.message}`)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error creating calendar event', error, { date, patient, specialist, duration })
+    throw new Error(`Failed to create calendar event: ${errorMessage}`)
   }
 }
 
@@ -106,9 +108,11 @@ export async function updateEvent(
       eventId,
       requestBody: updates,
     })
-  } catch (error: any) {
-    console.error('Error updating calendar event:', error)
-    throw new Error(`Failed to update calendar event: ${error.message}`)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error updating calendar event', error, { eventId })
+    throw new Error(`Failed to update calendar event: ${errorMessage}`)
   }
 }
 
@@ -137,9 +141,11 @@ export async function deleteEvent(eventId: string): Promise<void> {
       calendarId: settings.GOOGLE_CALENDAR_ID,
       eventId,
     })
-  } catch (error: any) {
-    console.error('Error deleting calendar event:', error)
-    throw new Error(`Failed to delete calendar event: ${error.message}`)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error deleting calendar event', error, { eventId })
+    throw new Error(`Failed to delete calendar event: ${errorMessage}`)
   }
 }
 
@@ -175,9 +181,11 @@ export async function getEvents(startDate: string, endDate: string): Promise<any
     })
 
     return response.data.items || []
-  } catch (error: any) {
-    console.error('Error fetching calendar events:', error)
-    throw new Error(`Failed to fetch calendar events: ${error.message}`)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching calendar events', error, { startDate, endDate })
+    throw new Error(`Failed to fetch calendar events: ${errorMessage}`)
   }
 }
 

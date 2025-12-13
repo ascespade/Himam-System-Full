@@ -71,10 +71,14 @@ export async function GET(
         messages
       }
     })
-  } catch (error: any) {
-    console.error('Error fetching Slack conversation:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/slack/[patient_id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -191,10 +195,14 @@ export async function POST(
       success: true,
       data: message
     }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error sending Slack message:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/slack/[patient_id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

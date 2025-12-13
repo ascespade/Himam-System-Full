@@ -63,10 +63,12 @@ export async function GET(req: NextRequest) {
         totalPages: Math.ceil((count || 0) / limit)
       }
     })
-  } catch (error: any) {
-    console.error('Error fetching knowledge:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب قاعدة المعرفة'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching knowledge', error, { endpoint: '/api/knowledge' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -123,10 +125,12 @@ export async function POST(req: NextRequest) {
       success: true,
       data
     }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating knowledge item:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء إنشاء عنصر المعرفة'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error creating knowledge item', error, { endpoint: '/api/knowledge' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

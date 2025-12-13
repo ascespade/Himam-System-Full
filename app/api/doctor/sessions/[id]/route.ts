@@ -56,10 +56,14 @@ export async function GET(
       success: true,
       data
     })
-  } catch (error: any) {
-    console.error('Error fetching session:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/sessions/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -105,7 +109,7 @@ export async function PUT(
     }
 
     const body = await req.json()
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
 
     if (body.date !== undefined) updateData.date = body.date
     if (body.duration !== undefined) updateData.duration = body.duration
@@ -135,10 +139,14 @@ export async function PUT(
       success: true,
       data
     })
-  } catch (error: any) {
-    console.error('Error updating session:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/sessions/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -193,10 +201,14 @@ export async function DELETE(
     return NextResponse.json({
       success: true
     })
-  } catch (error: any) {
-    console.error('Error deleting session:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/sessions/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     // Process each status update
     const updates = []
     for (const status of statuses) {
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         status: status.status,
         updated_at: new Date().toISOString(),
       }
@@ -115,10 +115,14 @@ export async function POST(req: NextRequest) {
       message: `Processed ${updates.length} status updates`,
       updates,
     })
-  } catch (error: any) {
-    console.error('Error processing WhatsApp status webhook:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/messages/status' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

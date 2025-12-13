@@ -29,7 +29,7 @@ export async function PUT(
     const body = await req.json()
     const { status } = body
 
-    const updates: any = { status }
+    const updates: Record<string, unknown> = { status }
 
     // Update timestamps based on status
     if (status === 'in_progress') {
@@ -48,10 +48,12 @@ export async function PUT(
     if (error) throw error
 
     return NextResponse.json({ success: true, data })
-  } catch (error: any) {
-    console.error('Error updating queue item:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء تحديث عنصر الطابور'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error updating queue item', error, { endpoint: '/api/reception/queue/[id]', queueId: params.id })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -89,10 +91,12 @@ export async function DELETE(
     if (error) throw error
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error deleting queue item:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء حذف عنصر الطابور'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error deleting queue item', error, { endpoint: '/api/reception/queue/[id]', queueId: params.id })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

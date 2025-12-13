@@ -84,8 +84,12 @@ export async function GET(req: NextRequest) {
       date: tomorrow.toISOString().split('T')[0]
     })
 
-  } catch (error: any) {
-    console.error('Reminder Cron Error:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/cron/reminders' })
+
+    
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }

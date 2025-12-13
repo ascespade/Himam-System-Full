@@ -91,10 +91,14 @@ export async function GET(req: NextRequest) {
         }
       }
     })
-  } catch (error: any) {
-    console.error('Error in monitoring:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/insurance/ai-agent/monitor' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -240,10 +244,14 @@ export async function POST(req: NextRequest) {
       { success: false, error: 'Invalid action' },
       { status: 400 }
     )
-  } catch (error: any) {
-    console.error('Error in auto-followup:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/insurance/ai-agent/monitor' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

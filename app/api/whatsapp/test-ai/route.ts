@@ -117,11 +117,15 @@ export async function POST(req: NextRequest) {
         },
       }, { status: 500 })
     }
-  } catch (error: any) {
-    console.error('Error in test AI endpoint:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/test-ai' })
+
+    
     return NextResponse.json({
       success: false,
-      error: error.message,
+      error: errorMessage
     }, { status: 500 })
   }
 }
@@ -174,11 +178,15 @@ export async function GET(req: NextRequest) {
         status: hasGeminiKey || hasOpenAIKey ? 'configured' : 'not_configured',
       },
     })
-  } catch (error: any) {
-    console.error('Error in test AI endpoint:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/test-ai' })
+
+    
     return NextResponse.json({
       success: false,
-      error: error.message,
+      error: errorMessage
     }, { status: 500 })
   }
 }

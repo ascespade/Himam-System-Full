@@ -74,8 +74,8 @@ export async function GET(req: NextRequest) {
         .eq('doctor_id', user.id)
         .is('end_date', null)
 
-      const assignedPatientIds = new Set((relationships || []).map((r: any) => r.patient_id))
-      const filteredResults = (searchResults || []).filter((p: any) => assignedPatientIds.has(p.id))
+      const assignedPatientIds = new Set((relationships || []).map((r: Record<string, unknown>) => r.patient_id))
+      const filteredResults = (searchResults || []).filter((p: Record<string, unknown>) => assignedPatientIds.has(p.id))
 
       // Enrich with additional data
       const enrichedResults = await Promise.all(
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
         .gte('date', thirtyDaysAgo.toISOString())
         .order('date', { ascending: false })
 
-      const recentPatientIds = [...new Set((recentSessions || []).map((s: any) => s.patient_id))]
+      const recentPatientIds = [...new Set((recentSessions || []).map((s: Record<string, unknown>) => s.patient_id))]
 
       if (recentPatientIds.length === 0) {
         return NextResponse.json({ success: true, data: [] })
@@ -171,8 +171,8 @@ export async function GET(req: NextRequest) {
         .gte('date', thirtyDaysAgo.toISOString())
 
       const activePatientIds = new Set([
-        ...(activePlans || []).map((p: any) => p.patient_id),
-        ...(recentSessions || []).map((s: any) => s.patient_id)
+        ...(activePlans || []).map((p: Record<string, unknown>) => p.patient_id),
+        ...(recentSessions || []).map((s: Record<string, unknown>) => s.patient_id)
       ])
 
       if (activePatientIds.size === 0) {
@@ -198,16 +198,20 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    const patients = (data || []).map((item: any) => item.patients).filter(Boolean)
+    const patients = (data || []).map((item: Record<string, unknown>) => item.patients).filter(Boolean)
 
     return NextResponse.json({
       success: true,
       data: patients
     })
-  } catch (error: any) {
-    console.error('Error fetching patients:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/patients' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

@@ -37,10 +37,12 @@ export async function GET(req: NextRequest) {
         step5: 'Click "Verify and Save"',
       },
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
     return NextResponse.json({
       success: false,
-      error: error.message,
+      error: errorMessage
     }, { status: 500 })
   }
 }

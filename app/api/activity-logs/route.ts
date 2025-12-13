@@ -73,10 +73,12 @@ export async function GET(req: NextRequest) {
       success: true,
       data: data || []
     })
-  } catch (error: any) {
-    console.error('Error fetching activity logs:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب سجلات النشاط'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching activity logs', error, { endpoint: '/api/activity-logs' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -156,10 +158,12 @@ export async function POST(req: NextRequest) {
       success: true,
       data
     }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating activity log:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء إنشاء سجل النشاط'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error creating activity log', error, { endpoint: '/api/activity-logs' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

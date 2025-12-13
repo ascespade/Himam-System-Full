@@ -72,7 +72,10 @@ export async function GET(req: NextRequest) {
         doctorsCount: doctors?.length || 0
       }
     })
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب إحصائيات التقارير'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching report stats', error, { endpoint: '/api/reports/stats', userId: user.id })
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }

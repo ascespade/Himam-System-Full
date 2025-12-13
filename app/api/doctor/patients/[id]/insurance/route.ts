@@ -56,10 +56,14 @@ export async function GET(
       success: true,
       data: data || []
     })
-  } catch (error: any) {
-    console.error('Error fetching patient insurance:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/patients/[id]/insurance' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

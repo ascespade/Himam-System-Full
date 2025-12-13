@@ -193,10 +193,14 @@ export async function GET(req: NextRequest) {
       })
 
     return NextResponse.json({ success: true, data: metrics, cached: false })
-  } catch (error: any) {
-    console.error('Error calculating doctor performance metrics:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/analytics/performance' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

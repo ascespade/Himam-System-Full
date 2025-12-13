@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Patient not found' }, { status: 404 })
     }
 
-    const exportData: any = {
+    const exportData: Record<string, unknown> = {
       patient: {
         id: patient.id,
         name: patient.name,
@@ -203,10 +203,14 @@ ${'='.repeat(50)}
         format: 'json',
       })
     }
-  } catch (error: any) {
-    console.error('Error exporting data:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/export' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 export async function GET() {
   const settings = await getSettings()
-  const debugInfo: any = {
+  const debugInfo: Record<string, unknown> = {
     hasGemini: !!settings.GEMINI_KEY,
     geminiKeyLength: settings.GEMINI_KEY?.length,
     geminiKeyStart: settings.GEMINI_KEY?.substring(0, 5) + '...',
@@ -21,8 +21,10 @@ export async function GET() {
     } else {
       debugInfo.configuredTest = 'Skipped (No Key)'
     }
-  } catch (error: any) {
-    debugInfo.configuredTest = 'Failed: ' + error.message
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
+    debugInfo.configuredTest = 'Failed: ' + errorMessage
   }
 
   // 2. Test with USER PROVIDED Key
@@ -32,8 +34,10 @@ export async function GET() {
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' }) // Using standard model to be safe
     const result = await model.generateContent('Hello')
     debugInfo.manualTest = 'Success: ' + result.response.text()
-  } catch (error: any) {
-    debugInfo.manualTest = 'Failed: ' + error.message
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
+    debugInfo.manualTest = 'Failed: ' + errorMessage
   }
 
   return NextResponse.json(debugInfo)

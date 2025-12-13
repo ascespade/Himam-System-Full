@@ -80,13 +80,15 @@ export async function GET(req: NextRequest) {
 
         results.sent++
         results.processed++
-      } catch (error: any) {
+      } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+
         // Update status to failed
         await supabaseAdmin
           .from('whatsapp_scheduled_messages')
           .update({
             status: 'failed',
-            error_message: error.message,
+            error_message: error instanceof Error ? error.message : 'Failed to send message',
             updated_at: new Date().toISOString(),
           })
           .eq('id', message.id)
@@ -105,10 +107,14 @@ export async function GET(req: NextRequest) {
       message: `Processed ${results.processed} scheduled messages`,
       data: results,
     })
-  } catch (error: any) {
-    console.error('Error processing scheduled messages:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/cron/whatsapp-scheduled' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

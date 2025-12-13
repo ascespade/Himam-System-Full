@@ -120,10 +120,14 @@ export async function POST(req: NextRequest) {
       message: 'Recording processed successfully',
       data: updatedSession,
     })
-  } catch (error: any) {
-    console.error('Error processing Slack recording webhook:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/slack/webhooks/recording' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

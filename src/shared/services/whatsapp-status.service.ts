@@ -214,8 +214,20 @@ class WhatsAppStatusService {
             const phone = outbound.to_phone || outbound.from_phone
             const inboundMessages = inboundByPhone.get(phone) || []
             const lastInbound = inboundMessages
-              .filter((inbound: any) => new Date(inbound.created_at) < new Date(outbound.created_at))
-              .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+              .filter((inbound: Record<string, unknown>) => {
+                const inboundDate = typeof inbound.created_at === 'string' || inbound.created_at instanceof Date 
+                  ? new Date(inbound.created_at) 
+                  : null
+                const outboundDate = typeof outbound.created_at === 'string' || outbound.created_at instanceof Date
+                  ? new Date(outbound.created_at)
+                  : null
+                return inboundDate && outboundDate && inboundDate < outboundDate
+              })
+              .sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+                const aDate = typeof a.created_at === 'string' || a.created_at instanceof Date ? new Date(a.created_at).getTime() : 0
+                const bDate = typeof b.created_at === 'string' || b.created_at instanceof Date ? new Date(b.created_at).getTime() : 0
+                return bDate - aDate
+              })[0]
 
             if (lastInbound) {
               const responseTime = new Date(outbound.created_at).getTime() - new Date(lastInbound.created_at).getTime()

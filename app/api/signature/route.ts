@@ -62,12 +62,16 @@ export async function POST(req: NextRequest) {
       fileName,
       signatureRecord,
     })
-  } catch (error: any) {
-    console.error('Signature API Error:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/signature' })
+
+    
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to save signature',
+        error: errorMessage || 'Failed to save signature',
       },
       { status: 500 }
     )
@@ -98,12 +102,16 @@ export async function GET(req: NextRequest) {
       success: true,
       signatures: signatures || [],
     })
-  } catch (error: any) {
-    console.error('Signature GET error:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/signature' })
+
+    
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to fetch signatures',
+        error: errorMessage || 'Failed to fetch signatures',
       },
       { status: 500 }
     )

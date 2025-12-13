@@ -127,10 +127,12 @@ export async function POST(
         message: 'تم تأكيد المريض للطبيب بنجاح. سيظهر ملف المريض الكامل في شاشة الطبيب.'
       }
     })
-  } catch (error: any) {
-    console.error('Error confirming patient to doctor:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء تأكيد المريض للطبيب'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error confirming patient to doctor', error, { endpoint: '/api/reception/queue/[id]/confirm-to-doctor', queueId: params.id })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

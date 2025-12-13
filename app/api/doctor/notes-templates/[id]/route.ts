@@ -67,7 +67,7 @@ export async function PUT(
       )
     }
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     }
 
@@ -89,10 +89,14 @@ export async function PUT(
     if (error) throw error
 
     return NextResponse.json({ success: true, data })
-  } catch (error: any) {
-    console.error('Error updating notes template:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/notes-templates/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -173,10 +177,14 @@ export async function DELETE(
     if (error) throw error
 
     return NextResponse.json({ success: true, data, message: 'Template deleted' })
-  } catch (error: any) {
-    console.error('Error deleting notes template:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/notes-templates/[id]' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

@@ -146,10 +146,14 @@ export async function POST(req: NextRequest) {
       data: claim,
       message: 'تم إنشاء المطالبة تلقائياً وبدء عملية الأتمتة'
     })
-  } catch (error: any) {
-    console.error('Error auto-generating claim:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/insurance/claims/auto-generate' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

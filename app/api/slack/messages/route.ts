@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    const transformed = (data || []).map((msg: any) => ({
+    const transformed = (data || []).map((msg: Record<string, unknown>) => ({
       ...msg,
       sender_name: msg.users?.name || 'غير معروف'
     }))
@@ -42,10 +42,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: transformed
     })
-  } catch (error: any) {
-    console.error('Error fetching Slack messages:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/slack/messages' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -97,10 +101,14 @@ export async function POST(req: NextRequest) {
       data,
       message: 'Message sent. Will be synced with Slack.'
     }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error sending Slack message:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/slack/messages' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

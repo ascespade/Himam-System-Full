@@ -39,7 +39,7 @@ export async function sendButtonMessage(
     throw new Error('WhatsApp API not configured')
   }
 
-  const message: any = {
+  const message: Record<string, unknown> = {
     messaging_product: 'whatsapp',
     to,
     type: 'interactive',
@@ -51,7 +51,7 @@ export async function sendButtonMessage(
   }
 
   if (headerText) {
-    message.interactive.header = { type: 'text', text: headerText }
+    (message.interactive as Record<string, unknown>).header = { type: 'text', text: headerText }
   }
 
   const response = await fetch(
@@ -95,7 +95,7 @@ export async function sendListMessage(
     throw new Error('WhatsApp API not configured')
   }
 
-  const message: any = {
+  const message: Record<string, unknown> = {
     messaging_product: 'whatsapp',
     to,
     type: 'interactive',
@@ -110,7 +110,7 @@ export async function sendListMessage(
   }
 
   if (headerText) {
-    message.interactive.header = { type: 'text', text: headerText }
+    (message.interactive as Record<string, unknown>).header = { type: 'text', text: headerText }
   }
 
   const response = await fetch(
@@ -267,7 +267,7 @@ export async function sendImageMessage(
     throw new Error('WhatsApp API not configured')
   }
 
-  const message: any = {
+  const message: Record<string, unknown> = {
     messaging_product: 'whatsapp',
     to,
     type: 'image',
@@ -277,7 +277,7 @@ export async function sendImageMessage(
   }
 
   if (caption) {
-    message.image.caption = caption
+    (message.image as Record<string, unknown>).caption = caption
   }
 
   const response = await fetch(
@@ -370,7 +370,7 @@ export async function sendDocumentMessage(
     throw new Error('WhatsApp API not configured')
   }
 
-  const message: any = {
+  const message: Record<string, unknown> = {
     messaging_product: 'whatsapp',
     to,
     type: 'document',
@@ -380,11 +380,11 @@ export async function sendDocumentMessage(
   }
 
   if (filename) {
-    message.document.filename = filename
+    (message.document as Record<string, unknown>).filename = filename
   }
 
   if (caption) {
-    message.document.caption = caption
+    (message.document as Record<string, unknown>).caption = caption
   }
 
   const response = await fetch(
@@ -427,7 +427,7 @@ export async function sendTemplateMessage(
     throw new Error('WhatsApp API not configured')
   }
 
-  const message: any = {
+  const message: Record<string, unknown> = {
     messaging_product: 'whatsapp',
     to,
     type: 'template',
@@ -440,7 +440,7 @@ export async function sendTemplateMessage(
   }
 
   if (components && components.length > 0) {
-    message.template.components = components
+    (message.template as Record<string, unknown>).components = components
   }
 
   const response = await fetch(

@@ -26,14 +26,18 @@ export async function GET(req: NextRequest) {
       success: true,
       data: settings,
     })
-  } catch (error: any) {
-    console.error('Error fetching active WhatsApp settings:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/settings/active' })
+
+    
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch active WhatsApp settings',
+          message: errorMessage || 'Failed to fetch active WhatsApp settings',
         },
       },
       { status: 500 }

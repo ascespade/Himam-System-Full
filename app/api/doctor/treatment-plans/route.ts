@@ -47,10 +47,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: data || []
     })
-  } catch (error: any) {
-    console.error('Error fetching treatment plans:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/treatment-plans' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -90,7 +94,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate progress percentage
-    const completedGoals = goals.filter((g: any) => g.status === 'completed').length
+    const completedGoals = goals.filter((g: Record<string, unknown>) => g.status === 'completed').length
     const progressPercentage = Math.round((completedGoals / goals.length) * 100)
 
     const { data, error } = await supabaseAdmin
@@ -121,10 +125,14 @@ export async function POST(req: NextRequest) {
       success: true,
       data
     })
-  } catch (error: any) {
-    console.error('Error creating treatment plan:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/treatment-plans' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

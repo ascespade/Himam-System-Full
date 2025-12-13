@@ -136,10 +136,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: analyticsData,
     })
-  } catch (error: any) {
-    console.error('Error fetching WhatsApp analytics:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/analytics' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

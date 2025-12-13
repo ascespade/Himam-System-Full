@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
 ${context || 'لا يوجد سياق إضافي'}
 
 السجلات الطبية المرتبطة:
-${entityData.medical_records?.map((r: any) => `- ${r.notes || r.description}`).join('\n') || 'لا توجد سجلات'}
+${entityData.medical_records?.map((r: Record<string, unknown>) => `- ${r.notes || r.description}`).join('\n') || 'لا توجد سجلات'}
 
 قم بإنشاء ملخص احترافي يتضمن:
 1. ملخص الجلسة
@@ -156,7 +156,7 @@ ${entityData.medical_records?.map((r: any) => `- ${r.notes || r.description}`).j
 الحالة: ${entityData.status || 'غير محدد'}
 
 الجلسات المكتملة:
-${entityData.sessions?.map((s: any) => `- ${new Date(s.date).toLocaleDateString('ar-SA')}: ${s.session_type}`).join('\n') || 'لا توجد جلسات'}
+${entityData.sessions?.map((s: Record<string, unknown>) => `- ${new Date(s.date).toLocaleDateString('ar-SA')}: ${s.session_type}`).join('\n') || 'لا توجد جلسات'}
 
 السياق الإضافي:
 ${context || 'لا يوجد سياق إضافي'}
@@ -244,10 +244,14 @@ ${context || 'لا يوجد سياق إضافي'}
         model: aiResponse.model,
       },
     })
-  } catch (error: any) {
-    console.error('Error generating auto-documentation:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/auto-documentation' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -303,10 +307,14 @@ export async function GET(req: NextRequest) {
     if (error) throw error
 
     return NextResponse.json({ success: true, data: data || [] })
-  } catch (error: any) {
-    console.error('Error fetching auto-documentation logs:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/doctor/auto-documentation' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

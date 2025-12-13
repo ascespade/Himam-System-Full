@@ -86,10 +86,12 @@ export async function GET(req: NextRequest) {
         total: count || 0,
       },
     })
-  } catch (error: any) {
-    console.error('Error fetching contacts:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب جهات الاتصال'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching contacts', error, { endpoint: '/api/contacts' })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }

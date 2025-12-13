@@ -28,7 +28,7 @@ export async function PUT(
     if (error) throw error
 
     return NextResponse.json(successResponse(data, 'تم تحديث الأخصائي بنجاح'))
-  } catch (error: any) {
+  } catch (error: unknown) {
     return handleApiError(error)
   }
 }
@@ -51,7 +51,7 @@ export async function DELETE(
     if (error) throw error
 
     return NextResponse.json(successResponse(null, 'تم حذف الأخصائي بنجاح'))
-  } catch (error: any) {
+  } catch (error: unknown) {
     return handleApiError(error)
   }
 }

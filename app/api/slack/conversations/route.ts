@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    const transformed = (data || []).map((conv: any) => ({
+    const transformed = (data || []).map((conv: Record<string, unknown>) => ({
       ...conv,
       patient_name: conv.patients?.name || 'غير معروف',
       doctor_name: conv.users?.name || 'غير معروف'
@@ -52,10 +52,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: transformed
     })
-  } catch (error: any) {
-    console.error('Error fetching Slack conversations:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/slack/conversations' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -115,10 +119,14 @@ export async function POST(req: NextRequest) {
       data,
       message: 'Slack conversation created. Channel will be created via Slack API.'
     }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating Slack conversation:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/slack/conversations' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

@@ -64,10 +64,14 @@ export async function GET(req: NextRequest) {
       success: true,
       data: profile?.business_hours || {},
     })
-  } catch (error: any) {
-    console.error('Error fetching business hours:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/business-hours' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
@@ -157,10 +161,14 @@ export async function PUT(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, data })
-  } catch (error: any) {
-    console.error('Error updating business hours:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error', error, { endpoint: '/api/whatsapp/business-hours' })
+
+    
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }

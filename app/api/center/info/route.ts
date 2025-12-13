@@ -26,14 +26,16 @@ export async function GET() {
       success: true,
       data: centerInfo,
     })
-  } catch (error: any) {
-    console.error('Error fetching center info:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch center information'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching center info', error, { endpoint: '/api/center/info' })
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch center information',
+          message: errorMessage,
         },
       },
       { status: 500 }
