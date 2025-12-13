@@ -174,5 +174,5 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

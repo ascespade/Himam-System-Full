@@ -20,7 +20,11 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       )
     }
 
-    const { data, error } = await supabaseAdmin
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
+
+    const { data, error, count } = await supabaseAdmin
       .from('slack_messages')
       .select(`
         id, conversation_id, slack_message_ts, sender_id, sender_type, message_text, is_read, created_at, updated_at,
@@ -28,9 +32,10 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
           id,
           name
         )
-      `)
+      `, { count: 'exact' })
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1)
 
     if (error) throw error
 
@@ -42,9 +47,20 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       }
     })
 
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
+
     return NextResponse.json({
       success: true,
-      data: transformed
+      data: transformed,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
     })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'

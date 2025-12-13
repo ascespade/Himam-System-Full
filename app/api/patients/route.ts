@@ -73,6 +73,20 @@ export async function GET(req: NextRequest) {
       query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`)
     }
 
+    // Try cache first for read-heavy endpoint
+    const cacheKey = `patients:${page}:${limit}:${search || ''}:${user_id || ''}:${email || ''}:${phone || ''}`
+    const { getCache, setCache } = await import('@/lib/redis')
+    const cached = await getCache(cacheKey)
+    
+    if (cached) {
+      const headers = createRateLimitHeaders(
+        rateLimitResult.limit,
+        rateLimitResult.remaining,
+        rateLimitResult.reset
+      )
+      return NextResponse.json(successResponse(cached), { headers })
+    }
+
     const { data: patients, error, count } = await query
 
     if (error) throw error

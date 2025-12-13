@@ -173,5 +173,5 @@ export const PUT = withRateLimit(async function PUT(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

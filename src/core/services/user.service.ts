@@ -140,7 +140,7 @@ export class UserService extends BaseService {
   async findById(userId: string): Promise<User | null> {
     const { data, error } = await supabaseAdmin
       .from('users')
-      .select('*')
+      .select('id, email, name, role, phone, created_at, updated_at')
       .eq('id', userId)
       .single()
 
@@ -161,7 +161,7 @@ export class UserService extends BaseService {
 
     const { data, error, count } = await supabaseAdmin
       .from('users')
-      .select('*', { count: 'exact' })
+      .select('id, email, name, role, phone, created_at, updated_at', { count: 'exact' })
       .eq('role', role)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)

@@ -196,4 +196,4 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')
