@@ -256,7 +256,7 @@ ${context || 'لا يوجد سياق إضافي'}
         prompt_used: prompt,
         metadata: { context, patientData: { name: patientName } },
       })
-      .select()
+      .select('id, entity_type, entity_id, doctor_id, documentation_type, generated_content, ai_model, prompt_used, metadata, created_at, updated_at')
       .single()
 
     if (logError) throw logError

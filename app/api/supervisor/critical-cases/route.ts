@@ -8,6 +8,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
 import { supabaseAdmin } from '@/lib'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/supervisor/critical-cases
  * Get critical cases
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('critical_cases')
       .select(`
-        *,
+        id, patient_id, session_id, doctor_id, case_type, severity, description, detected_by, status, resolved_at, created_at, updated_at,
         patients (
           id,
           name,
@@ -103,13 +104,13 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')
 
 /**
  * POST /api/supervisor/critical-cases
  * Create or update critical case
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -170,7 +171,7 @@ export async function POST(req: NextRequest) {
         status: 'open',
         created_at: new Date().toISOString()
       })
-      .select()
+      .select('id, patient_id, session_id, doctor_id, case_type, severity, description, detected_by, status, resolved_at, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -182,4 +183,4 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')

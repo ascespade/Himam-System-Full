@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/whatsapp/conversations
  * Get all conversations with filters
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -53,7 +54,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('whatsapp_conversations')
       .select(`
-        *,
+        id, phone_number, patient_id, status, last_message_at, unread_count, assigned_to, tags, notes, created_at, updated_at,
         patients (id, name, phone),
         users:assigned_to (id, name, role)
       `)
@@ -96,13 +97,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/whatsapp/conversations
  * Create or update conversation
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -146,7 +147,7 @@ export async function POST(req: NextRequest) {
       }, {
         onConflict: 'phone_number',
       })
-      .select()
+      .select('id, phone_number, patient_id, status, last_message_at, unread_count, assigned_to, tags, notes, created_at, updated_at')
       .single()
 
     if (error) throw error

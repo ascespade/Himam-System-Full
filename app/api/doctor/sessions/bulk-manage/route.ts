@@ -88,7 +88,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
         status: 'processing',
         created_by: user.id
       })
-      .select()
+      .select('id, doctor_id, operation_type, target_date, end_date, reason, affected_sessions, new_schedule, status, processed_count, failed_count, error_log, created_by, created_at, completed_at')
       .single()
 
     if (bulkError) throw bulkError

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * Get messages for a phone number from whatsapp_messages table
  * Same data source as /api/whatsapp/conversations/[id] but by phone number
  */
-export async function GET(request: NextRequest) {
+export const GET = withRateLimit(async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const phone = searchParams.get('phone')
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     // Get messages for this conversation
     const { data: messages, error: msgError } = await supabaseAdmin
       .from('whatsapp_messages')
-      .select('*')
+      .select('id, message_id, from_phone, to_phone, message_type, content, status, direction, session_id, conversation_id, patient_id, created_at, updated_at')
       .eq('conversation_id', conversation.id)
       .order('created_at', { ascending: true })
 
@@ -113,4 +114,4 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
-}
+}, 'api')

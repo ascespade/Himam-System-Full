@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     // 2. Fetch confirmed appointments for tomorrow
     const { data: appointments, error } = await supabaseAdmin
       .from('appointments')
-      .select('*')
+      .select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, phone, specialist, created_at, updated_at')
       .eq('status', 'confirmed') // Only remind confirmed appointments
       .gte('date', tomorrow.toISOString())
       .lt('date', dayAfterTomorrow.toISOString())

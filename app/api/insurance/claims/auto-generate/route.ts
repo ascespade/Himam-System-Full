@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic'
  * Auto-generate insurance claim when doctor approves treatment plan with sessions
  * يتم استدعاؤه تلقائياً عند موافقة الطبيب على خطة علاجية تحتوي على جلسات
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -51,8 +52,8 @@ export async function POST(req: NextRequest) {
     const { data: patient } = await supabaseAdmin
       .from('patients')
       .select(`
-        *,
-        patient_insurance (*)
+        id, name, phone, email, nationality, date_of_birth, gender, address, status, allergies, chronic_diseases, emergency_contact, notes, created_at, updated_at,
+        patient_insurance (id, patient_id, insurance_company, policy_number, member_id, group_number, coverage_type, coverage_percentage, copay_amount, deductible, max_coverage, effective_date, expiry_date, is_active, notes, created_at, updated_at)
       `)
       .eq('id', patient_id)
       .single()
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     const { data: insuranceCompany } = await supabaseAdmin
       .from('insurance_companies')
-      .select('*')
+      .select('id, name, code, contact_email, contact_phone, api_endpoint, api_key, is_active, created_at, updated_at')
       .eq('name', insuranceInfo.insurance_provider)
       .eq('is_active', true)
       .single()
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
     // Get treatment plan details
     const { data: treatmentPlan } = await supabaseAdmin
       .from('treatment_plans')
-      .select('*, goals(*)')
+      .select('id, patient_id, doctor_id, title, description, status, start_date, end_date, progress_percentage, created_at, updated_at, goals(id, title, description, status, target_date, completed_date)')
       .eq('id', treatment_plan_id)
       .single()
 
@@ -133,7 +134,7 @@ export async function POST(req: NextRequest) {
           member_id: insuranceInfo.member_id
         }
       })
-      .select()
+      .select('id, claim_number, patient_id, doctor_id, insurance_company_id, treatment_plan_id, claim_type, requested_sessions, session_dates, total_amount, covered_amount, patient_responsibility, doctor_notes, medical_justification, auto_generated, ai_suggestions, status, workflow_step, metadata, created_at, updated_at')
       .single()
 
     if (claimError) throw claimError
@@ -157,7 +158,7 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * Generate AI suggestions for claim based on learning
@@ -173,7 +174,7 @@ async function generateAIClaimSuggestions(
   if (insuranceCompanyId) {
     const { data: learningData } = await supabaseAdmin
       .from('ai_learning_logs')
-      .select('*')
+      .select('id, entity_type, entity_id, learning_type, pattern, suggestion, applied_to_future_cases, created_at, updated_at')
       .eq('entity_type', 'insurance_company')
       .eq('entity_id', insuranceCompanyId)
       .eq('applied_to_future_cases', true)
@@ -221,7 +222,7 @@ async function startClaimAutomationWorkflow(claimId: string) {
   // 1. Validate claim completeness
   const { data: claim } = await supabaseAdmin
     .from('insurance_claims_enhanced')
-    .select('*')
+    .select('id, claim_number, patient_id, doctor_id, insurance_company_id, treatment_plan_id, claim_type, requested_sessions, session_dates, total_amount, covered_amount, patient_responsibility, doctor_notes, medical_justification, auto_generated, ai_suggestions, status, workflow_step, metadata, created_at, updated_at')
     .eq('id', claimId)
     .single()
 

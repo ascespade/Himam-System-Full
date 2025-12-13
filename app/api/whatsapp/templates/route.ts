@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { getSettings } from '@/lib/config'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/whatsapp/templates
  * Get all WhatsApp templates
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('whatsapp_templates')
-      .select('*')
+      .select('id, template_name, display_name, category, language_code, body_text, header_text, footer_text, button_type, button_text, button_urls, status, is_active, created_by, created_at, updated_at')
       .order('created_at', { ascending: false })
 
     if (category) {
@@ -115,13 +116,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/whatsapp/templates
  * Create a new WhatsApp template
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -191,7 +192,7 @@ export async function POST(req: NextRequest) {
         is_active: true,
         created_by: user.id,
       })
-      .select()
+      .select('id, template_name, display_name, category, language_code, body_text, header_text, footer_text, button_type, button_text, button_urls, status, is_active, created_by, created_at, updated_at')
       .single()
 
     if (error) throw error

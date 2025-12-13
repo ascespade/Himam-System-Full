@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/whatsapp/analytics
  * Get WhatsApp message analytics
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
     // Get messages in date range
     const { data: messages } = await supabaseAdmin
       .from('whatsapp_messages')
-      .select('*')
+      .select('id, message_id, from_phone, to_phone, message_type, content, status, direction, session_id, conversation_id, patient_id, created_at, updated_at')
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString())
 
@@ -147,5 +148,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

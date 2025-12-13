@@ -1,10 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function PUT(req: NextRequest) {
+export const PUT = withRateLimit(async function PUT(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -33,7 +34,7 @@ export async function PUT(req: NextRequest) {
       })
       .eq('user_id', user.id)
       .eq('is_read', false)
-      .select()
+      .select('id, user_id, patient_id, type, title, message, entity_type, entity_id, is_read, read_at, created_at, updated_at')
 
     if (error) throw error
 
@@ -47,5 +48,5 @@ export async function PUT(req: NextRequest) {
     logError('Error marking all notifications as read', error, { endpoint: '/api/notifications/mark-all-read' })
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
-}
+}, 'api')
 

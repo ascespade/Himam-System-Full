@@ -6,8 +6,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createEvent, updateEvent, deleteEvent, getEvents } from '@/lib/calendar'
 import { supabaseAdmin } from '@/lib'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { action, patientName, phone, specialist, date, duration, appointmentId, eventId } = body
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
           status: 'confirmed',
           calendar_event_id: calendarEventId,
         })
-        .select()
+        .select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, created_at, updated_at')
         .single()
 
       if (dbError) {
@@ -91,9 +92,9 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams
     const startDate = searchParams.get('startDate') || new Date().toISOString()
@@ -119,4 +120,4 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')

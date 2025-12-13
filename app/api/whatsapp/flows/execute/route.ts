@@ -8,6 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { successResponse, errorResponse } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
 import { generateWhatsAppResponse } from '@/lib/ai'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export const dynamic = 'force-dynamic'
  * POST /api/whatsapp/flows/execute
  * Execute a flow for a conversation
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
     // Find matching active flows
     const { data: flows, error: flowsError } = await supabaseAdmin
       .from('whatsapp_flows')
-      .select('*')
+      .select('id, name, description, category, trigger_type, trigger_config, steps, appointment_actions, ai_model, system_prompt, response_template, is_active, priority, created_by, created_at, updated_at')
       .eq('is_active', true)
       .order('priority', { ascending: false })
 
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
         trigger_message: message,
         status: 'running',
       })
-      .select()
+      .select('id, flow_id, conversation_id, patient_id, trigger_message, status, current_step, step_results, appointment_id, created_at, updated_at, completed_at')
       .single()
 
     if (execError) throw execError
@@ -174,7 +175,7 @@ ${message}
                 status: 'pending',
                 notes: `تم الحجز عبر الواتساب - ${message}`,
               })
-              .select()
+              .select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, created_at, updated_at')
               .single()
 
             if (!aptError && appointment) {
@@ -278,4 +279,4 @@ ${message}
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')

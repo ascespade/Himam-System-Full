@@ -6,10 +6,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
     // Get recent inbound messages
     const { data: inboundMessages } = await supabaseAdmin
       .from('whatsapp_messages')
-      .select('*')
+      .select('id, message_id, from_phone, to_phone, message_type, content, status, direction, session_id, conversation_id, patient_id, created_at, updated_at')
       .eq('direction', 'inbound')
       .order('created_at', { ascending: false })
       .limit(10)
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
     // Get recent outbound messages
     const { data: outboundMessages } = await supabaseAdmin
       .from('whatsapp_messages')
-      .select('*')
+      .select('id, message_id, from_phone, to_phone, message_type, content, status, direction, session_id, conversation_id, patient_id, created_at, updated_at')
       .eq('direction', 'outbound')
       .order('created_at', { ascending: false })
       .limit(10)
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
     // Get recent conversations
     const { data: conversations } = await supabaseAdmin
       .from('whatsapp_conversations')
-      .select('*')
+      .select('id, phone_number, patient_id, status, last_message_at, unread_count, assigned_to, tags, notes, created_at, updated_at')
       .order('last_message_at', { ascending: false, nullsFirst: false })
       .limit(10)
 
@@ -107,7 +108,7 @@ export async function GET(req: NextRequest) {
       error: errorMessage
     }, { status: 500 })
   }
-}
+}, 'api')
 
 
 

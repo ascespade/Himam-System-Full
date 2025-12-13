@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -41,7 +45,7 @@ export async function GET(
     const { data: conversation, error: convError } = await supabaseAdmin
       .from('whatsapp_conversations')
       .select(`
-        *,
+        id, phone_number, patient_id, status, last_message_at, unread_count, assigned_to, tags, notes, created_at, updated_at,
         patients (id, name, phone),
         users:assigned_to (id, name, role)
       `)
@@ -53,7 +57,7 @@ export async function GET(
     // Get messages
     const { data: messages, error: msgError } = await supabaseAdmin
       .from('whatsapp_messages')
-      .select('*')
+      .select('id, message_id, from_phone, to_phone, message_type, content, status, direction, session_id, conversation_id, patient_id, created_at, updated_at')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
 
@@ -65,13 +69,15 @@ export async function GET(
       .update({ unread_count: 0, updated_at: new Date().toISOString() })
       .eq('id', conversationId)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         conversation,
         messages: messages || [],
       },
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -93,6 +99,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -131,15 +140,17 @@ export async function PUT(
       .from('whatsapp_conversations')
       .update(updateData)
       .eq('id', conversationId)
-      .select()
+      .select('id, phone_number, patient_id, status, last_message_at, unread_count, assigned_to, tags, notes, created_at, updated_at')
       .single()
 
     if (error) throw error
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data,
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

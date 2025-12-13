@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/system/working-hours
  * Get working hours
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabaseAdmin
       .from('working_hours')
-      .select('*')
+      .select('id, day_of_week, start_time, end_time, is_working_day, break_start, break_end, is_active, created_at, updated_at')
       .order('day_of_week', { ascending: true })
 
     if (error) throw error
@@ -52,13 +53,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/system/working-hours
  * Update working hours (admin only)
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(

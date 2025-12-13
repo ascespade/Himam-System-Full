@@ -113,7 +113,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
         slot_duration: slot_duration || 30,
         is_active: is_active !== undefined ? is_active : true
       })
-      .select()
+      .select('id, doctor_id, day_of_week, start_time, end_time, break_start, break_end, slot_duration, is_active, created_at, updated_at')
       .single()
 
     if (error) throw error

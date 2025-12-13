@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { getSettings } from '@/lib/config'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/whatsapp/business-hours
  * Get business hours
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -75,13 +76,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * PUT /api/whatsapp/business-hours
  * Update business hours
  */
-export async function PUT(req: NextRequest) {
+export const PUT = withRateLimit(async function PUT(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -139,7 +140,7 @@ export async function PUT(req: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('phone_number_id', phoneNumberId)
-      .select()
+      .select('id, business_name, business_description, business_email, business_website, business_address, business_category, profile_picture_url, cover_photo_url, phone_number_id, display_phone_number, waba_id, is_active, business_hours, created_at, updated_at')
       .single()
 
     if (error) {
@@ -152,7 +153,7 @@ export async function PUT(req: NextRequest) {
             business_hours,
             is_active: true,
           })
-          .select()
+          .select('id, business_name, business_description, business_email, business_website, business_address, business_category, profile_picture_url, cover_photo_url, phone_number_id, display_phone_number, waba_id, is_active, business_hours, created_at, updated_at')
           .single()
 
         return NextResponse.json({ success: true, data: newProfile })

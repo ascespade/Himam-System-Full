@@ -9,6 +9,7 @@ import { successResponse, errorResponse, handleApiError } from '@/shared/utils/a
 import { HTTP_STATUS } from '@/shared/constants'
 import { guardianRepository } from '@/infrastructure/supabase/repositories'
 import { supabaseAdmin } from '@/lib'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ export const dynamic = 'force-dynamic'
  * POST /api/guardian/approve-procedure
  * Approve or reject a procedure requiring guardian consent
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
       })
       .eq('id', procedure_id)
       .eq('patient_id', patient_id)
-      .select()
+      .select('id, patient_id, procedure_type, description, guardian_approved, guardian_approval_date, guardian_approval_notes, guardian_id, created_at, updated_at')
       .single()
 
     if (procedureError) {
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
           notes: notes || null,
           created_at: new Date().toISOString()
         })
-        .select()
+        .select('id, guardian_id, patient_id, procedure_id, approved, notes, created_at, updated_at')
         .single()
 
       return NextResponse.json(
@@ -123,4 +124,4 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')

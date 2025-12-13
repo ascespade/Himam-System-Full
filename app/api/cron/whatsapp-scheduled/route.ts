@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     // Get pending scheduled messages
     const { data: scheduledMessages, error } = await supabaseAdmin
       .from('whatsapp_scheduled_messages')
-      .select('*')
+      .select('id, to_phone, message_type, content, template_name, scheduled_at, status, sent_at, created_by, created_at, updated_at')
       .eq('status', 'pending')
       .gte('scheduled_at', now.toISOString())
       .lte('scheduled_at', fiveMinutesFromNow.toISOString())

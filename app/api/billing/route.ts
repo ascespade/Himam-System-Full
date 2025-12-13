@@ -55,7 +55,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
         invoice_number: invoiceNumber || `INV-${Date.now()}`,
         notes,
       })
-      .select()
+      .select('id, patient_name, phone, amount, paid, invoice_number, notes, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -130,7 +130,7 @@ export const PUT = withRateLimit(async function PUT(req: NextRequest) {
       .from('billing')
       .update(updates)
       .eq('id', id)
-      .select()
+      .select('id, patient_name, phone, amount, paid, invoice_number, notes, created_at, updated_at')
       .single()
 
     if (error) throw error

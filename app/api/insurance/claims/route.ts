@@ -146,7 +146,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
         insurance_provider: insurance_provider || '',
         status: 'pending'
       })
-      .select()
+      .select('id, patient_id, claim_number, claim_type, service_date, service_description, amount, covered_amount, patient_responsibility, insurance_provider, status, created_at, updated_at')
       .single()
 
     if (error) throw error

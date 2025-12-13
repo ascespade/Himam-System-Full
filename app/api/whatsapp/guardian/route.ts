@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
           phone_number: from,
           status: 'active',
         })
-        .select()
+        .select('id, phone_number, patient_id, status, last_message_at, unread_count, created_at, updated_at')
         .single()
       conversation = newConversation
     }

@@ -8,6 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { successResponse, errorResponse } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/whatsapp/flows
  * Get all WhatsApp flows
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('whatsapp_flows')
-      .select('*')
+      .select('id, name, description, category, trigger_type, trigger_config, steps, appointment_actions, ai_model, system_prompt, response_template, is_active, priority, created_by, created_at, updated_at')
       .order('priority', { ascending: false })
       .order('created_at', { ascending: false })
 
@@ -90,13 +91,13 @@ export async function GET(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/whatsapp/flows
  * Create new WhatsApp flow
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -175,7 +176,7 @@ export async function POST(req: NextRequest) {
         priority: priority || 0,
         created_by: user.id,
       })
-      .select()
+      .select('id, name, description, category, trigger_type, trigger_config, steps, appointment_actions, ai_model, system_prompt, response_template, is_active, priority, created_by, created_at, updated_at')
       .single()
 
     if (error) throw error

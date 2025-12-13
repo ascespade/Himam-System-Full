@@ -53,4 +53,4 @@ export const POST = withRateLimit(async function POST(req: Request) {
 
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
-}
+}, 'api')

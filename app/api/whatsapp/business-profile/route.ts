@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { whatsappSettingsRepository } from '@/infrastructure/supabase/repositories'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/whatsapp/business-profile
  * Get business profile
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
     try {
       const { data } = await supabaseAdmin
         .from('whatsapp_business_profiles')
-        .select('*')
+        .select('id, business_name, business_description, business_email, business_website, business_address, business_category, profile_picture_url, cover_photo_url, phone_number_id, display_phone_number, waba_id, is_active, created_at, updated_at')
         .eq('phone_number_id', phoneNumberId)
         .eq('is_active', true)
         .maybeSingle()
@@ -174,7 +175,7 @@ export async function GET(req: NextRequest) {
         const { data: savedProfile } = await supabaseAdmin
           .from('whatsapp_business_profiles')
           .insert(mergedData)
-          .select()
+          .select('id, business_name, business_description, business_email, business_website, business_address, business_category, profile_picture_url, cover_photo_url, phone_number_id, display_phone_number, waba_id, is_active, created_at, updated_at')
           .single()
 
         return NextResponse.json({ success: true, data: savedProfile })
@@ -210,13 +211,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * PUT /api/whatsapp/business-profile
  * Update business profile
  */
-export async function PUT(req: NextRequest) {
+export const PUT = withRateLimit(async function PUT(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -297,7 +298,7 @@ export async function PUT(req: NextRequest) {
         .from('whatsapp_business_profiles')
         .update(updateData)
         .eq('phone_number_id', phoneNumberId)
-        .select()
+        .select('id, business_name, business_description, business_email, business_website, business_address, business_category, profile_picture_url, cover_photo_url, phone_number_id, display_phone_number, waba_id, is_active, created_at, updated_at')
         .maybeSingle()
 
       if (error && error.code !== 'PGRST116') {
@@ -316,7 +317,7 @@ export async function PUT(req: NextRequest) {
           ...updateData,
           is_active: true,
         })
-        .select()
+        .select('id, business_name, business_description, business_email, business_website, business_address, business_category, profile_picture_url, cover_photo_url, phone_number_id, display_phone_number, waba_id, is_active, created_at, updated_at')
         .single()
 
       return NextResponse.json({ success: true, data: newProfile })

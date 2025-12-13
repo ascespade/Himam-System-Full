@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 /**
  * GET /api/doctors/profiles/[id]
@@ -9,11 +10,14 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const { data, error } = await supabaseAdmin
       .from('doctor_profiles')
       .select(`
-        *,
+        id, user_id, specialization, license_number, license_expiry, years_of_experience, education, certifications, languages, bio, consultation_fee, image_url, created_at, updated_at,
         users (
           id,
           name,
@@ -37,7 +41,7 @@ export async function GET(
     // Get patient count
     const { count } = await supabaseAdmin
       .from('doctor_patient_relationships')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('doctor_id', data.user_id)
       .is('end_date', null)
 
@@ -45,7 +49,7 @@ export async function GET(
     const { data: relationships } = await supabaseAdmin
       .from('doctor_patient_relationships')
       .select(`
-        *,
+        id, patient_id, doctor_id, start_date, end_date, status, notes, created_at, updated_at,
         patients (
           id,
           name,
@@ -55,7 +59,7 @@ export async function GET(
       .eq('doctor_id', data.user_id)
       .is('end_date', null)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         ...data,
@@ -65,6 +69,8 @@ export async function GET(
         patients: (relationships || []).map((r: Record<string, unknown>) => r.patients).filter(Boolean)
       }
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -86,6 +92,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const body = await req.json()
     const {
@@ -120,15 +129,17 @@ export async function PUT(
       .from('doctor_profiles')
       .update(updateData)
       .eq('id', params.id)
-      .select()
+      .select('id, user_id, specialization, license_number, license_expiry, years_of_experience, education, certifications, languages, bio, consultation_fee, image_url, created_at, updated_at')
       .single()
 
     if (error) throw error
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/slack/messages
  * Get messages from a Slack conversation
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams
     const conversationId = searchParams.get('conversation_id')
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await supabaseAdmin
       .from('slack_messages')
       .select(`
-        *,
+        id, conversation_id, slack_message_ts, sender_id, sender_type, message_text, is_read, created_at, updated_at,
         users (
           id,
           name
@@ -56,13 +57,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/slack/messages
  * Send message via Slack (sync with database)
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { conversation_id, message_text, sender_id, sender_type } = body
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
         message_text,
         is_read: false
       })
-      .select()
+      .select('id, conversation_id, slack_message_ts, sender_id, sender_type, message_text, is_read, created_at, updated_at')
       .single()
 
     if (error) throw error

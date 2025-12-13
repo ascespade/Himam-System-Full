@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { HTTP_STATUS } from '@/shared/constants'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/flows
  * Get all flows (filtered by module if provided)
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('flows')
-      .select('*')
+      .select('id, name, description, module, category, trigger_type, trigger_config, nodes, edges, execution_mode, retry_config, timeout_seconds, ai_enabled, ai_model, ai_prompt, ai_context, is_active, priority, tags, metadata, created_by, created_at, updated_at')
       .order('priority', { ascending: false })
       .order('created_at', { ascending: false })
 
@@ -98,13 +99,13 @@ export async function GET(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/flows
  * Create new flow
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -203,7 +204,7 @@ export async function POST(req: NextRequest) {
         metadata: metadata || {},
         created_by: user.id,
       })
-      .select()
+      .select('id, name, description, module, category, trigger_type, trigger_config, nodes, edges, execution_mode, retry_config, timeout_seconds, ai_enabled, ai_model, ai_prompt, ai_context, is_active, priority, tags, metadata, created_by, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -223,4 +224,4 @@ export async function POST(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')

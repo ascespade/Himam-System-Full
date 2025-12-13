@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
           }, {
             onConflict: 'category,key',
           })
-          .select()
+          .select('id, category, key, value, description, is_editable, created_by, updated_by, created_at, updated_at')
           .then(({ error }) => {
             if (error) throw error
             return { success: true }
@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
           }, {
             onConflict: 'category,key',
           })
-          .select()
+          .select('id, category, key, value, description, is_editable, created_by, updated_by, created_at, updated_at')
           .then(({ error }) => {
             if (error) throw error
             return { success: true }
@@ -245,7 +245,7 @@ export async function POST(req: NextRequest) {
           }, {
             onConflict: 'category,key',
           })
-          .select()
+          .select('id, category, key, value, description, is_editable, created_by, updated_by, created_at, updated_at')
           .then(({ error }) => {
             if (error) throw error
             return { success: true }

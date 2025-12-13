@@ -10,10 +10,11 @@ import { parseRequestBody } from '@/core/api/middleware'
 import { successResponse, errorResponse } from '@/shared/utils/api'
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '@/shared/constants'
 import type { SystemSetting } from '@/shared/types'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 import { whatsappSettingsRepository } from '@/infrastructure/supabase/repositories/whatsapp-settings.repository'
 
-export async function GET() {
+export const GET = withRateLimit(async function GET() {
   try {
     const { data: settings, error } = await supabaseAdmin
       .from('settings')
@@ -44,9 +45,9 @@ export async function GET() {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await parseRequestBody<Record<string, string>>(req)
 
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')
 
 
 

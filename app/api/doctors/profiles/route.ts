@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctors/profiles
  * Get all doctor profiles
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams
     const specialization = searchParams.get('specialization')
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('doctor_profiles')
       .select(`
-        *,
+        id, user_id, specialization, license_number, license_expiry, years_of_experience, education, certifications, languages, bio, consultation_fee, image_url, created_at, updated_at,
         users (
           id,
           name,
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
       (data || []).map(async (profile: Record<string, unknown>) => {
         const { count } = await supabaseAdmin
           .from('doctor_patient_relationships')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('doctor_id', profile.user_id)
           .is('end_date', null)
 
@@ -66,13 +67,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/doctors/profiles
  * Create doctor profile
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
         consultation_fee: consultation_fee || null,
         image_url: image_url || null
       })
-      .select()
+      .select('id, user_id, specialization, license_number, license_expiry, years_of_experience, education, certifications, languages, bio, consultation_fee, image_url, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -131,5 +132,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

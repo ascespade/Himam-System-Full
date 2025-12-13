@@ -234,7 +234,7 @@ export async function POST(req: NextRequest) {
               phone_number: from,
               status: 'active',
             })
-            .select()
+            .select('id, phone_number, patient_id, status, last_message_at, created_at, updated_at')
             .single()
           conversation = newConversation
         }
@@ -302,8 +302,8 @@ export async function POST(req: NextRequest) {
           } else if (buttonId === 'contact_us') {
             // Fetch center info and working hours from database
             const [centerInfo, workingHours] = await Promise.all([
-              supabaseAdmin.from('center_info').select('*').limit(1).maybeSingle(),
-              supabaseAdmin.from('working_hours').select('*').eq('is_working_day', true).order('day_of_week'),
+              supabaseAdmin.from('center_info').select('id, name_ar, name_en, address_ar, address_en, phone, email, website, logo_url, created_at, updated_at').limit(1).maybeSingle(),
+              supabaseAdmin.from('working_hours').select('id, day_of_week, start_time, end_time, is_working_day, created_at, updated_at').eq('is_working_day', true).order('day_of_week'),
             ])
 
             const center = centerInfo.data
@@ -398,7 +398,7 @@ export async function POST(req: NextRequest) {
               status: 'active',
               patient_id: patient?.id || null,
             })
-            .select()
+            .select('id, phone_number, patient_id, status, last_message_at, created_at, updated_at')
             .single()
           conversation = newConv
         }
@@ -429,7 +429,7 @@ export async function POST(req: NextRequest) {
                 status: 'active',
                 patient_id: patient?.id || null,
               })
-              .select()
+              .select('id, phone_number, patient_id, status, last_message_at, created_at, updated_at')
               .single()
             
             if (convError) {
@@ -454,7 +454,7 @@ export async function POST(req: NextRequest) {
               conversation_id: conversation?.id || null,
               patient_id: patient?.id || null,
             })
-            .select()
+            .select('id, message_id, from_phone, to_phone, message_type, content, media_url, direction, status, delivered_at, read_at, session_id, conversation_id, patient_id, created_at, updated_at')
             .single()
           
           if (error) {
@@ -562,7 +562,7 @@ export async function POST(req: NextRequest) {
                   status: 'active',
                   created_at: new Date().toISOString()
                }, { onConflict: 'phone' })
-               .select()
+               .select('id, name, phone, email, nationality, date_of_birth, gender, address, status, allergies, chronic_diseases, emergency_contact, notes, created_at, updated_at')
                .single()
 
             if (patientError) {
@@ -611,7 +611,7 @@ export async function POST(req: NextRequest) {
                 calendar_event_id: calendarEventId,
                 notes: `Service: ${bookingDetails.service || 'Not specified'}`
               })
-              .select()
+              .select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, created_at, updated_at')
               .single()
 
             if (!aptError && appointment) {

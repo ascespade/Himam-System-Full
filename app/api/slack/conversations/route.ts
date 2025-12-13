@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/slack/conversations
  * Get Slack conversations for doctor-patient communication
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams
     const doctorId = searchParams.get('doctor_id')
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('slack_conversations')
       .select(`
-        *,
+        id, doctor_id, patient_id, slack_channel_id, status, last_message_at, created_at, updated_at,
         patients (
           id,
           name,
@@ -67,13 +68,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/slack/conversations
  * Create or get Slack conversation between doctor and patient
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { doctor_id, patient_id } = body
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
     // Check if conversation exists
     const { data: existing } = await supabaseAdmin
       .from('slack_conversations')
-      .select('*')
+      .select('id, doctor_id, patient_id, slack_channel_id, status, last_message_at, created_at, updated_at')
       .eq('doctor_id', doctor_id)
       .eq('patient_id', patient_id)
       .single()
@@ -142,7 +143,7 @@ export async function POST(req: NextRequest) {
         slack_channel_id: channelId,
         status: 'active'
       })
-      .select()
+      .select('id, doctor_id, patient_id, slack_channel_id, status, last_message_at, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -163,5 +164,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

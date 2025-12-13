@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { sendTextMessage, sendTemplateMessage } from '@/lib/whatsapp-messaging'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +15,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/whatsapp/scheduled
  * Get scheduled messages
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -51,7 +53,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('whatsapp_scheduled_messages')
-      .select('*')
+      .select('id, to_phone, message_type, content, template_name, scheduled_at, status, sent_at, created_by, created_at, updated_at')
       .order('scheduled_at', { ascending: true })
 
     if (status) {
@@ -82,13 +84,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/whatsapp/scheduled
  * Schedule a message
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -162,7 +164,7 @@ export async function POST(req: NextRequest) {
         status: 'pending',
         created_by: user.id,
       })
-      .select()
+      .select('id, to_phone, message_type, content, template_name, scheduled_at, status, sent_at, created_by, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -179,7 +181,7 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * DELETE /api/whatsapp/scheduled/[id]
@@ -189,6 +191,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -219,7 +224,7 @@ export async function DELETE(
       })
       .eq('id', scheduledId)
       .eq('status', 'pending')
-      .select()
+      .select('id, to_phone, message_type, content, template_name, scheduled_at, status, sent_at, created_by, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -231,11 +236,13 @@ export async function DELETE(
       )
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Scheduled message cancelled',
       data,
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

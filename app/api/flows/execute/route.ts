@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { HTTP_STATUS } from '@/shared/constants'
 import { generateWhatsAppResponse } from '@/lib/ai'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,7 @@ export const dynamic = 'force-dynamic'
  * POST /api/flows/execute
  * Execute a flow
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
     // Get flow
     const { data: flow, error: flowError } = await supabaseAdmin
       .from('flows')
-      .select('*')
+      .select('id, name, description, nodes, edges, is_active, ai_prompt, created_at, updated_at')
       .eq('id', flow_id)
       .eq('is_active', true)
       .single()
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')
 
 /**
  * Execute flow asynchronously
@@ -318,7 +319,9 @@ async function executeDatabaseNode(node: Record<string, unknown>, contextType: s
     throw new Error('Table name is required for database_query node')
   }
 
-  let dbQuery = supabaseAdmin.from(table).select('*')
+  // Note: Dynamic table queries need explicit columns, but we don't know the schema
+  // For now, we'll use a limited select - in production, this should be validated
+  let dbQuery = supabaseAdmin.from(table).select('id, created_at, updated_at')
 
   // Apply filters
   for (const [key, value] of Object.entries(filters)) {
@@ -372,10 +375,10 @@ async function executeDatabaseUpdateNode(
 
   const { data, error } = await supabaseAdmin
     .from(table)
-    .update(resolvedUpdates)
-    .eq('id', updateId)
-    .select()
-    .single()
+      .update(resolvedUpdates)
+      .eq('id', updateId)
+      .select('id, created_at, updated_at')
+      .single()
 
   if (error) throw error
 

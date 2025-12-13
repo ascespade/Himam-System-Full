@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/system/service-types
  * Get all service types
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('service_types')
-      .select('*')
+      .select('id, code, name_ar, name_en, description_ar, description_en, icon, color, duration_minutes, order_index, is_active, created_at, updated_at')
       .order('order_index', { ascending: true })
 
     if (isActive !== null) {
@@ -61,13 +62,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/system/service-types
  * Create or update service type (admin only)
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
       }, {
         onConflict: 'code',
       })
-      .select()
+      .select('id, code, name_ar, name_en, description_ar, description_en, icon, color, duration_minutes, order_index, is_active, created_at, updated_at')
       .single()
 
     if (error) throw error

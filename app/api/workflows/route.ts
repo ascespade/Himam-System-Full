@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/workflows
  * Get all workflows (admin only)
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('workflow_definitions')
-      .select('*')
+      .select('id, name, description, category, trigger_type, trigger_config, steps, ai_model, is_active, created_by, created_at, updated_at')
       .order('created_at', { ascending: false })
 
     if (category) {
@@ -76,13 +77,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/workflows
  * Create new workflow (admin only)
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -145,7 +146,7 @@ export async function POST(req: NextRequest) {
         is_active: true,
         created_by: user.id
       })
-      .select()
+      .select('id, name, description, category, trigger_type, trigger_config, steps, ai_model, is_active, created_by, created_at, updated_at')
       .single()
 
     if (error) throw error

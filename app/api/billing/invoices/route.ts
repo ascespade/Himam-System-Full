@@ -150,7 +150,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
         due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Due in 7 days
         notes
       })
-      .select()
+      .select('id, patient_id, invoice_number, subtotal, tax, discount, total, status, due_date, paid_at, notes, created_at, updated_at')
       .single()
 
     if (invoiceError) throw invoiceError

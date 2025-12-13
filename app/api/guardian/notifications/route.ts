@@ -8,6 +8,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
 import { supabaseAdmin } from '@/lib'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/guardian/notifications
  * Get notifications for guardian
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -63,7 +64,7 @@ export async function GET(req: NextRequest) {
     // Note: Adjust based on your notifications table structure
     let query = supabaseAdmin
       .from('notifications')
-      .select('*', { count: 'exact' })
+      .select('id, user_id, type, title, message, read, entity_type, entity_id, created_at, updated_at', { count: 'exact' })
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -105,4 +106,4 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/dashboard/widgets
  * Get dashboard widgets for a specific role
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabaseAdmin
       .from('dashboard_configurations')
-      .select('*')
+      .select('id, user_role, widget_type, widget_title, widget_config, position, is_visible, created_at, updated_at')
       .eq('user_role', role)
       .eq('is_visible', true)
       .order('position', { ascending: true })
@@ -63,5 +64,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

@@ -138,7 +138,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
     const { data, error } = await supabaseAdmin
       .from('doctor_working_hours')
       .insert(hoursToInsert)
-      .select()
+      .select('id, doctor_id, day_of_week, start_time, end_time, break_start, break_end, slot_duration_minutes, max_appointments_per_day, is_active, is_working_day, valid_from, valid_until, notes, created_at, updated_at')
 
     if (error) throw error
 

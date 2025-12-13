@@ -148,7 +148,7 @@ export async function DELETE(
         updated_at: new Date().toISOString(),
       })
       .eq('id', recordingId)
-      .select()
+      .select('id, session_id, doctor_id, patient_id, meeting_url, recording_url, recording_status, start_time, end_time, created_at, updated_at')
       .single()
 
     if (updateError) throw updateError

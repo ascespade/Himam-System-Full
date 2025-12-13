@@ -188,7 +188,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
           rejection_count: (claim.rejection_count || 0) + 1
         })
         .eq('id', claim_id)
-        .select()
+        .select('id, patient_id, claim_number, claim_type, service_date, service_description, amount, status, rejection_reason, rejection_count, resubmission_notes, created_at, updated_at')
         .single()
 
       if (updateError) throw updateError

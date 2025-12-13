@@ -2,8 +2,9 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { CreateMedicalRecordSchema } from '@/shared/schemas'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     // 1. Check Authentication
     const cookieStore = req.cookies
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
         notes,
         date: new Date().toISOString()
       })
-      .select()
+      .select('id, patient_id, doctor_id, record_type, chief_complaint, history_of_present_illness, physical_examination, assessment, plan, notes, date, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -72,4 +73,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/system/config
  * Get system configurations
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('system_configurations')
-      .select('*')
+      .select('id, category, key, value, description, is_editable, updated_by, created_at, updated_at')
 
     if (category) {
       query = query.eq('category', category)
@@ -79,13 +80,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * PUT /api/system/config
  * Update system configuration (admin only)
  */
-export async function PUT(req: NextRequest) {
+export const PUT = withRateLimit(async function PUT(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -155,7 +156,7 @@ export async function PUT(req: NextRequest) {
       }, {
         onConflict: 'category,key'
       })
-      .select()
+      .select('id, category, key, value, description, is_editable, updated_by, created_at, updated_at')
       .single()
 
     if (error) throw error

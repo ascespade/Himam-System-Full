@@ -150,7 +150,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
           session_type: 'video_call',
           status: 'scheduled'
         })
-        .select()
+        .select('id, patient_id, doctor_id, appointment_id, date, duration, session_type, status, notes, created_at, updated_at')
         .single()
 
       if (sessionError) throw sessionError
@@ -173,7 +173,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
         provider: 'slack_huddle'
       })
       .select(`
-        *,
+        id, session_id, appointment_id, doctor_id, patient_id, meeting_url, meeting_id, recording_url, recording_status, recording_enabled, start_time, end_time, slack_channel_id, provider, created_at, updated_at,
         sessions (
           id,
           date,

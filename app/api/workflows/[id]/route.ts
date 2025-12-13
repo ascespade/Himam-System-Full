@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -60,15 +64,17 @@ export async function PUT(
       .from('workflow_definitions')
       .update(updateData)
       .eq('id', params.id)
-      .select()
+      .select('id, name, description, category, trigger_type, trigger_config, steps, ai_model, is_active, created_by, created_at, updated_at')
       .single()
 
     if (error) throw error
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

@@ -346,7 +346,7 @@ ${service_description}
         submitted_by_ai: true,
         ai_confidence: validationResult.confidence
       })
-      .select()
+      .select('id, patient_id, claim_number, claim_type, service_date, service_description, amount, covered_amount, patient_responsibility, insurance_provider, status, submitted_date, submitted_by_ai, ai_confidence, created_at, updated_at')
       .single()
 
     if (claimError) throw claimError

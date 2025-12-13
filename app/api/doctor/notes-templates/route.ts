@@ -126,7 +126,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
         is_active: true,
         created_by: user.id,
       })
-      .select()
+      .select('id, name, category, template_content, is_default, is_active, created_by, created_at, updated_at')
       .single()
 
     if (error) throw error

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSettings } from '@/lib/config'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
-export async function GET() {
+export const GET = withRateLimit(async function GET() {
   const envCheck = {
     SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
     SUPABASE_ANON: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -14,7 +15,7 @@ export async function GET() {
   try {
      const { count, error } = await supabaseAdmin
         .from('settings')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
      
      dbCheck.settingsCount = count
      dbCheck.error = error ? error.message : null
@@ -41,4 +42,4 @@ export async function GET() {
     db: dbCheck,
     config: loadedSettings
   })
-}
+}, 'api')

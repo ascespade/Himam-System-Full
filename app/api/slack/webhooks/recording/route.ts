@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     // Find video session by Slack channel or meeting ID
     const { data: videoSession } = await supabaseAdmin
       .from('video_sessions')
-      .select('*, sessions(*), patients(*), doctors:doctor_id(*)')
+      .select('id, session_id, appointment_id, doctor_id, patient_id, meeting_url, meeting_id, recording_url, recording_status, recording_enabled, start_time, end_time, slack_channel_id, provider, created_at, updated_at, sessions(id, date, session_type, status), patients(id, name, phone), doctors:doctor_id(id, name, email)')
       .or(`meeting_id.eq.${call_id},slack_channel_id.ilike.%${call_id}%`)
       .eq('recording_status', 'enabled')
       .single()
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', videoSession.id)
-      .select()
+      .select('id, session_id, appointment_id, doctor_id, patient_id, meeting_url, meeting_id, recording_url, recording_status, recording_enabled, recording_duration, recording_size, start_time, end_time, ended_at, slack_channel_id, provider, created_at, updated_at')
       .single()
 
     if (updateError) throw updateError

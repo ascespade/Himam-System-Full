@@ -5,8 +5,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { signature, patientName, sessionId, documentType } = body
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
         signature_url: urlData.publicUrl,
         document_type: documentType || 'consent',
       })
-      .select()
+      .select('id, patient_name, session_id, signature_url, document_type, created_at, updated_at')
       .single()
 
     let signatureId: string | null = null
@@ -87,15 +88,15 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams
     const sessionId = searchParams.get('sessionId')
     const patientName = searchParams.get('patientName')
 
-    let query = supabaseAdmin.from('signatures').select('*').order('created_at', { ascending: false })
+    let query = supabaseAdmin.from('signatures').select('id, patient_name, session_id, signature_url, document_type, created_at, updated_at').order('created_at', { ascending: false })
 
     if (sessionId) {
       query = query.eq('session_id', sessionId)
@@ -127,4 +128,4 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')

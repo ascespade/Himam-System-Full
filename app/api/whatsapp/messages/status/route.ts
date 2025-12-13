@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
         .from('whatsapp_messages')
         .update(updateData)
         .eq('message_id', status.id)
-        .select()
+        .select('id, message_id, conversation_id, from_phone, to_phone, message_type, content, direction, status, delivered_at, read_at, created_at, updated_at')
         .single()
 
       if (error) {

@@ -1,11 +1,15 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -42,12 +46,14 @@ export async function PUT(
       .from('reception_queue')
       .update(updates)
       .eq('id', params.id)
-      .select()
+      .select('id, patient_id, patient_name, phone, status, priority, called_at, seen_at, notes, created_at, updated_at')
       .single()
 
     if (error) throw error
 
-    return NextResponse.json({ success: true, data })
+    const response = NextResponse.json({ success: true, data })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء تحديث عنصر الطابور'
     const { logError } = await import('@/shared/utils/logger')
@@ -63,6 +69,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -90,7 +99,9 @@ export async function DELETE(
 
     if (error) throw error
 
-    return NextResponse.json({ success: true })
+    const response = NextResponse.json({ success: true })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء حذف عنصر الطابور'
     const { logError } = await import('@/shared/utils/logger')

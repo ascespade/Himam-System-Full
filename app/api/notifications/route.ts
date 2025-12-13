@@ -62,7 +62,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
         entity_type,
         entity_id
       })
-      .select()
+      .select('id, user_id, patient_id, type, title, message, entity_type, entity_id, is_read, read_at, created_at, updated_at')
       .single()
 
     if (error) throw error

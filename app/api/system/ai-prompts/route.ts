@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/system/ai-prompts
  * Get all AI prompt templates
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('ai_prompt_templates')
-      .select('*')
+      .select('id, name, category, system_prompt, language, dialect, variables, is_active, version, created_by, created_at, updated_at')
       .order('category', { ascending: true })
 
     if (category) {
@@ -66,13 +67,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/system/ai-prompts
  * Create or update AI prompt template (admin only)
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -146,7 +147,7 @@ export async function POST(req: NextRequest) {
       }, {
         onConflict: 'name',
       })
-      .select()
+      .select('id, name, category, system_prompt, language, dialect, variables, is_active, version, created_by, created_at, updated_at')
       .single()
 
     if (error) throw error

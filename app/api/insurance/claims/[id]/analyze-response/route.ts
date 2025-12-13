@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextRequest, NextResponse } from 'next/server'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const body = await req.json()
     const { response_text } = body
@@ -27,9 +31,9 @@ export async function POST(
     const { data: claim, error: claimError } = await supabaseAdmin
       .from('insurance_claims_enhanced')
       .select(`
-        *,
-        insurance_companies (*),
-        patients (*)
+        id, claim_number, patient_id, doctor_id, insurance_company_id, treatment_plan_id, claim_type, requested_sessions, session_dates, total_amount, covered_amount, patient_responsibility, doctor_notes, medical_justification, auto_generated, ai_suggestions, status, workflow_step, metadata, created_at, updated_at,
+        insurance_companies (id, name, code, contact_email, contact_phone, api_endpoint, api_key, is_active, created_at, updated_at),
+        patients (id, name, phone, email, nationality, date_of_birth, gender, address, status, allergies, chronic_diseases, emergency_contact, notes, created_at, updated_at)
       `)
       .eq('id', params.id)
       .single()
@@ -72,13 +76,15 @@ export async function POST(
       await handleInfoRequest(params.id, analysis)
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         analysis,
         claim_id: params.id
       }
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
 
@@ -113,7 +119,7 @@ async function analyzeInsuranceResponse(
   // Get learning data for this insurance company
   const { data: learningData } = await supabaseAdmin
     .from('ai_learning_logs')
-    .select('*')
+    .select('id, entity_type, entity_id, learning_type, pattern, suggestion, applied_to_future_cases, lesson_learned, confidence_score, created_at, updated_at')
     .eq('entity_type', 'insurance_company')
     .eq('entity_id', insuranceCompany?.id || '')
     .order('created_at', { ascending: false })
@@ -362,7 +368,7 @@ async function handleInfoRequest(claimId: string, analysis: any) {
 async function attemptAutoFillMissingInfo(claimId: string, missingInfo: string[]) {
   const { data: claim } = await supabaseAdmin
     .from('insurance_claims_enhanced')
-    .select('*, patients(*), treatment_plans(*)')
+    .select('id, claim_number, patient_id, doctor_id, insurance_company_id, treatment_plan_id, claim_type, requested_sessions, session_dates, total_amount, covered_amount, patient_responsibility, doctor_notes, medical_justification, auto_generated, ai_suggestions, status, workflow_step, metadata, created_at, updated_at, patients(id, name, phone, email, nationality, date_of_birth, gender, address, status, allergies, chronic_diseases, emergency_contact, notes, created_at, updated_at), treatment_plans(id, patient_id, doctor_id, title, description, status, start_date, end_date, progress_percentage, created_at, updated_at)')
     .eq('id', claimId)
     .single()
 
@@ -379,7 +385,7 @@ async function attemptAutoFillMissingInfo(claimId: string, missingInfo: string[]
 async function notifyClaimApproval(claimId: string) {
   const { data: claim } = await supabaseAdmin
     .from('insurance_claims_enhanced')
-    .select('*, patients(*)')
+    .select('id, claim_number, patient_id, doctor_id, insurance_company_id, treatment_plan_id, claim_type, requested_sessions, session_dates, total_amount, covered_amount, patient_responsibility, doctor_notes, medical_justification, auto_generated, ai_suggestions, status, workflow_step, metadata, created_at, updated_at, patients(id, name, phone, email, nationality, date_of_birth, gender, address, status, allergies, chronic_diseases, emergency_contact, notes, created_at, updated_at)')
     .eq('id', claimId)
     .single()
 
