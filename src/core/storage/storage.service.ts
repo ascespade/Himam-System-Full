@@ -5,6 +5,7 @@
 
 import { BaseService, ServiceException } from '@/core/services'
 import { supabaseAdmin } from '@/lib/supabase'
+import { logError } from '@/shared/utils/logger'
 
 export interface FileUploadOptions {
   folder?: string
@@ -69,7 +70,7 @@ export class StorageService extends BaseService {
     const filePath = `${folder}/${fileName}`
 
     // Upload file
-    const { data, error } = await this.supabase.storage
+    const { data, error } = await supabaseAdmin.storage
       .from('files')
       .upload(filePath, file, {
         cacheControl: '3600',
@@ -77,11 +78,12 @@ export class StorageService extends BaseService {
       })
 
     if (error) {
-      throw this.handleError(error, 'uploadFile')
+      logError('Error uploading file', error, { filePath })
+      throw new ServiceException('Failed to upload file', 'STORAGE_UPLOAD_ERROR')
     }
 
     // Get public URL
-    const { data: urlData } = this.supabase.storage
+    const { data: urlData } = supabaseAdmin.storage
       .from('files')
       .getPublicUrl(filePath)
 
@@ -97,12 +99,13 @@ export class StorageService extends BaseService {
    * Deletes a file from storage
    */
   async deleteFile(path: string): Promise<void> {
-    const { error } = await this.supabase.storage
+    const { error } = await supabaseAdmin.storage
       .from('files')
       .remove([path])
 
     if (error) {
-      throw this.handleError(error, 'deleteFile')
+      logError('Error deleting file', error, { path })
+      throw new ServiceException('Failed to delete file', 'STORAGE_DELETE_ERROR')
     }
   }
 
@@ -110,7 +113,7 @@ export class StorageService extends BaseService {
    * Gets a public URL for a file
    */
   getFileUrl(path: string): string {
-    const { data } = this.supabase.storage
+    const { data } = supabaseAdmin.storage
       .from('files')
       .getPublicUrl(path)
 
@@ -121,12 +124,13 @@ export class StorageService extends BaseService {
    * Gets a signed URL for a private file
    */
   async getSignedUrl(path: string, expiresIn: number = 3600): Promise<string> {
-    const { data, error } = await this.supabase.storage
+    const { data, error } = await supabaseAdmin.storage
       .from('files')
       .createSignedUrl(path, expiresIn)
 
     if (error) {
-      throw this.handleError(error, 'getSignedUrl')
+      logError('Error getting signed URL', error, { path, expiresIn })
+      throw new ServiceException('Failed to get signed URL', 'STORAGE_SIGNED_URL_ERROR')
     }
 
     return data.signedUrl
@@ -136,7 +140,7 @@ export class StorageService extends BaseService {
    * Lists files in a folder
    */
   async listFiles(folder: string, limit: number = 100): Promise<string[]> {
-    const { data, error } = await this.supabase.storage
+    const { data, error } = await supabaseAdmin.storage
       .from('files')
       .list(folder, {
         limit,
@@ -145,10 +149,11 @@ export class StorageService extends BaseService {
       })
 
     if (error) {
-      throw this.handleError(error, 'listFiles')
+      logError('Error listing files', error, { folder, limit })
+      throw new ServiceException('Failed to list files', 'STORAGE_LIST_ERROR')
     }
 
-    return data?.map(file => `${folder}/${file.name}`) || []
+    return data?.map((file: { name: string }) => `${folder}/${file.name}`) || []
   }
 }
 

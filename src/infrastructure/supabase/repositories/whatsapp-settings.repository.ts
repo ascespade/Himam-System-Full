@@ -1,6 +1,14 @@
-import { supabaseAdmin } from '@/lib'
+/**
+ * WhatsApp Settings Repository
+ * Manages WhatsApp integration settings with proper error handling and logging
+ * Extends BaseRepository for common CRUD operations
+ */
 
-export interface WhatsAppSettings {
+import { BaseRepository } from '@/core/repositories/base.repository'
+import { supabaseAdmin } from '@/lib'
+import { logError, logInfo } from '@/shared/utils/logger'
+
+export interface WhatsAppSettings extends Record<string, unknown> {
   id: string
   name?: string
   verify_token: string
@@ -15,53 +23,66 @@ export interface WhatsAppSettings {
   updated_at: string
 }
 
-export class WhatsAppSettingsRepository {
+export class WhatsAppSettingsRepository extends BaseRepository<WhatsAppSettings> {
+  protected readonly tableName = 'whatsapp_settings'
+  protected readonly selectFields = '*'
+
+  /**
+   * Map database row to entity
+   */
+  protected mapToEntity(row: unknown): WhatsAppSettings {
+    const data = row as Record<string, unknown>
+    return {
+      id: data.id as string,
+      name: data.name as string | undefined,
+      verify_token: data.verify_token as string,
+      access_token: data.access_token as string,
+      phone_number_id: data.phone_number_id as string,
+      webhook_url: data.webhook_url as string | null,
+      app_id: data.app_id as string | null | undefined,
+      waba_id: data.waba_id as string | null | undefined,
+      phone_number: data.phone_number as string | null | undefined,
+      is_active: data.is_active as boolean,
+      created_at: data.created_at as string,
+      updated_at: data.updated_at as string,
+    }
+  }
   /**
    * Get active WhatsApp settings
    */
   async getActiveSettings(): Promise<WhatsAppSettings | null> {
     try {
       const { data, error } = await supabaseAdmin
-        .from('whatsapp_settings')
-        .select('*')
+        .from(this.tableName)
+        .select(this.selectFields)
         .eq('is_active', true)
         .single()
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // No rows returned
           return null
         }
         throw error
       }
 
-      return data as WhatsAppSettings
+      return this.mapToEntity(data)
     } catch (error) {
-      console.error('Error fetching WhatsApp settings:', error)
+      logError('Error fetching active WhatsApp settings', error)
       return null
     }
   }
 
   /**
-   * Get all settings (for admin)
+   * Get all settings (for admin) - uses BaseRepository getAll
    */
   async getAllSettings(): Promise<WhatsAppSettings[]> {
-    try {
-      const { data, error } = await supabaseAdmin
-        .from('whatsapp_settings')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      return (data || []) as WhatsAppSettings[]
-    } catch (error) {
-      console.error('Error fetching all WhatsApp settings:', error)
-      return []
-    }
+    return this.getAll({
+      orderBy: { column: 'created_at', ascending: false },
+    })
   }
 
   /**
-   * Update settings
+   * Update settings - uses BaseRepository update
    */
   async updateSettings(
     id: string,
@@ -73,17 +94,9 @@ export class WhatsAppSettingsRepository {
         updated_at: new Date().toISOString(),
       }
       
-      const { data, error } = await supabaseAdmin
-        .from('whatsapp_settings')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-      return data as WhatsAppSettings
+      return await this.update(id, updateData)
     } catch (error) {
-      console.error('Error updating WhatsApp settings:', error)
+      logError('Error updating WhatsApp settings', error, { id })
       return null
     }
   }
@@ -98,7 +111,7 @@ export class WhatsAppSettingsRepository {
       // Deactivate all existing settings if this one should be active
       if (settings.is_active) {
         await supabaseAdmin
-          .from('whatsapp_settings')
+          .from(this.tableName)
           .update({ is_active: false })
           .eq('is_active', true)
       }
@@ -108,16 +121,9 @@ export class WhatsAppSettingsRepository {
         updated_at: new Date().toISOString(),
       }
 
-      const { data, error } = await supabaseAdmin
-        .from('whatsapp_settings')
-        .insert([insertData])
-        .select()
-        .single()
-
-      if (error) throw error
-      return data as WhatsAppSettings
+      return await this.create(insertData)
     } catch (error) {
-      console.error('Error creating WhatsApp settings:', error)
+      logError('Error creating WhatsApp settings', error)
       return null
     }
   }

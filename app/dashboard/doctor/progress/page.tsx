@@ -44,7 +44,7 @@ export default function ProgressPage() {
       }
 
       // Fetch progress for all patients
-      const progressPromises = patientsData.data.map((patient: any) =>
+      const progressPromises = patientsData.data.map((patient: { id: string; name?: string }) =>
         fetch(`/api/doctor/progress-tracking?patient_id=${patient.id}`)
       )
       
@@ -55,7 +55,7 @@ export default function ProgressPage() {
         const progressData = await progressResponses[i].json()
         if (progressData.success && progressData.data) {
           const patient = patientsData.data[i]
-          progressData.data.forEach((entry: any) => {
+          progressData.data.forEach((entry: Omit<ProgressEntry, 'patient_name'>) => {
             allProgress.push({
               ...entry,
               patient_name: patient.name || 'غير معروف',

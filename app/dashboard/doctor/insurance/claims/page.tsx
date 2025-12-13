@@ -83,8 +83,9 @@ function InsuranceClaimsContent() {
       } else {
         throw new Error('فشل إرسال المطالبة')
       }
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ في إرسال المطالبة')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في إرسال المطالبة'
+      toast.error(errorMessage)
     }
   }
 
@@ -108,8 +109,9 @@ function InsuranceClaimsContent() {
       } else {
         throw new Error('فشل إرسال الرد')
       }
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+      toast.error(errorMessage)
     }
   }
 

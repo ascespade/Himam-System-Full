@@ -1,116 +1,66 @@
-# 🏗️ Project Architecture Rules (Cursor IDE)
+# 🏗️ Project Rules for AI Agents
 
-## 🚫 ABSOLUTE FORBIDDEN
+## ⚠️ CRITICAL RULES - MUST FOLLOW
 
-### 1. No Mock/Simulation Data
-- NEVER use MOCK_, FAKE_, TEST_, SIMULATE_ prefixes in production code
-- NEVER return fake/hardcoded data instead of real implementation
-- If feature not implemented, throw appropriate error
+### 1. Type Safety
+- ❌ **NEVER** use `any` type
+- ✅ **ALWAYS** use proper TypeScript types
+- ✅ Use `unknown` + type guards if type is truly unknown
 
-### 2. No Data Loss
-- ALWAYS preserve full context in transformations
-- NEVER return partial data when full entity is available
-- Include relationships when querying
+### 2. Logging
+- ❌ **NEVER** use `console.log`, `console.error`, etc.
+- ✅ **ALWAYS** use centralized logger:
+  ```typescript
+  import { logInfo, logError, logWarn } from '@/shared/utils/logger'
+  ```
 
-### 3. No Code Duplication
-- Check shared/validations/ before creating new validation
-- Check shared/utils/ before creating new utility
-- Check shared/constants/ before creating new constant
-- Extract if used 2+ times
+### 3. Architecture Patterns
+- ✅ **ALWAYS** follow Clean Architecture layers
+- ✅ Repositories extend `BaseRepository`
+- ✅ Services extend `BaseService`
+- ✅ Use Cases extend `BaseUseCase`
+- ✅ API routes use `createApiHandler` or proper error handling
 
-### 4. No `any` Types
-- ALWAYS use explicit types
-- Use `unknown` + type guards if type truly unknown
-- NEVER use `any` as shortcut
+### 4. Error Handling
+- ✅ **ALWAYS** use structured error classes (`ServiceException`, `AppError`)
+- ✅ **ALWAYS** handle errors properly (never ignore)
+- ✅ **ALWAYS** log errors with context
 
-### 5. No Business Logic in API Routes
-- API routes are THIN layers
-- Delegate to use cases/services
-- Only: auth, validation, use case execution, response
+### 5. Database Access
+- ❌ **NEVER** use `this.supabase` in services
+- ✅ **ALWAYS** use `supabaseAdmin` from `@/lib`
+- ✅ **ALWAYS** use repositories for database operations
 
-### 6. No Direct Database Calls
-- ALWAYS use repositories
-- NEVER use supabaseAdmin/supabase directly outside repositories
+### 6. Code Quality
+- ✅ **ALWAYS** run `npm run validate` before committing
+- ✅ **ALWAYS** fix TypeScript errors
+- ✅ **ALWAYS** fix ESLint warnings
+- ✅ **ALWAYS** follow existing code patterns
 
-## ✅ REQUIRED PATTERNS
+## 🚫 FORBIDDEN PRACTICES
 
-### Repository Pattern (Data Access)
-```typescript
-// Interface in core/interfaces/repositories/
-// Implementation in infrastructure/supabase/repositories/
-// Usage: Inject interface, never concrete class
-```
+1. ❌ Using `any` type
+2. ❌ Using `console.log` or `console.error`
+3. ❌ Using `this.supabase` in services
+4. ❌ Ignoring TypeScript errors
+5. ❌ Ignoring ESLint warnings
+6. ❌ Breaking existing architecture patterns
+7. ❌ Duplicating code (use shared utilities)
+8. ❌ Committing without running validation
 
-### Use Case Pattern (Business Logic)
-```typescript
-// One use case = one business operation
-// Located in core/use-cases/[feature]/
-// Orchestrates domain and infrastructure
-```
+## ✅ REQUIRED BEFORE COMMIT
 
-### Dependency Injection
-```typescript
-// Constructor injection only
-// Depend on interfaces, not implementations
-```
+1. Run `npm run validate` (type-check + lint)
+2. Fix all TypeScript errors
+3. Fix all ESLint warnings
+4. Ensure no `console.log` statements
+5. Ensure no `any` types
+6. Follow architecture patterns
 
-## 📁 STRUCTURE RULES
+## 📚 Documentation
 
-### Import Order (STRICT)
-1. External dependencies
-2. Core layer (domain, interfaces, use-cases)
-3. Infrastructure
-4. Features
-5. Shared
-6. Types
-7. Styles
+See `PROJECT_RULES.md` and `docs/ARCHITECTURE_PATTERNS.md` for complete guides.
 
-### File Naming
-- Services: `*.service.ts`
-- Repositories: `*.repository.ts`
-- Use Cases: `*.use-case.ts`
-- Components: `PascalCase.tsx`
-- Hooks: `use-*.hook.ts`
+---
 
-### Layer Dependencies
-```
-Presentation → Application → Domain ← Infrastructure
-```
-Dependencies flow INWARD only.
-
-## 🎯 CENTRALIZATION
-
-### Single Source of Truth
-- Validations: `shared/validations/`
-- Constants: `shared/constants/`
-- Types: `shared/types/`
-- Utils: `shared/utils/`
-- Errors: `core/errors/`
-- Clients: `infrastructure/[service]/client.ts`
-
-## 🔒 CONTEXT PRESERVATION
-
-- ALWAYS return full entities
-- ALWAYS include relationships when needed
-- ALWAYS preserve all fields in transformations
-- NEVER lose data for convenience
-
-## 🚨 CODE QUALITY
-
-- Functions: Max 50 lines (ideal: 20-30)
-- Classes: Max 300 lines (ideal: 100-200)
-- Files: Max 500 lines (ideal: 200-300)
-- No `console.log` (use logger)
-- No hardcoded values (use env/constants)
-
-## ✅ BEFORE COMMIT
-
-- [ ] No `any` types
-- [ ] No console.log
-- [ ] No hardcoded values
-- [ ] No mock data
-- [ ] No duplication
-- [ ] Context preserved
-- [ ] TypeScript compiles
-- [ ] Linter passes
-
+**These rules are enforced by pre-commit hooks and CI/CD.**

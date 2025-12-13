@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     const dayAfterTomorrow = new Date(tomorrow)
     dayAfterTomorrow.setDate(tomorrow.getDate() + 1)
 
-    console.log(`Checking appointments for: ${tomorrow.toISOString().split('T')[0]}`)
+    // Checking appointments for tomorrow
 
     // 2. Fetch confirmed appointments for tomorrow
     const { data: appointments, error } = await supabaseAdmin
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'No appointments found for tomorrow.' })
     }
 
-    console.log(`Found ${appointments.length} appointments to remind.`)
+    // Found appointments to remind
 
     // 3. Send reminders
     const results = await Promise.allSettled(

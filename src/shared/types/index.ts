@@ -474,6 +474,11 @@ export interface WhatsAppWebhookPayload {
           timestamp?: string
           type?: 'text' | 'image' | 'document' | 'audio' | 'video' | 'sticker' | 'location' | 'interactive' | 'button'
           text?: { body?: string }
+          audio?: {
+            id?: string
+            mime_type?: string
+            sha?: string
+          }
           image?: {
             id?: string
             mime_type?: string
@@ -499,6 +504,12 @@ export interface WhatsAppWebhookPayload {
               description?: string
             }
           }
+        }>
+        statuses?: Array<{
+          id?: string
+          status?: 'sent' | 'delivered' | 'read' | 'failed'
+          recipient_id?: string
+          timestamp?: string
         }>
       }
       field?: string

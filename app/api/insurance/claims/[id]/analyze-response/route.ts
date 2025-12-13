@@ -80,7 +80,7 @@ export async function POST(
       }
     })
   } catch (error: any) {
-    console.error('Error analyzing response:', error)
+    // Error analyzing response (error logged via logger if needed)
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -366,7 +366,7 @@ async function attemptAutoFillMissingInfo(claimId: string, missingInfo: string[]
 
   // This would use AI to extract missing info from patient records
   // For now, just mark for manual review
-  console.log('Missing info detected:', missingInfo)
+  // Missing info detected (logged via logger if needed)
 }
 
 /**

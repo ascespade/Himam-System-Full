@@ -394,7 +394,8 @@ async function executeNotificationNode(node: any, inputData: Record<string, any>
 
   // In production, integrate with notification service
   // For now, just log
-  console.log(`Notification [${type}]:`, { recipient, subject: resolvedSubject, message: resolvedMessage })
+  // TODO: Implement actual notification sending
+  // logInfo(`Notification [${type}]`, { recipient, subject: resolvedSubject, message: resolvedMessage })
 
   return { success: true, sent: true }
 }

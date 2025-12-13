@@ -18,7 +18,7 @@ import { useEffect, useState, useCallback } from 'react'
 
 // Insurance Info Component
 function InsuranceInfoCard({ patientId }: { patientId: string }) {
-  const [insurance, setInsurance] = useState<any[]>([])
+  const [insurance, setInsurance] = useState<Array<Record<string, unknown>>>([])
   const [loading, setLoading] = useState(true)
 
   const fetchInsurance = useCallback(async () => {
@@ -65,17 +65,20 @@ function InsuranceInfoCard({ patientId }: { patientId: string }) {
         <Shield size={18} className="text-blue-500" />
         معلومات التأمين
       </h3>
-      {insurance.map((ins) => (
-        <div key={ins.id} className="mb-3 p-3 bg-blue-50 rounded-lg">
-          <div className="text-sm font-bold text-gray-900 mb-1">{ins.insurance_company}</div>
+      {insurance.map((ins: { id?: string; insurance_company?: string; policy_number?: string; member_id?: string; coverage_percentage?: number; copay_amount?: number; effective_date?: string | number | Date; [key: string]: unknown }) => (
+        <div key={String(ins.id || '')} className="mb-3 p-3 bg-blue-50 rounded-lg">
+          <div className="text-sm font-bold text-gray-900 mb-1">{String(ins.insurance_company || '')}</div>
           <div className="text-xs text-gray-600 space-y-1">
-            <div>رقم البوليصة: {ins.policy_number}</div>
-            {ins.member_id && <div>رقم العضوية: {ins.member_id}</div>}
-            <div>التغطية: {ins.coverage_percentage}%</div>
-            {ins.copay_amount > 0 && <div>الدفع المشترك: {ins.copay_amount} ريال</div>}
-            {ins.effective_date && (
-              <div>تاريخ السريان: {new Date(ins.effective_date).toLocaleDateString('ar-SA')}</div>
-            )}
+            <div>رقم البوليصة: {String(ins.policy_number || '')}</div>
+            {ins.member_id && <div>رقم العضوية: {String(ins.member_id)}</div>}
+            <div>التغطية: {String(ins.coverage_percentage || 0)}%</div>
+            {ins.copay_amount && Number(ins.copay_amount) > 0 && <div>الدفع المشترك: {String(ins.copay_amount)} ريال</div>}
+            {ins.effective_date && (() => {
+              const date = ins.effective_date as string | number | Date
+              return (
+                <div>تاريخ السريان: {new Date(String(date)).toLocaleDateString('ar-SA')}</div>
+              )
+            })()}
           </div>
         </div>
       ))}
@@ -167,19 +170,19 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between border-b border-gray-50 pb-2">
                   <span className="text-gray-500">الضغط</span>
-                  <span className="font-bold" dir="ltr">{vital_signs[0].blood_pressure_systolic}/{vital_signs[0].blood_pressure_diastolic}</span>
+                  <span className="font-bold" dir="ltr">{String(vital_signs[0].blood_pressure_systolic || '')}/{String(vital_signs[0].blood_pressure_diastolic || '')}</span>
                 </div>
                 <div className="flex justify-between border-b border-gray-50 pb-2">
                   <span className="text-gray-500">النبض</span>
-                  <span className="font-bold">{vital_signs[0].heart_rate} bpm</span>
+                  <span className="font-bold">{String(vital_signs[0].heart_rate || '')} bpm</span>
                 </div>
                 <div className="flex justify-between border-b border-gray-50 pb-2">
                   <span className="text-gray-500">الحرارة</span>
-                  <span className="font-bold">{vital_signs[0].temperature}°C</span>
+                  <span className="font-bold">{String(vital_signs[0].temperature || '')}°C</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">الوزن</span>
-                  <span className="font-bold">{vital_signs[0].weight} kg</span>
+                  <span className="font-bold">{String(vital_signs[0].weight || '')} kg</span>
                 </div>
               </div>
             ) : (
@@ -255,7 +258,7 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
               <div className="space-y-6">
                 <h3 className="font-bold text-lg mb-4">آخر الزيارات</h3>
                 {medical_records && medical_records.length > 0 ? (
-                  medical_records.slice(0, 3).map((record: any) => (
+                  medical_records.slice(0, 3).map((record: { id: string; record_type?: string; date?: string; title?: string; description?: string; chief_complaint?: string; notes?: string; [key: string]: unknown }) => (
                     <div key={record.id} className="flex gap-4 p-4 border rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
                       <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 shrink-0">
                         <FileText size={20} />
@@ -263,9 +266,9 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-bold text-gray-900">{record.record_type}</span>
-                          <span className="text-xs text-gray-500">{new Date(record.date).toLocaleDateString('ar-SA')}</span>
+                          <span className="text-xs text-gray-500">{record.date ? new Date(String(record.date)).toLocaleDateString('ar-SA') : 'غير محدد'}</span>
                         </div>
-                        <p className="text-sm text-gray-600 line-clamp-2">{record.chief_complaint || record.notes || 'لا توجد تفاصيل'}</p>
+                        <p className="text-sm text-gray-600 line-clamp-2">{String(record.chief_complaint || record.notes || 'لا توجد تفاصيل')}</p>
                       </div>
                     </div>
                   ))
@@ -286,21 +289,21 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
                     + إضافة سجل
                   </button>
                 </div>
-                {medical_records.map((record: any) => (
+                {medical_records.map((record: { id: string; record_type?: string; date?: string; title?: string; description?: string; chief_complaint?: string; notes?: string; assessment?: string; plan?: string | number | boolean; [key: string]: unknown }) => (
                   <div key={record.id} className="p-4 border border-gray-100 rounded-xl hover:shadow-sm transition-shadow">
                     <div className="flex justify-between mb-2">
                       <span className="font-bold text-primary">{record.record_type}</span>
-                      <span className="text-sm text-gray-500">{new Date(record.date).toLocaleDateString('ar-SA')}</span>
+                      <span className="text-sm text-gray-500">{record.date ? new Date(String(record.date)).toLocaleDateString('ar-SA') : 'غير محدد'}</span>
                     </div>
                     <div className="space-y-2 text-sm">
                       {record.chief_complaint && (
                         <div><span className="font-bold">الشكوى الرئيسية:</span> {record.chief_complaint}</div>
                       )}
                       {record.assessment && (
-                        <div><span className="font-bold">التقييم:</span> {record.assessment}</div>
+                        <div><span className="font-bold">التقييم:</span> {String(record.assessment)}</div>
                       )}
                       {record.plan && (
-                        <div><span className="font-bold">الخطة العلاجية:</span> {record.plan}</div>
+                        <div><span className="font-bold">الخطة العلاجية:</span> {String(record.plan)}</div>
                       )}
                     </div>
                   </div>
@@ -314,12 +317,12 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
                   <h3 className="font-bold text-lg">التشخيصات</h3>
                   <button className="text-sm text-primary font-bold hover:underline">+ إضافة تشخيص</button>
                 </div>
-                {diagnoses.map((diagnosis: any) => (
+                {diagnoses.map((diagnosis: { id: string; diagnosis_name?: string; diagnosed_date?: string; status?: string; severity?: string; [key: string]: unknown }) => (
                   <div key={diagnosis.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl">
                     <div>
-                      <div className="font-bold text-gray-900">{diagnosis.diagnosis_name}</div>
+                      <div className="font-bold text-gray-900">{String(diagnosis.diagnosis_name || '')}</div>
                       <div className="text-sm text-gray-500">
-                        {new Date(diagnosis.diagnosed_date).toLocaleDateString('ar-SA')} • {diagnosis.status}
+                        {diagnosis.diagnosed_date ? new Date(String(diagnosis.diagnosed_date)).toLocaleDateString('ar-SA') : 'غير محدد'} • {String(diagnosis.status || '')}
                       </div>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -327,7 +330,7 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
                       diagnosis.severity === 'moderate' ? 'bg-orange-100 text-orange-700' :
                       'bg-green-100 text-green-700'
                     }`}>
-                      {diagnosis.severity || 'غير محدد'}
+                      {String(diagnosis.severity || 'غير محدد')}
                     </span>
                   </div>
                 ))}
@@ -347,15 +350,15 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
                 </div>
                 {medical_records && medical_records.length > 0 ? (
                   medical_records
-                    .filter((record: any) => ['visit', 'session', 'therapy'].includes(record.record_type?.toLowerCase()))
-                    .map((session: any) => (
+                    .filter((record: { record_type?: string }) => ['visit', 'session', 'therapy'].includes(record.record_type?.toLowerCase() || ''))
+                    .map((session: { id: string; record_type?: string; date?: string; title?: string; chief_complaint?: string; assessment?: string; plan?: string | number | boolean; [key: string]: unknown }) => (
                       <div key={session.id} className="p-4 border border-gray-100 rounded-xl hover:shadow-sm transition-shadow">
                         <div className="flex justify-between mb-2">
                           <div className="font-bold text-gray-900 flex items-center gap-2">
                             <Calendar size={16} className="text-primary" />
                             {session.record_type || 'جلسة علاجية'}
                           </div>
-                          <span className="text-sm text-gray-500">{new Date(session.date).toLocaleDateString('ar-SA')}</span>
+                          <span className="text-sm text-gray-500">{session.date ? new Date(String(session.date)).toLocaleDateString('ar-SA') : 'غير محدد'}</span>
                         </div>
                         <div className="text-sm text-gray-600 space-y-1">
                           {session.chief_complaint && (
@@ -365,7 +368,7 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
                             <div><span className="font-bold">ملاحظات الجلسة:</span> {session.assessment}</div>
                           )}
                           {session.plan && (
-                            <div><span className="font-bold">الخطة:</span> {session.plan}</div>
+                            <div><span className="font-bold">الخطة:</span> {String(session.plan)}</div>
                           )}
                         </div>
                       </div>
@@ -385,25 +388,25 @@ export default function PatientDetailsPage({ params }: { params: { id: string } 
                 {medical_records && medical_records.length > 0 ? (
                   <div className="space-y-4">
                     {medical_records
-                      .filter((record: any) => record.plan)
-                      .map((record: any) => (
+                      .filter((record: { plan?: unknown }) => record.plan)
+                      .map((record: { id: string; plan?: Record<string, unknown>; assessment?: string | number | boolean; date?: string; [key: string]: unknown }) => (
                         <div key={record.id} className="p-4 border border-gray-100 rounded-xl">
                           <div className="flex justify-between mb-2">
                             <div className="font-bold text-gray-900 flex items-center gap-2">
                               <Target size={16} className="text-primary" />
                               خطة علاجية
                             </div>
-                            <span className="text-sm text-gray-500">{new Date(record.date).toLocaleDateString('ar-SA')}</span>
+                            <span className="text-sm text-gray-500">{record.date ? new Date(String(record.date)).toLocaleDateString('ar-SA') : 'غير محدد'}</span>
                           </div>
                           <div className="text-sm text-gray-600">
-                            <div className="mb-2"><span className="font-bold">الخطة:</span> {record.plan}</div>
+                            <div className="mb-2"><span className="font-bold">الخطة:</span> {String(record.plan || '')}</div>
                             {record.assessment && (
-                              <div className="text-green-600"><span className="font-bold">التقدم:</span> {record.assessment}</div>
+                              <div className="text-green-600"><span className="font-bold">التقدم:</span> {String(record.assessment as string | number | boolean)}</div>
                             )}
                           </div>
                         </div>
                       ))}
-                    {medical_records.filter((record: any) => record.plan).length === 0 && (
+                    {medical_records.filter((record: { plan?: unknown }) => record.plan).length === 0 && (
                         <p className="text-center text-gray-400 py-8">لا توجد خطط علاجية مسجلة</p>
                       )}
                   </div>

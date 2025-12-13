@@ -96,8 +96,9 @@ export default function BookAppointmentPage() {
       } else {
         setError(Array.isArray(data.error) ? data.error[0].message : data.error)
       }
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'حدث خطأ أثناء الحجز'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

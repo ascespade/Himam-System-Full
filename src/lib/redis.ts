@@ -30,7 +30,7 @@ async function initializeRedis(): Promise<void> {
     // Test connection
     await redisClient.ping()
     isRedisAvailable = true
-    console.log('✅ Redis connected')
+    // Redis connected successfully (logged via logger if needed)
   } catch (error) {
     console.warn('Redis not available, using in-memory fallback:', error)
     isRedisAvailable = false

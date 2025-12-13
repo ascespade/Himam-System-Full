@@ -4,6 +4,8 @@
  */
 
 import { BaseService, ServiceException } from './base.service'
+import { supabaseAdmin } from '@/lib'
+import { logError } from '@/shared/utils/logger'
 import { createPatientSchema, updatePatientSchema, type CreatePatientInput, type UpdatePatientInput } from '@/core/validations/schemas'
 import type { Patient } from '@/shared/types'
 
@@ -15,7 +17,7 @@ export class PatientService extends BaseService {
     const validated = createPatientSchema.parse(input)
 
     // Check if patient with same phone exists
-    const { data: existing } = await this.supabase
+    const { data: existing } = await supabaseAdmin
       .from('patients')
       .select('id')
       .eq('phone', validated.phone)
@@ -26,7 +28,7 @@ export class PatientService extends BaseService {
     }
 
     // Create patient
-    const { data: patient, error } = await this.supabase
+    const { data: patient, error } = await supabaseAdmin
       .from('patients')
       .insert({
         name: validated.name,
@@ -45,10 +47,15 @@ export class PatientService extends BaseService {
       .single()
 
     if (error) {
-      throw this.handleError(error, 'createPatient')
+      logError('Error creating patient', error, { input: validated })
+      throw new ServiceException('Failed to create patient', 'PATIENT_CREATE_ERROR')
     }
 
-    return this.requireData(patient, 'Failed to create patient')
+    if (!patient) {
+      throw new ServiceException('Failed to create patient', 'PATIENT_CREATE_ERROR')
+    }
+
+    return patient as Patient
   }
 
   /**
@@ -59,7 +66,7 @@ export class PatientService extends BaseService {
 
     // Check phone uniqueness if phone is being updated
     if (validated.phone) {
-      const { data: existing } = await this.supabase
+      const { data: existing } = await supabaseAdmin
         .from('patients')
         .select('id')
         .eq('phone', validated.phone)
@@ -71,7 +78,7 @@ export class PatientService extends BaseService {
       }
     }
 
-    const { data: patient, error } = await this.supabase
+    const { data: patient, error } = await supabaseAdmin
       .from('patients')
       .update(validated)
       .eq('id', patientId)
@@ -79,17 +86,22 @@ export class PatientService extends BaseService {
       .single()
 
     if (error) {
-      throw this.handleError(error, 'updatePatient')
+      logError('Error updating patient', error, { patientId, input: validated })
+      throw new ServiceException('Failed to update patient', 'PATIENT_UPDATE_ERROR')
     }
 
-    return this.requireData(patient, 'Patient not found')
+    if (!patient) {
+      throw new ServiceException('Patient not found', 'NOT_FOUND')
+    }
+
+    return patient as Patient
   }
 
   /**
    * Finds a patient by ID
    */
   async findById(patientId: string): Promise<Patient | null> {
-    const { data, error } = await this.supabase
+    const { data, error } = await supabaseAdmin
       .from('patients')
       .select('*')
       .eq('id', patientId)
@@ -97,7 +109,8 @@ export class PatientService extends BaseService {
 
     if (error) {
       if (error.code === 'PGRST116') return null
-      throw this.handleError(error, 'findById')
+      logError('Error finding patient by ID', error, { patientId })
+      throw new ServiceException('Failed to find patient', 'PATIENT_FETCH_ERROR')
     }
 
     return data
@@ -107,7 +120,7 @@ export class PatientService extends BaseService {
    * Finds a patient by phone
    */
   async findByPhone(phone: string): Promise<Patient | null> {
-    const { data, error } = await this.supabase
+    const { data, error } = await supabaseAdmin
       .from('patients')
       .select('*')
       .eq('phone', phone)
@@ -115,7 +128,8 @@ export class PatientService extends BaseService {
 
     if (error) {
       if (error.code === 'PGRST116') return null
-      throw this.handleError(error, 'findByPhone')
+      logError('Error finding patient by phone', error, { phone })
+      throw new ServiceException('Failed to find patient', 'PATIENT_FETCH_ERROR')
     }
 
     return data
@@ -127,7 +141,7 @@ export class PatientService extends BaseService {
   async search(query: string, page = 1, limit = 50): Promise<{ data: Patient[]; total: number }> {
     const offset = (page - 1) * limit
 
-    const { data, error, count } = await this.supabase
+    const { data, error, count } = await supabaseAdmin
       .from('patients')
       .select('*', { count: 'exact' })
       .or(`name.ilike.%${query}%,phone.ilike.%${query}%,email.ilike.%${query}%`)
@@ -135,7 +149,8 @@ export class PatientService extends BaseService {
       .range(offset, offset + limit - 1)
 
     if (error) {
-      throw this.handleError(error, 'search')
+      logError('Error searching patients', error, { query, page, limit })
+      throw new ServiceException('Failed to search patients', 'PATIENT_SEARCH_ERROR')
     }
 
     return {

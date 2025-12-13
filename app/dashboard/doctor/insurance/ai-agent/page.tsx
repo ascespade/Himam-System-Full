@@ -38,8 +38,8 @@ export default function InsuranceAIAgentPage() {
   const [pendingClaims, setPendingClaims] = useState<Claim[]>([])
   const [statistics, setStatistics] = useState<Statistics | null>(null)
   const [loading, setLoading] = useState(true)
-  const [monitoring, setMonitoring] = useState<any>(null)
-  const [vectorStats, setVectorStats] = useState<any>(null)
+  const [monitoring, setMonitoring] = useState<Record<string, unknown> | null>(null)
+  const [vectorStats, setVectorStats] = useState<Record<string, unknown> | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -112,8 +112,9 @@ export default function InsuranceAIAgentPage() {
       } else {
         throw new Error(data.error || 'فشلت العملية')
       }
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+      toast.error(errorMessage)
     }
   }
 

@@ -31,8 +31,8 @@ export default function RecordingsPage() {
       if (data.success && data.data) {
         // Transform the data to match the interface
         const transformedRecordings = data.data
-          .filter((rec: any) => rec.recording_url || rec.recording_status) // Only show recordings with URLs
-          .map((rec: any) => ({
+          .filter((rec: { recording_url?: string; recording_status?: string }) => rec.recording_url || rec.recording_status) // Only show recordings with URLs
+          .map((rec: { id: string; session_id: string; patients?: { name?: string }; recording_url?: string; duration?: number; recording_duration?: number; created_at?: string; recorded_at?: string; recording_status?: string }) => ({
             id: rec.id,
             session_id: rec.session_id,
             patient_name: rec.patients?.name || 'غير معروف',

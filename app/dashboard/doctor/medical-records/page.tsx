@@ -36,7 +36,7 @@ export default function MedicalRecordsPage() {
       if (data.success && data.data) {
         // Transform the data to include patient names
         const recordsWithPatients = await Promise.all(
-          data.data.map(async (record: any) => {
+          data.data.map(async (record: { id: string; patient_id: string; patients?: { name?: string; [key: string]: unknown }; [key: string]: unknown }) => {
             if (record.patients) {
               return {
                 ...record,

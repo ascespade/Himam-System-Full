@@ -1,11 +1,17 @@
 /**
- * AI Service - Gemini 2.0 Flash (primary) + OpenAI (fallback)
- * Handles all AI interactions for the system
+ * AI Service
+ * Handles all AI interactions with automatic model fallback
+ * Supports Gemini (multiple models) and OpenAI with intelligent fallback
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import OpenAI from 'openai'
 import { getSettings } from './config'
+import { sendTextMessage } from './whatsapp-messaging'
+import { supabaseAdmin } from './supabase'
+import { logError, logInfo, logWarn } from '@/shared/utils/logger'
+
+export type AIModel = 'gemini' | 'openai' | 'auto'
 
 export interface AIResponse {
   text: string
@@ -13,8 +19,19 @@ export interface AIResponse {
   error?: string
 }
 
-import { sendTextMessage } from './whatsapp-messaging'
-import { supabaseAdmin } from './supabase'
+/**
+ * Gemini models ordered by preference (newest to oldest)
+ */
+const GEMINI_MODELS = [
+  'gemini-2.0-flash-exp',  // Latest experimental
+  'gemini-2.0-flash',      // Stable 2.0
+  'gemini-1.5-flash',      // Fallback 1.5
+  'gemini-1.5-pro',        // Pro version
+  'gemini-pro',            // Legacy
+] as const
+
+const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash'
+const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini'
 
 /**
  * Get primary admin phone from database
@@ -32,12 +49,11 @@ async function getAdminPhone(): Promise<string> {
       return data.phone
     }
 
-    // Fallback to settings
     const settings = await getSettings()
     return settings.ADMIN_PHONE || process.env.ADMIN_PHONE || '966581421483'
   } catch (error) {
-    console.error('Error fetching admin phone:', error)
-    return '966581421483' // Final fallback
+    logError('Error fetching admin phone', error)
+    return '966581421483'
   }
 }
 
@@ -45,103 +61,151 @@ async function getAdminPhone(): Promise<string> {
  * Ask AI a question with automatic fallback
  * @param prompt - The question/prompt to send to AI
  * @param context - Optional context for the conversation
+ * @param preferredModel - Optional preferred model (overrides settings)
  * @returns AI response text
  */
-export async function askAI(prompt: string, context?: string): Promise<AIResponse> {
+export async function askAI(
+  prompt: string, 
+  context?: string,
+  preferredModel?: AIModel
+): Promise<AIResponse> {
   const settings = await getSettings()
   
-  // Get keys from database settings (centralized configuration)
+  // Get keys and model preference from database settings
   const GEMINI_KEY = settings.GEMINI_KEY
   const OPENAI_KEY = settings.OPENAI_KEY
+  const AI_MODEL = (preferredModel || settings.AI_MODEL || 'auto') as AIModel
 
   const ADMIN_PHONE = await getAdminPhone()
 
-  // Validation Check
+  // Validation
   if (!GEMINI_KEY && !OPENAI_KEY) {
-     const msg = 'CRITICAL: No AI API Keys found in Database Settings table.'
-     console.error(msg)
-     await sendTextMessage(ADMIN_PHONE, `⚠️ System Alert:\n${msg}`) // Alert Admin
-     return {
-        text: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً.',
-        model: 'openai',
-        error: 'No AI service configured',
-      }
-  }
-
-  // Try Gemini first (primary)
-  if (GEMINI_KEY) {
-    try {
-      const genAI = new GoogleGenerativeAI(GEMINI_KEY)
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
-
-      const fullPrompt = context
-        ? `Context: ${context}\n\nUser message: ${prompt}`
-        : prompt
-
-      const result = await model.generateContent(fullPrompt)
-      const text = result.response.text()
-
-      return {
-        text,
-        model: 'gemini',
-      }
-    } catch (error: any) {
-      console.error('Gemini API error:', error)
-      await sendTextMessage(ADMIN_PHONE, `⚠️ Gemini Error:\n${error.message || error}`) // Alert Admin
-      // Fall through to OpenAI fallback
+    const errorMsg = 'CRITICAL: No AI API Keys found in Database Settings table.'
+    logError(errorMsg)
+    await sendTextMessage(ADMIN_PHONE, `⚠️ System Alert:\n${errorMsg}`)
+    return {
+      text: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً.',
+      model: 'openai',
+      error: 'No AI service configured',
     }
   }
 
-  // Fallback to OpenAI
-  if (OPENAI_KEY) {
+  /**
+   * Try Gemini with specific model
+   */
+  const tryGeminiModel = async (modelName: string): Promise<AIResponse | null> => {
+    if (!GEMINI_KEY) return null
+    
+    try {
+      const genAI = new GoogleGenerativeAI(GEMINI_KEY)
+      const model = genAI.getGenerativeModel({ model: modelName })
+      const fullPrompt = context ? `Context: ${context}\n\nUser message: ${prompt}` : prompt
+      const result = await model.generateContent(fullPrompt)
+      const text = result.response.text()
+
+      logInfo(`Gemini model ${modelName} succeeded`)
+      return { text, model: 'gemini' }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logWarn(`Gemini model ${modelName} failed: ${errorMessage}`)
+      return null
+    }
+  }
+
+  /**
+   * Try Gemini with optional auto-fallback between models
+   */
+  const tryGemini = async (autoMode: boolean = false): Promise<AIResponse | null> => {
+    if (!GEMINI_KEY) return null
+    
+    if (autoMode) {
+      // Try all Gemini models in order until one succeeds
+      for (const modelName of GEMINI_MODELS) {
+        const result = await tryGeminiModel(modelName)
+        if (result) return result
+      }
+      logWarn('All Gemini models failed')
+      return null
+    }
+    
+    // Use default model
+    return await tryGeminiModel(DEFAULT_GEMINI_MODEL)
+  }
+
+  /**
+   * Try OpenAI
+   */
+  const tryOpenAI = async (): Promise<AIResponse | null> => {
+    if (!OPENAI_KEY) return null
+    
     try {
       const openai = new OpenAI({ apiKey: OPENAI_KEY })
+      const systemPrompt = 'أنت مساعد طبي لمركز الهمم في جدة، المملكة العربية السعودية. استخدم لهجة جدة الخفيفة والودودة والاحترافية. كن مهذباً ومتعاطفاً ومهتماً. رد بالعربية أو الإنجليزية حسب لغة المستخدم.'
+      
+      const messages: Array<{ role: 'system' | 'user'; content: string }> = [
+        { role: 'system', content: systemPrompt },
+      ]
+      
+      if (context) {
+        messages.push({ role: 'system', content: `Context: ${context}` })
+      }
+      
+      messages.push({ role: 'user', content: prompt })
+
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system' as const,
-            content:
-              'أنت مساعد طبي لمركز الهمم في جدة، المملكة العربية السعودية. استخدم لهجة جدة الخفيفة والودودة والاحترافية. كن مهذباً ومتعاطفاً ومهتماً. رد بالعربية أو الإنجليزية حسب لغة المستخدم.',
-          },
-          ...(context
-            ? [
-                {
-                  role: 'system' as const,
-                  content: `Context: ${context}`,
-                },
-              ]
-            : []),
-          {
-            role: 'user' as const,
-            content: prompt,
-          },
-        ],
+        model: DEFAULT_OPENAI_MODEL,
+        messages,
         temperature: 0.7,
       })
 
       const text = completion.choices[0]?.message?.content || 'AI response unavailable'
-
-      return {
-        text,
-        model: 'openai',
-      }
-    } catch (error: any) {
-      console.error('OpenAI API error:', error)
-      await sendTextMessage(ADMIN_PHONE, `⚠️ OpenAI Error (Fallback Failed):\n${error.message}`) // Alert Admin
-      return {
-        text: 'عذراً، لا يمكنني الرد في الوقت الحالي. يرجى المحاولة لاحقاً.',
-        model: 'openai',
-        error: error.message || 'AI service unavailable',
-      }
+      return { text, model: 'openai' }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logError('OpenAI API error', error)
+      await sendTextMessage(ADMIN_PHONE, `⚠️ OpenAI Error:\n${errorMessage}`)
+      return null
     }
   }
 
-  // No AI service configured (or Gemini failed and no OpenAI)
-   return {
+  // Handle model selection based on AI_MODEL setting
+  switch (AI_MODEL) {
+    case 'gemini': {
+      // Gemini only: try all Gemini models, no OpenAI fallback
+      const result = await tryGemini(true)
+      if (result) return result
+      break
+    }
+    
+    case 'openai': {
+      // OpenAI only: no Gemini fallback
+      const result = await tryOpenAI()
+      if (result) return result
+      break
+    }
+    
+    case 'auto':
+    default: {
+      // Auto mode: try Gemini models first, then OpenAI
+      if (GEMINI_KEY) {
+        const result = await tryGemini(true)
+        if (result) return result
+      }
+      
+      if (OPENAI_KEY) {
+        logInfo('All Gemini models failed, trying OpenAI...')
+        const result = await tryOpenAI()
+        if (result) return result
+      }
+      break
+    }
+  }
+
+  // All models failed
+  return {
     text: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً.',
     model: 'openai',
-    error: 'No AI service configured',
+    error: 'No AI service configured or all models failed',
   }
 }
 

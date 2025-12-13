@@ -1,4 +1,5 @@
 import { supabase } from '@/lib'
+import { logError } from '@/shared/utils/logger'
 
 export type ContentItemType = 'service' | 'testimonial' | 'statistic' | 'value' | 'feature' | 'social_media'
 
@@ -50,7 +51,7 @@ export class ContentItemsRepository {
     const { data, error } = await query
 
     if (error) {
-      console.error(`Error fetching ${type} items:`, error)
+      logError(`Error fetching ${type} items`, error)
       return []
     }
 
@@ -68,7 +69,7 @@ export class ContentItemsRepository {
       .single()
 
     if (error) {
-      console.error('Error fetching content item:', error)
+      logError('Error fetching content item', error, { id })
       return null
     }
 

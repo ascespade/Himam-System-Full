@@ -39,7 +39,7 @@ export default function SearchPage() {
         
         // Transform patients
         if (data.data.patients && data.data.patients.length > 0) {
-          data.data.patients.forEach((patient: any) => {
+          data.data.patients.forEach((patient: { id: string; name?: string; phone?: string; created_at?: string }) => {
             allResults.push({
               type: 'patient',
               id: patient.id,
@@ -52,7 +52,7 @@ export default function SearchPage() {
         
         // Transform sessions
         if (data.data.sessions && data.data.sessions.length > 0) {
-          data.data.sessions.forEach((session: any) => {
+          data.data.sessions.forEach((session: { id: string; session_type?: string; date: string; notes?: string }) => {
             allResults.push({
               type: 'session',
               id: session.id,
@@ -65,7 +65,7 @@ export default function SearchPage() {
         
         // Transform medical records
         if (data.data.medical_records && data.data.medical_records.length > 0) {
-          data.data.medical_records.forEach((record: any) => {
+          data.data.medical_records.forEach((record: { id: string; record_type?: string; title?: string; description?: string; notes?: string; created_at?: string; date?: string }) => {
             allResults.push({
               type: 'record',
               id: record.id,
@@ -78,7 +78,7 @@ export default function SearchPage() {
         
         // Transform treatment plans
         if (data.data.treatment_plans && data.data.treatment_plans.length > 0) {
-          data.data.treatment_plans.forEach((plan: any) => {
+          data.data.treatment_plans.forEach((plan: { id: string; title?: string; description?: string; goals?: string; created_at?: string; start_date?: string }) => {
             allResults.push({
               type: 'treatment_plan',
               id: plan.id,

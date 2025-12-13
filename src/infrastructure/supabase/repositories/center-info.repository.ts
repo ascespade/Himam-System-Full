@@ -1,6 +1,12 @@
-import { supabase } from '@/lib'
+/**
+ * Center Info Repository
+ * Manages center information with proper error handling
+ */
 
-export interface CenterInfo {
+import { supabase } from '@/lib'
+import { logError } from '@/shared/utils/logger'
+
+export interface CenterInfo extends Record<string, unknown> {
   id: string
   name_ar: string
   name_en: string
@@ -36,7 +42,7 @@ export class CenterInfoRepository {
       .maybeSingle()
 
     if (error) {
-      console.error('Error fetching center info:', error)
+      logError('Error fetching center info', error)
       return null
     }
 
@@ -52,7 +58,7 @@ export class CenterInfoRepository {
       .single()
 
     if (error) {
-      console.error('Error updating center info:', error)
+      logError('Error updating center info', error, { id })
       return null
     }
 

@@ -1,37 +1,21 @@
-# 📚 Himam Enterprise AI System - Documentation
+# 📚 Project Documentation
 
-## 📖 Main Documentation
+## Core Documentation
 
-### Getting Started
-- **[Quick Start Guide](./QUICK_START.md)** - Step-by-step setup instructions
-- **[Enterprise System Guide](./ENTERPRISE_SYSTEM_README.md)** - Complete system overview
+### Architecture & Patterns
+- [ARCHITECTURE_PATTERNS.md](./ARCHITECTURE_PATTERNS.md) - Complete architecture patterns guide
+- [REPOSITORY_MIGRATION_GUIDE.md](./REPOSITORY_MIGRATION_GUIDE.md) - Repository migration guide
+- [COMPLETE_REFACTORING_SUMMARY.md](./COMPLETE_REFACTORING_SUMMARY.md) - Complete refactoring summary
 
-### Architecture & Best Practices
-- **[Flow Diagram](./FLOW_DIAGRAM.md)** - System architecture and data flow
-- **[MCP-Enhanced Best Practices](./MCP_ENHANCED_BEST_PRACTICES.md)** - Supabase optimization guide
+### System Documentation
+- [ENTERPRISE_SYSTEM_README.md](./ENTERPRISE_SYSTEM_README.md) - Enterprise system overview
+- [MCP_ENHANCED_BEST_PRACTICES.md](./MCP_ENHANCED_BEST_PRACTICES.md) - Best practices
+- [QUICK_START.md](./QUICK_START.md) - Quick start guide
 
 ### Integration Guides
-- **[WhatsApp Integration](./WHATSAPP_INTEGRATION_GUIDE.md)** - WhatsApp Cloud API setup
-
-## 🗂️ Documentation Structure
-
-```
-docs/
-├── README.md (this file)
-├── QUICK_START.md
-├── ENTERPRISE_SYSTEM_README.md
-├── MCP_ENHANCED_BEST_PRACTICES.md
-├── FLOW_DIAGRAM.md
-└── WHATSAPP_INTEGRATION_GUIDE.md
-```
-
-## 🚀 Quick Links
-
-- [Main README](../README.md)
-- [Settings Page](../app/settings/page.tsx)
-- [API Routes](../app/api)
+- [WHATSAPP_INTEGRATION_GUIDE.md](./WHATSAPP_INTEGRATION_GUIDE.md) - WhatsApp integration
+- [WHATSAPP_ACTIVATION_STEPS.md](./WHATSAPP_ACTIVATION_STEPS.md) - WhatsApp activation
 
 ---
 
-**Last Updated**: 2025-01-15  
-**Version**: 2.0.0
+**Note**: All other documentation files have been consolidated or archived. Refer to the core documentation above for current information.

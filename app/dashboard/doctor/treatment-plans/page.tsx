@@ -276,7 +276,7 @@ export default function TreatmentPlansPage() {
                       value={goal.status}
                       onChange={(e) => {
                         const newGoals = [...formData.goals]
-                        newGoals[index].status = e.target.value as any
+                        newGoals[index].status = e.target.value as 'pending' | 'in_progress' | 'completed'
                         setFormData({ ...formData, goals: newGoals })
                       }}
                       className="px-3 py-2 border border-gray-200 rounded-lg text-sm"

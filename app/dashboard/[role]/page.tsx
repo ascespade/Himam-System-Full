@@ -19,7 +19,7 @@ interface DashboardStats {
 interface DashboardWidget {
   id: string
   widget_type: string
-  widget_config: any
+  widget_config: Record<string, unknown>
   position: number
   is_visible: boolean
 }

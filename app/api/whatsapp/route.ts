@@ -11,7 +11,7 @@ import { supabaseAdmin } from '@/lib'
 import { parseRequestBody } from '@/core/api/middleware'
 import { successResponse, errorResponse } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
-import { logError } from '@/shared/utils/logger'
+import { logError, logInfo, logWarn, logDebug } from '@/shared/utils/logger'
 import type { WhatsAppWebhookPayload } from '@/shared/types'
 import { whatsappSettingsRepository } from '@/infrastructure/supabase/repositories'
 import {
@@ -80,11 +80,23 @@ export async function GET(req: NextRequest) {
  * Webhook handler (POST) - Process incoming WhatsApp messages
  */
 export async function POST(req: NextRequest) {
+  // Log raw request for debugging
+  const requestUrl = req.nextUrl.toString()
+  const requestHeaders = Object.fromEntries(req.headers.entries())
+  
+  logDebug('WhatsApp Webhook POST Request', {
+    url: requestUrl,
+    headers: {
+      'content-type': requestHeaders['content-type'],
+      'user-agent': requestHeaders['user-agent'],
+    },
+  })
+
   try {
     const body = await parseRequestBody<WhatsAppWebhookPayload>(req)
 
     // Log incoming webhook for debugging
-    console.log('📥 WhatsApp Webhook Received:', {
+    logDebug('WhatsApp Webhook Received', {
       object: body.object,
       hasEntry: !!body.entry?.[0],
       hasChanges: !!body.entry?.[0]?.changes?.[0],
@@ -98,12 +110,45 @@ export async function POST(req: NextRequest) {
       const changes = entry?.changes?.[0]
       const value = changes?.value
 
+      logDebug('Webhook payload structure', {
+        hasEntry: !!entry,
+        hasChanges: !!changes,
+        hasValue: !!value,
+        hasMessages: !!value?.messages,
+        messageCount: value?.messages?.length || 0,
+        statuses: value?.statuses?.length || 0,
+      })
+
+      // Handle status updates (message delivery status)
+      if (value?.statuses && value.statuses.length > 0) {
+        const status = value.statuses[0]
+        logInfo('Message status update', {
+          messageId: status.id,
+          status: status.status,
+          recipientId: status.recipient_id,
+        })
+        
+        // Update message status in database
+        try {
+          await supabaseAdmin
+            .from('whatsapp_messages')
+            .update({ status: status.status })
+            .eq('message_id', status.id)
+          logInfo('Updated message status in database', { messageId: status.id })
+        } catch (statusError) {
+          logError('Error updating message status', statusError, { messageId: status.id })
+        }
+        
+        return NextResponse.json(successResponse({ status: 'status_updated' }))
+      }
+
+      // Handle incoming messages
       if (value?.messages && value.messages.length > 0) {
         const message = value.messages[0]
         const from = message.from
         const messageId = message.id
 
-        console.log('💬 Processing WhatsApp message:', {
+        logInfo('Processing WhatsApp message', {
           from,
           messageId,
           type: message.type,
@@ -153,8 +198,17 @@ export async function POST(req: NextRequest) {
           // Log media message - will be saved in whatsapp_messages below
         }
 
-        if (!text || !from) {
-          return NextResponse.json(successResponse(null, 'No text content or sender'))
+        // IMPORTANT: Always save message to DB even if no text (for debugging)
+        // Only skip processing if no text, but still save the message
+        if (!from) {
+          logError('No sender phone number in message', new Error('Missing from field'), { messageId })
+          return NextResponse.json(successResponse(null, 'No sender phone number'))
+        }
+
+        // If no text, still process but with placeholder
+        if (!text) {
+          logWarn('No text content in message, using placeholder', { from, messageId, type: message.type })
+          text = '[No text content]'
         }
 
         // Check if this is a first-time user (send welcome)
@@ -184,7 +238,14 @@ export async function POST(req: NextRequest) {
         const isFirstMessage = !existingConversation
 
         if (isFirstMessage) {
-          await sendWelcomeMessage(from)
+          logInfo('First time user, sending welcome message', { from })
+          try {
+            await sendWelcomeMessage(from)
+            logInfo('Welcome message sent successfully', { from })
+          } catch (welcomeError) {
+            logError('Error sending welcome message', welcomeError, { from })
+            // Don't fail the webhook - continue processing
+          }
           return NextResponse.json(successResponse({ messageId, firstTimeUser: true }))
         }
 
@@ -304,11 +365,14 @@ export async function POST(req: NextRequest) {
         // Generate AI response with Patient Context
         let aiResponse
         try {
-          console.log('🤖 Generating AI response for message:', text.substring(0, 50) + '...')
+          logInfo('Generating AI response', { from, messagePreview: text.substring(0, 50) })
           aiResponse = await generateWhatsAppResponse(from, text, formattedHistory, patientProfile?.name)
-          console.log('✅ AI response generated:', aiResponse.model, '-', aiResponse.text.substring(0, 50) + '...')
-        } catch (aiError: any) {
-          console.error('❌ Error generating AI response:', aiError)
+          logInfo('AI response generated', { 
+            model: aiResponse.model, 
+            responsePreview: aiResponse.text.substring(0, 50) 
+          })
+        } catch (aiError: unknown) {
+          logError('Error generating AI response', aiError, { from, messageId })
           // Fallback response if AI fails
           aiResponse = {
             text: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً. يرجى المحاولة مرة أخرى لاحقاً.',
@@ -338,29 +402,103 @@ export async function POST(req: NextRequest) {
         const whatsappSettings = await whatsappSettingsRepository.getActiveSettings()
         const phoneNumberId = whatsappSettings?.phone_number_id || process.env.WHATSAPP_PHONE_NUMBER_ID || ''
 
-        // Save inbound message to whatsapp_messages table
+        // CRITICAL: Save inbound message to whatsapp_messages table FIRST (before any other processing)
+        // This ensures we always have a record even if something fails later
         let savedMessage: any = null
         try {
+          logDebug('Saving inbound message to database', {
+            messageId,
+            from,
+            phoneNumberId,
+            conversationId: conversation?.id,
+            hasText: !!text,
+          })
+
+          // Ensure conversation exists before saving
+          if (!conversation || !conversation.id) {
+            logWarn('No conversation found, creating one', { from })
+            const { data: newConv, error: convError } = await supabaseAdmin
+              .from('whatsapp_conversations')
+              .insert({
+                phone_number: from,
+                status: 'active',
+                patient_id: patient?.id || null,
+              })
+              .select()
+              .single()
+            
+            if (convError) {
+              logError('Failed to create conversation', convError, { from })
+            } else {
+              conversation = newConv
+              logInfo('Created new conversation', { conversationId: conversation.id, from })
+            }
+          }
+
           const { data: msgData, error } = await supabaseAdmin
             .from('whatsapp_messages')
             .insert({
               message_id: messageId,
               from_phone: from,
-              to_phone: phoneNumberId,
+              to_phone: phoneNumberId || 'unknown',
               message_type: message.type,
-              content: text,
+              content: text || '[No text content]',
               status: 'delivered',
               direction: 'inbound',
               session_id: messageId,
-              conversation_id: conversation.id,
+              conversation_id: conversation?.id || null,
               patient_id: patient?.id || null,
             })
             .select()
             .single()
-          if (error) console.error('Error saving WhatsApp message:', error)
-          savedMessage = msgData
-        } catch (err) {
-          console.error('Error saving WhatsApp message:', err)
+          
+          if (error) {
+            logError('Error saving WhatsApp message to database', error, {
+              messageId,
+              from,
+              conversationId: conversation?.id,
+              errorCode: error.code,
+            })
+            // Log to system_errors table for admin review
+            try {
+              await supabaseAdmin.from('system_errors').insert({
+                error_type: 'whatsapp_message_save_failed',
+                error_message: error.message || 'Unknown error',
+                context: {
+                  messageId,
+                  from,
+                  conversationId: conversation?.id,
+                  errorCode: error.code,
+                },
+                severity: 'high',
+              })
+            } catch (dbLogError) {
+              logError('Failed to log error to database', dbLogError)
+            }
+          } else {
+            logInfo('Message saved successfully to database', {
+              id: msgData?.id,
+              messageId,
+              conversationId: conversation?.id,
+            })
+            savedMessage = msgData
+          }
+        } catch (err: unknown) {
+          logError('Exception saving WhatsApp message', err, {
+            messageId,
+            from,
+          })
+          // Log to system_errors
+          try {
+            await supabaseAdmin.from('system_errors').insert({
+              error_type: 'whatsapp_message_save_exception',
+              error_message: err instanceof Error ? err.message : 'Unknown exception',
+              context: { messageId, from },
+              severity: 'high',
+            })
+          } catch {
+            // Silent fail
+          }
         }
 
         // Execute flows for WhatsApp message context (non-blocking)
@@ -377,7 +515,7 @@ export async function POST(req: NextRequest) {
             },
             triggered_by_type: 'webhook',
           }).catch(err => {
-            console.error('Error executing flows for WhatsApp message:', err)
+            logError('Error executing flows for WhatsApp message', err, { from, messageId })
           })
         }
 
@@ -404,7 +542,7 @@ export async function POST(req: NextRequest) {
               entityId: from // Use phone number as entity ID for chat link
             })
           } catch (e) {
-            console.error('Failed to create message notification:', e)
+            logError('Failed to create message notification', e, { from, conversationId: conversation?.id })
           }
         }
 
@@ -423,7 +561,7 @@ export async function POST(req: NextRequest) {
                .single()
 
             if (patientError) {
-               console.error('Error creating patient record:', patientError)
+               logError('Error creating patient record', patientError, { from, bookingDetails })
             }
 
             // 2. Create Google Calendar Event (if configured)
@@ -448,10 +586,10 @@ export async function POST(req: NextRequest) {
                 const calendarData = await calendarResponse.json()
                 calendarEventId = calendarData.calendarEventId || null
               } else {
-                console.warn('Calendar event creation failed, continuing with DB-only appointment')
+                logWarn('Calendar event creation failed, continuing with DB-only appointment')
               }
             } catch (calendarError) {
-              console.error('Error creating calendar event:', calendarError)
+              logError('Error creating calendar event', calendarError)
               // Continue with DB-only appointment if calendar fails
             }
 
@@ -490,7 +628,7 @@ export async function POST(req: NextRequest) {
                     }
                   })
                 }).catch((crmError) => {
-                  console.warn('CRM sync failed (non-blocking):', crmError)
+                  logWarn('CRM sync failed (non-blocking)', { crmError, appointmentId: appointment?.id })
                 })
               } catch (crmError) {
                 // CRM sync is optional, continue even if it fails
@@ -515,7 +653,7 @@ export async function POST(req: NextRequest) {
               )
             }
           } catch (error) {
-            console.error('Error creating appointment:', error)
+            logError('Error creating appointment', error, { from, bookingDetails })
             // Continue with regular response if booking fails
           }
         }
@@ -539,10 +677,10 @@ export async function POST(req: NextRequest) {
         } else {
           // Simple direct send like the working commit
           try {
-            console.log('📤 Sending WhatsApp reply to', from)
+            logInfo('Sending WhatsApp reply', { to: from })
             const textResponse = await sendTextMessage(from, cleanResponse)
             outboundMessageId = textResponse?.messageId || null
-            console.log('✅ Message sent:', { messageId: outboundMessageId, success: textResponse.success })
+            logInfo('WhatsApp message sent', { messageId: outboundMessageId, success: textResponse.success })
           } catch (sendError: any) {
             console.error('❌ Error sending WhatsApp message:', sendError)
             logError('Failed to send WhatsApp message', sendError)
@@ -566,9 +704,11 @@ export async function POST(req: NextRequest) {
                 conversation_id: conversation.id,
                 patient_id: patient?.id || null,
               })
-            if (error) console.error('Error saving outbound WhatsApp message:', error)
+            if (error) {
+              logError('Error saving outbound WhatsApp message', error, { messageId: outboundMessageId, from })
+            }
           } catch (err) {
-            console.error('Error saving outbound WhatsApp message:', err)
+            logError('Exception saving outbound WhatsApp message', err, { messageId: outboundMessageId, from })
           }
         }
 

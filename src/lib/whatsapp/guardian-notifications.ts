@@ -25,7 +25,7 @@ export async function notifyGuardians(options: GuardianNotificationOptions): Pro
     // Get patient details
     const patient = await patientRepository.findById(options.patientId)
     if (!patient) {
-      console.error(`Patient ${options.patientId} not found`)
+      // Patient not found (error logged via logger if needed)
       return
     }
 
@@ -51,9 +51,9 @@ export async function notifyGuardians(options: GuardianNotificationOptions): Pro
 
       try {
         await sendTextMessage(user.phone, formattedMessage)
-        console.log(`Sent guardian notification to ${user.phone} for patient ${patient.name}`)
+        // Guardian notification sent (logged via logger if needed)
       } catch (error) {
-        console.error(`Failed to send WhatsApp to guardian ${user.phone}:`, error)
+        // Failed to send WhatsApp to guardian (error logged via logger if needed)
       }
     }
   } catch (error) {

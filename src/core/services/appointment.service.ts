@@ -1,200 +1,165 @@
 /**
  * Appointment Service
  * Business logic for appointment management
+ * Uses AppointmentRepository for data access
  */
 
-import { BaseService, ServiceException } from './base.service'
-import { createAppointmentSchema, updateAppointmentSchema, type CreateAppointmentInput, type UpdateAppointmentInput } from '@/core/validations/schemas'
-import type { Appointment } from '@/shared/types'
+import { BaseService, type ServiceResult, type PaginatedServiceResult } from './base.service'
+import { appointmentRepository, type Appointment } from '@/infrastructure/supabase/repositories/appointment.repository'
+import { logInfo } from '@/shared/utils/logger'
+
+export interface CreateAppointmentInput {
+  patient_id?: string | null
+  patient_name?: string | null
+  phone?: string | null
+  specialist: string
+  date: string
+  status?: string
+  calendar_event_id?: string | null
+  notes?: string | null
+}
+
+export interface UpdateAppointmentInput {
+  patient_id?: string | null
+  patient_name?: string | null
+  phone?: string | null
+  specialist?: string
+  date?: string
+  status?: string
+  calendar_event_id?: string | null
+  notes?: string | null
+}
 
 export class AppointmentService extends BaseService {
   /**
-   * Creates a new appointment
+   * Get appointment by ID
    */
-  async createAppointment(input: CreateAppointmentInput): Promise<Appointment> {
-    const validated = createAppointmentSchema.parse(input)
-
-    // Check for conflicts
-    const conflicts = await this.checkConflicts(validated)
-    if (conflicts.length > 0) {
-      throw new ServiceException(
-        `Appointment conflicts with existing appointments: ${conflicts.map(c => c.id).join(', ')}`,
-        'CONFLICT'
-      )
-    }
-
-    // Create appointment
-    const { data: appointment, error } = await this.supabase
-      .from('appointments')
-      .insert({
-        patient_id: validated.patient_id,
-        doctor_id: validated.doctor_id,
-        date: validated.date,
-        time: validated.time,
-        duration: validated.duration,
-        appointment_type: validated.appointment_type,
-        notes: validated.notes,
-        status: validated.status,
-        created_at: new Date().toISOString(),
-      })
-      .select()
-      .single()
-
-    if (error) {
-      throw this.handleError(error, 'createAppointment')
-    }
-
-    return this.requireData(appointment, 'Failed to create appointment')
-  }
-
-  /**
-   * Updates an appointment
-   */
-  async updateAppointment(appointmentId: string, input: UpdateAppointmentInput): Promise<Appointment> {
-    const validated = updateAppointmentSchema.parse(input)
-
-    // Check for conflicts if date/time is being changed
-    if (validated.date || validated.time) {
-      const existing = await this.findById(appointmentId)
-      if (!existing) {
-        throw new ServiceException('Appointment not found', 'NOT_FOUND')
-      }
-
-      const checkInput = {
-        ...existing,
-        ...validated,
-      }
-      const conflicts = await this.checkConflicts(checkInput as CreateAppointmentInput, appointmentId)
-      if (conflicts.length > 0) {
-        throw new ServiceException('Appointment conflicts with existing appointments', 'CONFLICT')
+  async getAppointmentById(id: string): Promise<ServiceResult<Appointment | null>> {
+    this.logOperation('getAppointmentById', { id })
+    const result = await this.execute(
+      () => appointmentRepository.findById(id),
+      'Failed to fetch appointment',
+      { id }
+    )
+    
+    if (result.success && result.data === null) {
+      return {
+        success: false,
+        error: 'Appointment not found',
+        code: 'NOT_FOUND',
       }
     }
-
-    const { data: appointment, error } = await this.supabase
-      .from('appointments')
-      .update(validated)
-      .eq('id', appointmentId)
-      .select()
-      .single()
-
-    if (error) {
-      throw this.handleError(error, 'updateAppointment')
-    }
-
-    return this.requireData(appointment, 'Appointment not found')
+    
+    return result as ServiceResult<Appointment>
   }
 
   /**
-   * Finds an appointment by ID
+   * Get appointments by patient ID
    */
-  async findById(appointmentId: string): Promise<Appointment | null> {
-    const { data, error } = await this.supabase
-      .from('appointments')
-      .select('*')
-      .eq('id', appointmentId)
-      .single()
-
-    if (error) {
-      if (error.code === 'PGRST116') return null
-      throw this.handleError(error, 'findById')
-    }
-
-    return data
+  async getAppointmentsByPatientId(patientId: string): Promise<ServiceResult<Appointment[]>> {
+    this.logOperation('getAppointmentsByPatientId', { patientId })
+    return this.execute(
+      () => appointmentRepository.findByPatientId(patientId),
+      'Failed to fetch patient appointments',
+      { patientId }
+    )
   }
 
   /**
-   * Finds appointments by patient ID
+   * Create new appointment
    */
-  async findByPatientId(patientId: string, page = 1, limit = 50): Promise<{ data: Appointment[]; total: number }> {
-    const offset = (page - 1) * limit
-
-    const { data, error, count } = await this.supabase
-      .from('appointments')
-      .select('*', { count: 'exact' })
-      .eq('patient_id', patientId)
-      .order('date', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (error) {
-      throw this.handleError(error, 'findByPatientId')
+  async createAppointment(input: CreateAppointmentInput): Promise<ServiceResult<Appointment>> {
+    this.logOperation('createAppointment', { input })
+    
+    const appointmentData = {
+      patient_id: input.patient_id || null,
+      patient_name: input.patient_name || null,
+      phone: input.phone || null,
+      specialist: input.specialist,
+      date: input.date,
+      status: input.status || 'pending',
+      calendar_event_id: input.calendar_event_id || null,
+      notes: input.notes || null,
     }
 
-    return {
-      data: data || [],
-      total: count || 0,
-    }
+    return this.execute(
+      () => appointmentRepository.create(appointmentData),
+      'Failed to create appointment',
+      { input }
+    )
   }
 
   /**
-   * Finds appointments by doctor ID
+   * Update appointment
    */
-  async findByDoctorId(doctorId: string, page = 1, limit = 50): Promise<{ data: Appointment[]; total: number }> {
-    const offset = (page - 1) * limit
-
-    const { data, error, count } = await this.supabase
-      .from('appointments')
-      .select('*', { count: 'exact' })
-      .eq('doctor_id', doctorId)
-      .order('date', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (error) {
-      throw this.handleError(error, 'findByDoctorId')
-    }
-
-    return {
-      data: data || [],
-      total: count || 0,
-    }
+  async updateAppointment(
+    id: string,
+    input: UpdateAppointmentInput
+  ): Promise<ServiceResult<Appointment>> {
+    this.logOperation('updateAppointment', { id, input })
+    
+    // Convert UpdateAppointmentInput to Partial<Appointment>
+    const updateData: Partial<Appointment> = {}
+    if (input.patient_id !== undefined) updateData.patient_id = input.patient_id
+    if (input.patient_name !== undefined) updateData.patient_name = input.patient_name
+    if (input.phone !== undefined) updateData.phone = input.phone
+    if (input.specialist !== undefined) updateData.specialist = input.specialist
+    if (input.date !== undefined) updateData.date = input.date
+    if (input.status !== undefined) updateData.status = input.status
+    if (input.calendar_event_id !== undefined) updateData.calendar_event_id = input.calendar_event_id
+    if (input.notes !== undefined) updateData.notes = input.notes
+    
+    return this.execute(
+      () => appointmentRepository.update(id, updateData),
+      'Failed to update appointment',
+      { id, input }
+    )
   }
 
   /**
-   * Checks for appointment conflicts
+   * Delete appointment
    */
-  private async checkConflicts(
-    input: CreateAppointmentInput,
-    excludeId?: string
-  ): Promise<Appointment[]> {
-    if (!input.doctor_id || !input.date || !input.time) {
-      return []
+  async deleteAppointment(id: string): Promise<ServiceResult<boolean>> {
+    this.logOperation('deleteAppointment', { id })
+    return this.execute(
+      () => appointmentRepository.delete(id),
+      'Failed to delete appointment',
+      { id }
+    )
+  }
+
+  /**
+   * Get paginated appointments
+   */
+  async getAppointments(
+    page: number = 1,
+    limit: number = 50,
+    filters?: Record<string, unknown>
+  ): Promise<PaginatedServiceResult<Appointment>> {
+    this.logOperation('getAppointments', { page, limit, filters })
+    
+    try {
+      const result = await appointmentRepository.getPaginated({ page, limit }, filters)
+      
+      return {
+        success: true,
+        data: result.data,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          total: result.total,
+          totalPages: result.totalPages,
+        },
+      }
+    } catch (error: unknown) {
+      logInfo('Failed to get paginated appointments', { error, page, limit })
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch appointments',
+        code: 'FETCH_ERROR',
+      }
     }
-
-    const startTime = new Date(`${input.date}T${input.time}`)
-    const endTime = new Date(startTime.getTime() + (input.duration || 30) * 60000)
-
-    let query = this.supabase
-      .from('appointments')
-      .select('*')
-      .eq('doctor_id', input.doctor_id)
-      .eq('date', input.date)
-      .in('status', ['scheduled', 'confirmed'])
-
-    if (excludeId) {
-      query = query.neq('id', excludeId)
-    }
-
-    const { data: appointments, error } = await query
-
-    if (error) {
-      throw this.handleError(error, 'checkConflicts')
-    }
-
-    if (!appointments) return []
-
-    // Check for time overlaps
-    return appointments.filter(apt => {
-      if (!apt.time) return false
-      const aptStart = new Date(`${apt.date}T${apt.time}`)
-      const aptEnd = new Date(aptStart.getTime() + (apt.duration || 30) * 60000)
-
-      return (
-        (startTime >= aptStart && startTime < aptEnd) ||
-        (endTime > aptStart && endTime <= aptEnd) ||
-        (startTime <= aptStart && endTime >= aptEnd)
-      )
-    })
   }
 }
 
-// Export singleton instance
 export const appointmentService = new AppointmentService()

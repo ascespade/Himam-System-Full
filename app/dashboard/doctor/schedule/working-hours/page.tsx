@@ -83,7 +83,7 @@ export default function WorkingHoursPage() {
     fetchWorkingHours()
   }, [fetchWorkingHours])
 
-  const updateWorkingHour = (dayOfWeek: number, field: keyof WorkingHour, value: any) => {
+  const updateWorkingHour = (dayOfWeek: number, field: keyof WorkingHour, value: string | number | boolean | undefined) => {
     setWorkingHours((prev) => {
       const existing = prev.find((h) => h.day_of_week === dayOfWeek)
       if (existing) {

@@ -4,6 +4,8 @@
  */
 
 import { BaseService, ServiceException } from '@/core/services'
+import { supabaseAdmin } from '@/lib'
+import { logError } from '@/shared/utils/logger'
 import type { Notification } from '@/shared/types'
 import type { CreateNotificationInput } from './notification.templates'
 
@@ -17,7 +19,7 @@ export class NotificationService extends BaseService {
       throw new ServiceException('Missing required fields: type, title, message', 'VALIDATION_ERROR')
     }
 
-    const { data: notification, error } = await this.supabase
+    const { data: notification, error } = await supabaseAdmin
       .from('notifications')
       .insert({
         user_id: input.userId,
@@ -34,17 +36,22 @@ export class NotificationService extends BaseService {
       .single()
 
     if (error) {
-      throw this.handleError(error, 'createNotification')
+      logError('Error creating notification', error, { input })
+      throw new ServiceException('Failed to create notification', 'NOTIFICATION_CREATE_ERROR')
     }
 
-    return this.requireData(notification, 'Failed to create notification')
+    if (!notification) {
+      throw new ServiceException('Failed to create notification', 'NOTIFICATION_CREATE_ERROR')
+    }
+
+    return notification as Notification
   }
 
   /**
    * Marks a notification as read
    */
   async markAsRead(notificationId: string): Promise<Notification> {
-    const { data: notification, error } = await this.supabase
+    const { data: notification, error } = await supabaseAdmin
       .from('notifications')
       .update({
         is_read: true,
@@ -55,17 +62,21 @@ export class NotificationService extends BaseService {
       .single()
 
     if (error) {
-      throw this.handleError(error, 'markAsRead')
+      logError('Error marking notification as read', error, { notificationId })
+      throw new ServiceException('Failed to mark notification as read', 'NOTIFICATION_UPDATE_ERROR')
     }
 
-    return this.requireData(notification, 'Notification not found')
+    if (!notification) {
+      throw new ServiceException('Notification not found', 'NOT_FOUND')
+    }
+    return notification as Notification
   }
 
   /**
    * Marks all notifications as read for a user
    */
   async markAllAsRead(userId: string): Promise<number> {
-    const { data, error } = await this.supabase
+    const { data, error } = await supabaseAdmin
       .from('notifications')
       .update({
         is_read: true,
@@ -76,7 +87,8 @@ export class NotificationService extends BaseService {
       .select()
 
     if (error) {
-      throw this.handleError(error, 'markAllAsRead')
+      logError('Error marking all notifications as read', error, { userId })
+      throw new ServiceException('Failed to mark all notifications as read', 'NOTIFICATION_UPDATE_ERROR')
     }
 
     return data?.length || 0
@@ -96,7 +108,7 @@ export class NotificationService extends BaseService {
     const { unreadOnly = false, page = 1, limit = 50 } = options
     const offset = (page - 1) * limit
 
-    let query = this.supabase
+    let query = supabaseAdmin
       .from('notifications')
       .select('*', { count: 'exact' })
       .eq('user_id', userId)
@@ -110,11 +122,12 @@ export class NotificationService extends BaseService {
       .range(offset, offset + limit - 1)
 
     if (error) {
-      throw this.handleError(error, 'getNotifications')
+      logError('Error getting notifications', error, { userId, options })
+      throw new ServiceException('Failed to get notifications', 'NOTIFICATION_FETCH_ERROR')
     }
 
     // Get unread count
-    const { count: unreadCount } = await this.supabase
+    const { count: unreadCount } = await supabaseAdmin
       .from('notifications')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
@@ -131,13 +144,14 @@ export class NotificationService extends BaseService {
    * Deletes a notification
    */
   async deleteNotification(notificationId: string): Promise<void> {
-    const { error } = await this.supabase
+    const { error } = await supabaseAdmin
       .from('notifications')
       .delete()
       .eq('id', notificationId)
 
     if (error) {
-      throw this.handleError(error, 'deleteNotification')
+      logError('Error deleting notification', error, { notificationId })
+      throw new ServiceException('Failed to delete notification', 'NOTIFICATION_DELETE_ERROR')
     }
   }
 }

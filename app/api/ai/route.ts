@@ -3,11 +3,17 @@
  * Uses centralized AI service with Gemini 2.0 Flash + OpenAI fallback
  */
 
+/**
+ * AI API Route
+ * Enterprise-grade AI service endpoint with proper error handling
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { askAI } from '@/lib/ai'
 import { parseRequestBody } from '@/core/api/middleware'
 import { successResponse, errorResponse, validateRequestBody } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
+import { logError } from '@/shared/utils/logger'
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,7 +44,7 @@ export async function POST(req: NextRequest) {
       })
     )
   } catch (error) {
-    console.error('AI API Error:', error)
+    logError('AI API Error', error)
     return NextResponse.json(
       errorResponse(error),
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }

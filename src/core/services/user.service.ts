@@ -4,6 +4,8 @@
  */
 
 import { BaseService, ServiceException } from './base.service'
+import { supabaseAdmin } from '@/lib'
+import { logError } from '@/shared/utils/logger'
 import { createUserSchema, updateUserSchema, type CreateUserInput, type UpdateUserInput } from '@/core/validations/schemas'
 import type { User } from '@/shared/types'
 
@@ -17,15 +19,15 @@ export class UserService extends BaseService {
     const { name, email, phone, role, password } = validated
 
     // Check if user exists in auth.users
-    const { data: existingAuthUser } = await this.supabase.auth.admin.listUsers()
-    const authUserExists = existingAuthUser?.users?.some(u => u.email === email)
+    const { data: existingAuthUser } = await supabaseAdmin.auth.admin.listUsers()
+    const authUserExists = existingAuthUser?.users?.some((u: { email?: string }) => u.email === email)
 
     if (authUserExists) {
       throw new ServiceException('User with this email already exists', 'USER_EXISTS')
     }
 
     // Check if user exists in public.users
-    const { data: existingUser } = await this.supabase
+    const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('email', email)
@@ -36,7 +38,7 @@ export class UserService extends BaseService {
     }
 
     // Create auth user
-    const { data: authUser, error: authError } = await this.supabase.auth.admin.createUser({
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -48,10 +50,10 @@ export class UserService extends BaseService {
     })
 
     if (authError || !authUser?.user?.id) {
+      logError('Failed to create authentication user', authError, { email })
       throw new ServiceException(
         `Failed to create authentication user: ${authError?.message || 'No user ID returned'}`,
-        'AUTH_ERROR',
-        authError
+        'AUTH_ERROR'
       )
     }
 
@@ -59,7 +61,7 @@ export class UserService extends BaseService {
     await new Promise(resolve => setTimeout(resolve, 500))
 
     // Update the public.users record
-    const { data: updatedUser, error: updateError } = await this.supabase
+    const { data: updatedUser, error: updateError } = await supabaseAdmin
       .from('users')
       .update({
         name,
@@ -73,7 +75,7 @@ export class UserService extends BaseService {
 
     if (updateError) {
       // Try to insert directly if update fails
-      const { data: insertedUser, error: insertError } = await this.supabase
+      const { data: insertedUser, error: insertError } = await supabaseAdmin
         .from('users')
         .insert({
           id: authUser.user.id,
@@ -88,14 +90,23 @@ export class UserService extends BaseService {
 
       if (insertError) {
         // Clean up auth user
-        await this.supabase.auth.admin.deleteUser(authUser.user.id)
-        throw this.handleError(insertError, 'createUser')
+        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+        logError('Error creating user record', insertError, { userId: authUser.user.id })
+        throw new ServiceException('Failed to create user record', 'USER_CREATE_ERROR')
       }
 
-      return this.requireData(insertedUser, 'Failed to create user record')
+      if (!insertedUser) {
+        throw new ServiceException('Failed to create user record', 'USER_CREATE_ERROR')
+      }
+
+      return insertedUser as User
     }
 
-    return this.requireData(updatedUser, 'Failed to update user record')
+    if (!updatedUser) {
+      throw new ServiceException('Failed to update user record', 'USER_UPDATE_ERROR')
+    }
+
+    return updatedUser as User
   }
 
   /**
@@ -104,7 +115,7 @@ export class UserService extends BaseService {
   async updateUser(userId: string, input: UpdateUserInput): Promise<User> {
     const validated = updateUserSchema.parse(input)
 
-    const { data: user, error } = await this.supabase
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .update(validated)
       .eq('id', userId)
@@ -112,17 +123,22 @@ export class UserService extends BaseService {
       .single()
 
     if (error) {
-      throw this.handleError(error, 'updateUser')
+      logError('Error updating user', error, { userId, input: validated })
+      throw new ServiceException('Failed to update user', 'USER_UPDATE_ERROR')
     }
 
-    return this.requireData(user, 'User not found')
+    if (!user) {
+      throw new ServiceException('User not found', 'NOT_FOUND')
+    }
+
+    return user as User
   }
 
   /**
    * Finds a user by ID
    */
   async findById(userId: string): Promise<User | null> {
-    const { data, error } = await this.supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('id', userId)
@@ -130,7 +146,8 @@ export class UserService extends BaseService {
 
     if (error) {
       if (error.code === 'PGRST116') return null
-      throw this.handleError(error, 'findById')
+      logError('Error finding user by ID', error, { userId })
+      throw new ServiceException('Failed to find user', 'USER_FETCH_ERROR')
     }
 
     return data
@@ -142,7 +159,7 @@ export class UserService extends BaseService {
   async findByRole(role: string, page = 1, limit = 50): Promise<{ data: User[]; total: number }> {
     const offset = (page - 1) * limit
 
-    const { data, error, count } = await this.supabase
+    const { data, error, count } = await supabaseAdmin
       .from('users')
       .select('*', { count: 'exact' })
       .eq('role', role)
@@ -150,7 +167,8 @@ export class UserService extends BaseService {
       .range(offset, offset + limit - 1)
 
     if (error) {
-      throw this.handleError(error, 'findByRole')
+      logError('Error finding users by role', error, { role, page, limit })
+      throw new ServiceException('Failed to find users by role', 'USER_FETCH_ERROR')
     }
 
     return {

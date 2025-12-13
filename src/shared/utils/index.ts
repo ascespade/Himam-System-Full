@@ -178,43 +178,49 @@ export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
 // ============================================================================
 
 /**
- * Deep merges two objects
+ * Type guard: Checks if value is a plain object
  */
-export function deepMerge<T extends Record<string, any>>(
+function isObject(item: unknown): item is Record<string, unknown> {
+  return item !== null && typeof item === 'object' && !Array.isArray(item)
+}
+
+/**
+ * Deep merges two objects with proper type safety
+ */
+export function deepMerge<T extends Record<string, unknown>>(
   target: T,
   source: Partial<T>
 ): T {
   const output = { ...target } as T
+  
   if (isObject(target) && isObject(source)) {
     Object.keys(source).forEach((key) => {
       const sourceKey = key as keyof T
-      if (isObject(source[sourceKey])) {
-        if (!(sourceKey in target)) {
-          Object.assign(output, { [sourceKey]: source[sourceKey] })
-        } else {
-          (output as any)[sourceKey] = deepMerge(target[sourceKey] as Record<string, any>, source[sourceKey] as Partial<Record<string, any>>)
-        }
+      const sourceValue = source[sourceKey]
+      
+      if (sourceValue === undefined) return
+      
+      if (isObject(sourceValue) && isObject(target[sourceKey])) {
+        output[sourceKey] = deepMerge(
+          target[sourceKey] as Record<string, unknown>,
+          sourceValue as Partial<Record<string, unknown>>
+        ) as T[keyof T]
       } else {
-        Object.assign(output, { [sourceKey]: source[sourceKey] })
+        output[sourceKey] = sourceValue as T[keyof T]
       }
     })
   }
+  
   return output
 }
 
 /**
- * Checks if value is an object
- */
-function isObject(item: any): item is Record<string, any> {
-  return item && typeof item === 'object' && !Array.isArray(item)
-}
-
-/**
  * Removes undefined/null values from object
+ * Returns a new object with only defined values
  */
-export function cleanObject<T extends Record<string, any>>(obj: T): Partial<T> {
+export function cleanObject<T extends Record<string, unknown>>(obj: T): Partial<T> {
   return Object.fromEntries(
-    Object.entries(obj).filter(([_, value]) => value !== undefined && value !== null)
+    Object.entries(obj).filter(([, value]) => value !== undefined && value !== null)
   ) as Partial<T>
 }
 
@@ -274,12 +280,16 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
- * Creates a safe error object
+ * Creates a safe error object with optional code
+ * Note: AppError class is defined in @/shared/types/errors
  */
-export function createError(message: string, code?: string): Error {
+export function createError(message: string, code?: string, statusCode?: number): Error {
   const error = new Error(message)
   if (code) {
-    (error as any).code = code
+    (error as { code?: string }).code = code
+  }
+  if (statusCode) {
+    (error as { statusCode?: number }).statusCode = statusCode
   }
   return error
 }

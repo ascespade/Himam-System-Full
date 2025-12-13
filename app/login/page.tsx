@@ -49,9 +49,11 @@ export default function LoginPage() {
 
         router.refresh()
       }
-    } catch (err: any) {
-      console.error('Login error:', err)
-      setError(err.message === 'Invalid login credentials' ? 'البيانات غير صحيحة' : err.message)
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error 
+        ? (err.message === 'Invalid login credentials' ? 'البيانات غير صحيحة' : err.message)
+        : 'حدث خطأ أثناء تسجيل الدخول'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

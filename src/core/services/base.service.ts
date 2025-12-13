@@ -1,97 +1,105 @@
 /**
  * Base Service
- * Abstract base class for all service layers
+ * Enterprise-grade service layer pattern
+ * Provides business logic abstraction over repositories
  */
 
-import { supabaseAdmin } from '@/lib/supabase'
-import type { PostgrestError } from '@supabase/supabase-js'
-import { logError } from '@/shared/utils/logger'
+import { logError, logInfo } from '@/shared/utils/logger'
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export interface ServiceError {
-  message: string
+export interface ServiceResult<T> {
+  success: boolean
+  data?: T
+  error?: string
   code?: string
-  originalError?: unknown
+}
+
+export interface PaginatedServiceResult<T> extends ServiceResult<T[]> {
+  pagination?: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
 }
 
 export class ServiceException extends Error {
   constructor(
     message: string,
-    public code?: string,
-    public originalError?: unknown
+    public readonly code: string = 'SERVICE_ERROR'
   ) {
     super(message)
     this.name = 'ServiceException'
+    Object.setPrototypeOf(this, ServiceException.prototype)
   }
+}
+
+export interface ServiceError {
+  message: string
+  code: string
+  details?: Record<string, unknown>
 }
 
 // ============================================================================
 // Base Service Class
 // ============================================================================
 
+/**
+ * Base service class with common business logic patterns
+ * All services should extend this class
+ */
 export abstract class BaseService {
-  protected supabase = supabaseAdmin
-
   /**
-   * Handles Supabase errors and converts to ServiceException
+   * Wraps repository call with error handling
    */
-  protected handleError(error: PostgrestError | Error | unknown, context?: string): ServiceException {
-    logError(`Service Error${context ? ` in ${context}` : ''}`, error)
-
-    if (error instanceof ServiceException) {
-      return error
-    }
-
-    if (error && typeof error === 'object' && 'message' in error) {
-      const pgError = error as PostgrestError
-      return new ServiceException(
-        pgError.message || 'Database operation failed',
-        pgError.code,
-        error
-      )
-    }
-
-    if (error instanceof Error) {
-      return new ServiceException(error.message, undefined, error)
-    }
-
-    return new ServiceException('An unknown error occurred', undefined, error)
-  }
-
-  /**
-   * Validates that data exists
-   */
-  protected requireData<T>(data: T | null | undefined, errorMessage = 'Data not found'): T {
-    if (!data) {
-      throw new ServiceException(errorMessage, 'NOT_FOUND')
-    }
-    return data
-  }
-
-  /**
-   * Validates required fields
-   */
-  protected validateRequired<T extends Record<string, unknown>>(
-    data: T,
-    fields: (keyof T)[]
-  ): void {
-    const missing: string[] = []
-    
-    for (const field of fields) {
-      const value = data[field]
-      if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
-        missing.push(String(field))
+  protected async execute<T>(
+    operation: () => Promise<T>,
+    errorMessage: string,
+    context?: Record<string, unknown>
+  ): Promise<ServiceResult<T>> {
+    try {
+      const data = await operation()
+      return {
+        success: true,
+        data,
+      }
+    } catch (error: unknown) {
+      logError(errorMessage, error, context)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : errorMessage,
+        code: 'SERVICE_ERROR',
       }
     }
+  }
 
-    if (missing.length > 0) {
-      throw new ServiceException(
-        `Missing required fields: ${missing.join(', ')}`,
-        'VALIDATION_ERROR'
-      )
+  /**
+   * Validates input data
+   */
+  protected validateInput<T>(
+    data: unknown,
+    validator: (data: unknown) => data is T
+  ): ServiceResult<T> {
+    if (!validator(data)) {
+      return {
+        success: false,
+        error: 'Invalid input data',
+        code: 'VALIDATION_ERROR',
+      }
     }
+    return {
+      success: true,
+      data,
+    }
+  }
+
+  /**
+   * Logs service operation
+   */
+  protected logOperation(operation: string, context?: Record<string, unknown>): void {
+    logInfo(`Service operation: ${operation}`, context)
   }
 }

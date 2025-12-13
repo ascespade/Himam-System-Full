@@ -1,10 +1,14 @@
 /**
  * CRM API Route
  * Syncs data with external CRM system
+ * Non-blocking: continues even if CRM sync fails
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getSettings } from '@/lib/config'
+import { successResponse, errorResponse } from '@/shared/utils/api'
+import { HTTP_STATUS } from '@/shared/constants'
+import { logError, logWarn, logInfo } from '@/shared/utils/logger'
 
 export async function POST(req: NextRequest) {
   try {
@@ -40,40 +44,40 @@ export async function POST(req: NextRequest) {
 
         if (!crmResponse.ok) {
           const errorText = await crmResponse.text()
-          console.error('CRM sync failed:', errorText)
+          logError('CRM sync failed', new Error(errorText), { action, patientId })
           // Continue even if CRM sync fails (non-blocking)
         } else {
           const crmData = await crmResponse.json()
-          return NextResponse.json({
-            success: true,
-            source: 'CRM',
-            action,
-            crmData,
-          })
+          logInfo('CRM sync successful', { action, patientId })
+          return NextResponse.json(
+            successResponse({
+              source: 'CRM',
+              action,
+              crmData,
+            })
+          )
         }
-      } catch (crmError: any) {
-        console.error('CRM API Error:', crmError)
+      } catch (crmError: unknown) {
+        logError('CRM API Error', crmError, { action, patientId })
         // Continue even if CRM sync fails (non-blocking)
       }
     } else {
-      console.warn('CRM not configured - skipping sync')
+      logWarn('CRM not configured - skipping sync', { action })
     }
 
     // Return success even if CRM is not configured (local operations continue)
-    return NextResponse.json({
-      success: true,
-      source: 'CRM',
-      action,
-      message: 'Local operation completed',
-    })
-  } catch (error: any) {
-    console.error('CRM API Error:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to sync with CRM',
-      },
-      { status: 500 }
+      successResponse({
+        source: 'CRM',
+        action,
+        message: 'Local operation completed',
+      })
+    )
+  } catch (error: unknown) {
+    logError('CRM API Error', error)
+    return NextResponse.json(
+      errorResponse(error),
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
 }

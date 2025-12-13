@@ -33,9 +33,9 @@ export default function PatientsPage() {
       if (data.success) {
         // Transform the data structure from doctor_patient_relationships
         // The API returns data with nested patients object or flat structure
-        const patientsList = (data.data || []).map((item: any) => {
+        const patientsList = (data.data || []).map((item: { patients?: Patient; patient_id?: string; created_at?: string; [key: string]: unknown }) => {
           // Handle both nested structure (patients) and flat structure
-          const patient = item.patients || item
+          const patient = (item.patients || item) as Patient & { [key: string]: unknown }
           return {
             id: patient.id || item.patient_id,
             name: patient.name,

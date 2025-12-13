@@ -17,7 +17,7 @@ export function initSentry(): void {
     const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN
 
     if (!dsn) {
-      console.log('Sentry DSN not configured, skipping initialization')
+      // Sentry DSN not configured, skipping initialization
       return
     }
 
@@ -38,9 +38,9 @@ export function initSentry(): void {
       })
 
       sentryInitialized = true
-      console.log('✅ Sentry initialized')
+      // Sentry initialized successfully
     }).catch(() => {
-      console.log('Sentry package not installed, skipping')
+      // Sentry package not installed, skipping
     })
   } catch (error) {
     console.warn('Failed to initialize Sentry:', error)
@@ -75,7 +75,12 @@ export function captureException(error: Error, context?: Record<string, unknown>
  */
 export function captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info'): void {
   if (!sentryInitialized) {
-    console.log(`[${level}]`, message)
+    // Fallback logging when Sentry not initialized
+    if (level === 'error') {
+      console.error(`[${level}]`, message)
+    } else {
+      console.warn(`[${level}]`, message)
+    }
     return
   }
 
@@ -86,10 +91,20 @@ export function captureMessage(message: string, level: 'info' | 'warning' | 'err
         level: level as 'info' | 'warning' | 'error' | 'fatal' | 'debug'
       })
     }).catch(() => {
-      console.log(`[${level}]`, message)
+      // Fallback logging on Sentry error
+      if (level === 'error') {
+        console.error(`[${level}]`, message)
+      } else {
+        console.warn(`[${level}]`, message)
+      }
     })
   } catch (err) {
-    console.log(`[${level}]`, message)
+    // Fallback logging on exception
+    if (level === 'error') {
+      console.error(`[${level}]`, message)
+    } else {
+      console.warn(`[${level}]`, message)
+    }
   }
 }
 

@@ -102,7 +102,7 @@ export default function PatientDashboard() {
           const medsRes = await fetch(`/api/patients/${patientInfo.id}/medications`)
           const medsData = await medsRes.json()
           if (medsData.success) {
-            const activeMeds = (medsData.data || []).filter((m: any) => m.status === 'active').length
+            const activeMeds = (medsData.data || []).filter((m: { status?: string }) => m.status === 'active').length
             setStats((prev) => ({ ...prev, activeMedications: activeMeds }))
           }
         } catch (error) {
@@ -114,7 +114,7 @@ export default function PatientDashboard() {
           const plansRes = await fetch(`/api/patients/${patientInfo.id}/treatment-plans`)
           const plansData = await plansRes.json()
           if (plansData.success) {
-            const activePlans = (plansData.data || []).filter((p: any) => p.status === 'active').length
+            const activePlans = (plansData.data || []).filter((p: { status?: string }) => p.status === 'active').length
             setStats((prev) => ({ ...prev, activePlans: activePlans }))
           }
         } catch (error) {

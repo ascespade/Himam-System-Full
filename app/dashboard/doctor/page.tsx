@@ -104,7 +104,7 @@ export default function DoctorPage() {
 
       if (appointmentsJson.success) {
         const appointmentsRaw = appointmentsJson.data || []
-        const transformed: TodayAppointment[] = appointmentsRaw.map((apt: any) => ({
+        const transformed: TodayAppointment[] = appointmentsRaw.map((apt: { id: string; patient_id: string; patients?: { name?: string; phone?: string }; patient_name?: string; patient_phone?: string; date: string; status?: string; notes?: string }) => ({
           id: apt.id,
           patient_id: apt.patient_id,
           patient_name: apt.patients?.name || apt.patient_name || 'غير معروف',
@@ -135,9 +135,9 @@ export default function DoctorPage() {
     fetchDashboardData()
     
     // Set up realtime subscriptions
-    let appointmentsSubscription: any = null
-    let queueSubscription: any = null
-    let clinicSettingsSubscription: any = null
+    let appointmentsSubscription: ReturnType<typeof supabase.channel> | null = null
+    let queueSubscription: ReturnType<typeof supabase.channel> | null = null
+    let clinicSettingsSubscription: ReturnType<typeof supabase.channel> | null = null
 
     const setupRealtime = async () => {
       // Get current user

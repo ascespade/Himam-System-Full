@@ -4,6 +4,7 @@
  */
 
 import { BaseService, ServiceException } from '@/core/services'
+import { logError, logInfo } from '@/shared/utils/logger'
 
 // ============================================================================
 // Types
@@ -55,7 +56,7 @@ export class EmailService extends BaseService {
       // In production, integrate with email service (SendGrid, AWS SES, etc.)
       // For now, log the email (development mode)
       if (process.env.NODE_ENV === 'development') {
-        console.log('📧 Email would be sent:', {
+        logInfo('Email would be sent (dev mode)', {
           to: options.to,
           subject: options.subject,
           from: options.from || `${this.fromName} <${this.fromEmail}>`,
@@ -74,7 +75,8 @@ export class EmailService extends BaseService {
       if (error instanceof ServiceException) {
         throw error
       }
-      throw this.handleError(error, 'sendEmail')
+      logError('Error sending email', error, { to: options.to, subject: options.subject })
+      throw new ServiceException('Failed to send email', 'EMAIL_SEND_ERROR')
     }
   }
 

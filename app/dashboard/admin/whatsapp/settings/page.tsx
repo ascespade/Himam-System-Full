@@ -26,7 +26,7 @@ interface WhatsAppSettings {
 
 interface AISettings {
   ai_agent_enabled: boolean
-  ai_provider: 'gemini' | 'openai' | ''
+  ai_provider: 'gemini' | 'openai' | 'auto' | ''
   gemini_key: string
   openai_key: string
 }
@@ -114,12 +114,13 @@ export default function WhatsAppSettingsPage() {
         
         // Determine if AI agent is enabled (if at least one key exists)
         const aiEnabled = !!(geminiKey || openaiKey)
-        // Determine provider (prefer Gemini if both exist)
-        const provider = geminiKey ? 'gemini' : (openaiKey ? 'openai' : '')
+        // Get model preference from settings (default to 'auto' if both keys exist)
+        const modelPreference = (settingsMap.get('AI_MODEL') as 'gemini' | 'openai' | 'auto') || 
+          (geminiKey && openaiKey ? 'auto' : (geminiKey ? 'gemini' : (openaiKey ? 'openai' : '')))
         
         setAiSettings({
           ai_agent_enabled: aiEnabled,
-          ai_provider: provider as 'gemini' | 'openai' | '',
+          ai_provider: modelPreference as 'gemini' | 'openai' | 'auto' | '',
           gemini_key: geminiKey,
           openai_key: openaiKey,
         })
@@ -238,22 +239,23 @@ export default function WhatsAppSettingsPage() {
       // Save AI settings
       const aiSettingsToSave: Record<string, string> = {}
       if (aiSettings.ai_agent_enabled) {
-        if (aiSettings.ai_provider === 'gemini' && aiSettings.gemini_key) {
+        // Save API keys (keep both if auto mode)
+        if (aiSettings.gemini_key) {
           aiSettingsToSave['GEMINI_KEY'] = aiSettings.gemini_key
         }
-        if (aiSettings.ai_provider === 'openai' && aiSettings.openai_key) {
+        if (aiSettings.openai_key) {
           aiSettingsToSave['OPENAI_KEY'] = aiSettings.openai_key
         }
-        // Clear the other key if switching providers
-        if (aiSettings.ai_provider === 'gemini') {
-          aiSettingsToSave['OPENAI_KEY'] = ''
-        } else if (aiSettings.ai_provider === 'openai') {
-          aiSettingsToSave['GEMINI_KEY'] = ''
+        
+        // Save model preference
+        if (aiSettings.ai_provider) {
+          aiSettingsToSave['AI_MODEL'] = aiSettings.ai_provider
         }
       } else {
-        // If disabled, clear both keys
+        // If disabled, clear both keys and model preference
         aiSettingsToSave['GEMINI_KEY'] = ''
         aiSettingsToSave['OPENAI_KEY'] = ''
+        aiSettingsToSave['AI_MODEL'] = ''
       }
 
       if (Object.keys(aiSettingsToSave).length > 0) {
@@ -628,56 +630,80 @@ export default function WhatsAppSettingsPage() {
             <>
               {/* AI Provider Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   اختر مزود AI <span className="text-red-500">*</span>
                 </label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Gemini Option */}
                   <button
                     type="button"
                     onClick={() => setAiSettings({ ...aiSettings, ai_provider: 'gemini' })}
-                    className={`p-4 border-2 rounded-lg transition-all ${
+                    className={`p-4 border-2 rounded-xl transition-all text-right ${
                       aiSettings.ai_provider === 'gemini'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-primary bg-primary/10 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center justify-between mb-2">
                       <input
                         type="radio"
                         checked={aiSettings.ai_provider === 'gemini'}
                         onChange={() => setAiSettings({ ...aiSettings, ai_provider: 'gemini' })}
-                        className="w-4 h-4 text-primary"
+                        className="w-4 h-4 text-primary cursor-pointer"
                       />
                       <span className="font-bold text-gray-900">Google Gemini</span>
                     </div>
-                    <p className="text-xs text-gray-500 text-right">(مزود أساسي - موصى به)</p>
+                    <p className="text-xs text-gray-500">يجرب نماذج Gemini تلقائياً</p>
                   </button>
 
+                  {/* OpenAI Option */}
                   <button
                     type="button"
                     onClick={() => setAiSettings({ ...aiSettings, ai_provider: 'openai' })}
-                    className={`p-4 border-2 rounded-lg transition-all ${
+                    className={`p-4 border-2 rounded-xl transition-all text-right ${
                       aiSettings.ai_provider === 'openai'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-primary bg-primary/10 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center justify-between mb-2">
                       <input
                         type="radio"
                         checked={aiSettings.ai_provider === 'openai'}
                         onChange={() => setAiSettings({ ...aiSettings, ai_provider: 'openai' })}
-                        className="w-4 h-4 text-primary"
+                        className="w-4 h-4 text-primary cursor-pointer"
                       />
                       <span className="font-bold text-gray-900">OpenAI</span>
                     </div>
-                    <p className="text-xs text-gray-500 text-right">(مزود احتياطي)</p>
+                    <p className="text-xs text-gray-500">مزود احتياطي</p>
+                  </button>
+
+                  {/* Auto Option */}
+                  <button
+                    type="button"
+                    onClick={() => setAiSettings({ ...aiSettings, ai_provider: 'auto' })}
+                    className={`p-4 border-2 rounded-xl transition-all text-right ${
+                      aiSettings.ai_provider === 'auto'
+                        ? 'border-primary bg-primary/10 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <input
+                        type="radio"
+                        checked={aiSettings.ai_provider === 'auto'}
+                        onChange={() => setAiSettings({ ...aiSettings, ai_provider: 'auto' })}
+                        className="w-4 h-4 text-primary cursor-pointer"
+                      />
+                      <span className="font-bold text-gray-900">تلقائي (Auto)</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Gemini ثم OpenAI</p>
                   </button>
                 </div>
               </div>
 
               {/* Gemini API Key */}
-              {aiSettings.ai_provider === 'gemini' && (
+              {(aiSettings.ai_provider === 'gemini' || aiSettings.ai_provider === 'auto') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                     <Key size={16} />
@@ -701,7 +727,7 @@ export default function WhatsAppSettingsPage() {
               )}
 
               {/* OpenAI API Key */}
-              {aiSettings.ai_provider === 'openai' && (
+              {(aiSettings.ai_provider === 'openai' || aiSettings.ai_provider === 'auto') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                     <Key size={16} />
@@ -731,8 +757,23 @@ export default function WhatsAppSettingsPage() {
                   <div className="text-sm text-blue-800">
                     <p className="font-bold mb-1">ملاحظة مهمة:</p>
                     <ul className="list-disc list-inside space-y-1 mr-4">
-                      <li>سيتم استخدام {aiSettings.ai_provider === 'gemini' ? 'Gemini' : 'OpenAI'} للرد التلقائي على جميع رسائل الواتساب</li>
-                      <li>إذا فشل {aiSettings.ai_provider === 'gemini' ? 'Gemini' : 'OpenAI'}، سيتم استخدام المزود الآخر تلقائياً</li>
+                      {aiSettings.ai_provider === 'auto' ? (
+                        <>
+                          <li>سيتم تجربة نماذج Gemini تلقائياً (flash-2.5, flash-2.0, flash-1.5, pro) حتى يجد واحد يعمل</li>
+                          <li>إذا فشلت كل نماذج Gemini، سيتم تجربة OpenAI تلقائياً</li>
+                          <li>يجب إدخال مفتاحي API (Gemini و OpenAI) للعمل في الوضع التلقائي</li>
+                        </>
+                      ) : aiSettings.ai_provider === 'gemini' ? (
+                        <>
+                          <li>سيتم تجربة نماذج Gemini تلقائياً (flash-2.5, flash-2.0, flash-1.5, pro) حتى يجد واحد يعمل</li>
+                          <li>لن يتم التبديل إلى OpenAI تلقائياً - Gemini فقط</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>سيتم استخدام OpenAI للرد التلقائي على جميع رسائل الواتساب</li>
+                          <li>لن يتم التبديل إلى Gemini تلقائياً - OpenAI فقط</li>
+                        </>
+                      )}
                       <li>تأكد من صحة API Key قبل الحفظ</li>
                     </ul>
                   </div>

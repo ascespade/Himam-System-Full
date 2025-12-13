@@ -8,6 +8,7 @@ import { supabase, supabaseAdmin } from './supabase'
 export interface SystemSettings {
   GEMINI_KEY: string
   OPENAI_KEY: string
+  AI_MODEL: 'gemini' | 'openai' | 'auto' // AI model selection: gemini, openai, or auto (try both)
   WHATSAPP_TOKEN: string
   WHATSAPP_PHONE_NUMBER_ID: string
   WHATSAPP_VERIFY_TOKEN: string

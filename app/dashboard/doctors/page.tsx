@@ -43,7 +43,7 @@ export default function DoctorsPage() {
       const data = await res.json()
       if (data.success) {
         // Map users to doctor profile format
-        const doctorsList = (data.data || []).map((user: any) => ({
+        const doctorsList = (data.data || []).map((user: { id: string; name?: string; email?: string; phone?: string; image_url?: string; [key: string]: unknown }) => ({
           id: user.id,
           user_id: user.id,
           user_name: user.name || 'غير معروف',

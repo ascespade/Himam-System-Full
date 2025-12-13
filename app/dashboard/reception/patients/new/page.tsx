@@ -23,11 +23,19 @@ interface PatientFormData {
   notes?: string
 }
 
+interface DuplicateMatch {
+  id: string
+  name: string
+  phone: string
+  email?: string
+  created_at?: string
+}
+
 export default function NewPatientPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [checkingDuplicate, setCheckingDuplicate] = useState(false)
-  const [duplicateMatches, setDuplicateMatches] = useState<any[]>([])
+  const [duplicateMatches, setDuplicateMatches] = useState<DuplicateMatch[]>([])
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
   const [formData, setFormData] = useState<PatientFormData>({
     name: '',
@@ -98,7 +106,7 @@ export default function NewPatientPage() {
       // If duplicate warning is shown, require confirmation
       if (showDuplicateWarning && duplicateMatches.length > 0) {
         const confirmed = window.confirm(
-          `يوجد مريض بنفس رقم الهاتف. هل تريد المتابعة؟\n\n${duplicateMatches.map((m: any) => `${m.name} - ${m.phone}`).join('\n')}`
+          `يوجد مريض بنفس رقم الهاتف. هل تريد المتابعة؟\n\n${duplicateMatches.map((m) => `${m.name} - ${m.phone}`).join('\n')}`
         )
         if (!confirmed) {
           setLoading(false)
@@ -136,8 +144,9 @@ export default function NewPatientPage() {
       } else {
         toast.error(data.error || 'فشل تسجيل المريض')
       }
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ أثناء التسجيل')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء التسجيل'
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -170,7 +179,7 @@ export default function NewPatientPage() {
                 تم العثور على {duplicateMatches.length} مريض بنفس رقم الهاتف:
               </div>
               <div className="space-y-2">
-                {duplicateMatches.map((match: any) => (
+                {duplicateMatches.map((match) => (
                   <div
                     key={match.id}
                     className="bg-white rounded-lg p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50"
@@ -181,7 +190,7 @@ export default function NewPatientPage() {
                       <div className="text-sm text-gray-500">{match.phone}</div>
                     </div>
                     <div className="text-xs text-gray-400">
-                      {new Date(match.created_at).toLocaleDateString('ar-SA')}
+                      {match.created_at ? new Date(match.created_at).toLocaleDateString('ar-SA') : 'غير محدد'}
                     </div>
                   </div>
                 ))}

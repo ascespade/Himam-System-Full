@@ -57,11 +57,11 @@ export default function UsersPage() {
         // Sort locally for now (can be moved to backend)
         let sorted = [...(data.data || [])]
         sorted.sort((a, b) => {
-          let aVal: any = a[sortBy]
-          let bVal: any = b[sortBy]
+          let aVal: string | number = a[sortBy] as string | number
+          let bVal: string | number = b[sortBy] as string | number
           if (sortBy === 'created_at') {
-            aVal = new Date(aVal).getTime()
-            bVal = new Date(bVal).getTime()
+            aVal = new Date(aVal as string).getTime()
+            bVal = new Date(bVal as string).getTime()
           }
           return sortOrder === 'asc' 
             ? (aVal > bVal ? 1 : -1)

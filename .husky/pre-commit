@@ -1,4 +1,35 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-npx lint-staged
+echo "🔍 Running pre-commit checks..."
+
+# TypeScript check
+echo "📝 TypeScript type checking..."
+npm run type-check || {
+  echo "❌ TypeScript errors found. Please fix them before committing."
+  exit 1
+}
+
+# ESLint check
+echo "🔧 ESLint checking..."
+npm run lint:check || {
+  echo "❌ ESLint errors found. Please fix them before committing."
+  exit 1
+}
+
+# Check for console.log (exclude logger.ts, toast.ts, and client-side dashboard pages)
+echo "🚫 Checking for console.log..."
+if grep -r "console\.log" --include="*.ts" --include="*.tsx" src/ app/api/ --exclude-dir=node_modules --exclude="logger.ts" --exclude="toast.ts" 2>/dev/null; then
+  echo "❌ Found console.log statements in server-side code. Use logger instead."
+  echo "   Replace with: import { logInfo } from '@/shared/utils/logger'"
+  exit 1
+fi
+
+# Check for any types
+echo "🚫 Checking for 'any' types..."
+if grep -r ": any\|as any" --include="*.ts" --include="*.tsx" src/ app/ --exclude-dir=node_modules 2>/dev/null; then
+  echo "❌ Found 'any' types. Use proper types instead."
+  exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"

@@ -8,7 +8,7 @@ interface Template {
   id: string
   name: string
   category: string
-  template_content: any
+  template_content: Record<string, unknown>
   is_default: boolean
   is_active: boolean
   created_at: string

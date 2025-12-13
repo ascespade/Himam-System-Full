@@ -95,8 +95,9 @@ function NewClaimContent() {
       } else {
         throw new Error(autoSubmitData.error || 'فشل إنشاء المطالبة')
       }
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ في إنشاء المطالبة')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في إنشاء المطالبة'
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
