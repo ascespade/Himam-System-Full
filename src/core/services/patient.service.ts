@@ -43,7 +43,7 @@ export class PatientService extends BaseService {
         allergies: validated.allergies,
         created_at: new Date().toISOString(),
       })
-      .select()
+      .select('id, name, email, phone, date_of_birth, gender, address, emergency_contact, emergency_phone, medical_history, allergies, created_at, updated_at')
       .single()
 
     if (error) {
@@ -82,7 +82,7 @@ export class PatientService extends BaseService {
       .from('patients')
       .update(validated)
       .eq('id', patientId)
-      .select()
+      .select('id, name, email, phone, date_of_birth, gender, address, emergency_contact, emergency_phone, medical_history, allergies, created_at, updated_at')
       .single()
 
     if (error) {
@@ -103,7 +103,7 @@ export class PatientService extends BaseService {
   async findById(patientId: string): Promise<Patient | null> {
     const { data, error } = await supabaseAdmin
       .from('patients')
-      .select('*')
+      .select('id, name, email, phone, date_of_birth, gender, address, emergency_contact, emergency_phone, medical_history, allergies, created_at, updated_at')
       .eq('id', patientId)
       .single()
 
@@ -122,7 +122,7 @@ export class PatientService extends BaseService {
   async findByPhone(phone: string): Promise<Patient | null> {
     const { data, error } = await supabaseAdmin
       .from('patients')
-      .select('*')
+      .select('id, name, email, phone, date_of_birth, gender, address, emergency_contact, emergency_phone, medical_history, allergies, created_at, updated_at')
       .eq('phone', phone)
       .single()
 
@@ -143,7 +143,7 @@ export class PatientService extends BaseService {
 
     const { data, error, count } = await supabaseAdmin
       .from('patients')
-      .select('*', { count: 'exact' })
+      .select('id, name, email, phone, date_of_birth, gender, address, emergency_contact, emergency_phone, medical_history, allergies, created_at, updated_at', { count: 'exact' })
       .or(`name.ilike.%${query}%,phone.ilike.%${query}%,email.ilike.%${query}%`)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)

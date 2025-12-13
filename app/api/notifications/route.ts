@@ -26,13 +26,18 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
+    const searchParams = req.nextUrl.searchParams
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
+
     // Select specific columns for better performance
-    const { data, error } = await supabaseAdmin
+    const { data, error, count } = await supabaseAdmin
       .from('notifications')
-      .select('id, user_id, patient_id, type, title, message, entity_type, entity_id, is_read, created_at, updated_at')
+      .select('id, user_id, patient_id, type, title, message, entity_type, entity_id, is_read, created_at, updated_at', { count: 'exact' })
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(50)
+      .range(offset, offset + limit - 1)
 
     if (error) throw error
 

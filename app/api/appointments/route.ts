@@ -42,15 +42,17 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const doctor_id = searchParams.get('doctor_id')
     const date = searchParams.get('date')
     const status = searchParams.get('status')
-    const limit = parseInt(searchParams.get('limit') || '100')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
 
     // Select specific columns for better performance
     let query = supabaseAdmin
       .from('appointments')
-      .select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, created_at, updated_at')
+      .select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, created_at, updated_at', { count: 'exact' })
       .order('date', { ascending: false })
       .order('time', { ascending: false })
-      .limit(limit)
+      .range(offset, offset + limit - 1)
 
     if (patient_id) {
       query = query.eq('patient_id', patient_id)
@@ -68,11 +70,24 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       query = query.eq('status', status)
     }
 
-    const { data: appointments, error } = await query
+    const { data: appointments, error, count } = await query
 
     if (error) throw error
 
-    return NextResponse.json(successResponse(appointments || []))
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
+
+    return NextResponse.json(successResponse({
+      data: appointments || [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    }))
   } catch (error: unknown) {
     return handleApiError(error)
   }
