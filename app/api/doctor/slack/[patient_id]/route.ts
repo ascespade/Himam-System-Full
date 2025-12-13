@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { patient_id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -32,14 +36,13 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Select specific columns for better performance
     const { data: conversation, error: convError } = await supabaseAdmin
       .from('slack_conversations')
       .select(`
-        *,
+        id, doctor_id, patient_id, slack_channel_id, slack_channel_name, is_active, last_message_at, created_at, updated_at,
         patients (
-          id,
-          name,
-          phone
+          id, name, phone
         )
       `)
       .eq('doctor_id', user.id)
@@ -50,27 +53,40 @@ export async function GET(
       throw convError
     }
 
-    // Get messages if conversation exists
-    let messages = []
+    // Get messages if conversation exists - select specific columns
+    type Message = {
+      id: string
+      conversation_id: string
+      slack_message_ts: string | null
+      sender_id: string | null
+      sender_type: string | null
+      message_text: string | null
+      is_read: boolean
+      created_at: string
+      updated_at: string
+    }
+    let messages: Message[] = []
     if (conversation) {
       const { data: msgs, error: msgsError } = await supabaseAdmin
         .from('slack_messages')
-        .select('*')
+        .select('id, conversation_id, slack_message_ts, sender_id, sender_type, message_text, is_read, created_at, updated_at')
         .eq('conversation_id', conversation.id)
         .order('created_at', { ascending: true })
 
-      if (!msgsError) {
-        messages = msgs || []
+      if (!msgsError && msgs) {
+        messages = msgs as Message[]
       }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         conversation: conversation || null,
         messages
       }
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -92,6 +108,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { patient_id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -119,11 +138,11 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Message text is required' }, { status: 400 })
     }
 
-    // Get or create conversation
+    // Get or create conversation - select specific columns
     let conversation
     const { data: existing } = await supabaseAdmin
       .from('slack_conversations')
-      .select('*')
+      .select('id, doctor_id, patient_id, slack_channel_id, slack_channel_name, is_active, last_message_at, created_at, updated_at')
       .eq('doctor_id', user.id)
       .eq('patient_id', params.patient_id)
       .single()
@@ -150,7 +169,8 @@ export async function POST(
           slack_channel_name: channelName,
           is_active: true
         })
-        .select()
+        // Select specific columns for better performance
+        .select('id, doctor_id, patient_id, slack_channel_id, slack_channel_name, is_active, last_message_at, created_at, updated_at')
         .single()
 
       if (createError) throw createError
@@ -181,7 +201,8 @@ export async function POST(
         message_text,
         is_read: false
       })
-      .select()
+      // Select specific columns for better performance
+      .select('id, conversation_id, slack_message_ts, sender_id, sender_type, message_text, is_read, created_at, updated_at')
       .single()
 
     if (msgError) throw msgError
@@ -192,10 +213,12 @@ export async function POST(
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', conversation.id)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: message
     }, { status: 201 })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

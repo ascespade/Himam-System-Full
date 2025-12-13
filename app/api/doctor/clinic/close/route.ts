@@ -5,10 +5,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -36,7 +37,8 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('doctor_id', user.id)
-      .select()
+      // Select specific columns for better performance
+      .select('id, doctor_id, is_open, daily_capacity, current_queue_count, appointment_buffer_minutes, allow_same_day_booking, allow_online_booking, booking_advance_days, consultation_fee, follow_up_fee, notify_on_new_appointment, notify_on_cancellation, notify_before_appointment_minutes, created_at, updated_at')
       .maybeSingle()
 
     if (error && error.code !== 'PGRST116') {
@@ -59,5 +61,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

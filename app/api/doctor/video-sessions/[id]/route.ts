@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -57,21 +61,18 @@ export async function PUT(
     if (started_at !== undefined) updateData.started_at = started_at
     if (ended_at !== undefined) updateData.ended_at = ended_at
 
+    // Select specific columns for better performance
     const { data, error } = await supabaseAdmin
       .from('video_sessions')
       .update(updateData)
       .eq('id', params.id)
       .select(`
-        *,
+        id, session_id, doctor_id, patient_id, meeting_id, meeting_url, recording_url, recording_duration, recording_size, recording_status, started_at, ended_at, created_at, updated_at,
         sessions (
-          id,
-          date,
-          session_type
+          id, date, session_type
         ),
         patients (
-          id,
-          name,
-          phone
+          id, name, phone
         )
       `)
       .single()
@@ -86,10 +87,12 @@ export async function PUT(
         .eq('id', data.session_id)
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -111,14 +114,17 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const body = await req.json()
     const { recording_url, recording_duration, recording_size, meeting_id } = body
 
-    // Verify meeting_id matches
+    // Verify meeting_id matches - select specific columns
     const { data: videoSession } = await supabaseAdmin
       .from('video_sessions')
-      .select('*')
+      .select('id, session_id, doctor_id, patient_id, meeting_id, meeting_url, recording_url, recording_duration, recording_size, recording_status, started_at, ended_at, created_at, updated_at')
       .eq('id', params.id)
       .eq('meeting_id', meeting_id)
       .single()
@@ -138,18 +144,14 @@ export async function POST(
         updated_at: new Date().toISOString()
       })
       .eq('id', params.id)
+      // Select specific columns for better performance
       .select(`
-        *,
+        id, session_id, doctor_id, patient_id, meeting_id, meeting_url, recording_url, recording_duration, recording_size, recording_status, started_at, ended_at, created_at, updated_at,
         sessions (
-          id,
-          date,
-          session_type,
-          status
+          id, date, session_type, status
         ),
         patients (
-          id,
-          name,
-          phone
+          id, name, phone
         )
       `)
       .single()
@@ -167,11 +169,14 @@ export async function POST(
     // Create notification
     try {
       const { createNotification, NotificationTemplates } = await import('@/lib/notifications')
+      const patientName = Array.isArray(data.patients) && data.patients.length > 0
+        ? (data.patients[0] as { name?: string })?.name
+        : (data.patients as { name?: string } | undefined)?.name
       await createNotification({
         userId: data.doctor_id,
         patientId: data.patient_id,
         ...NotificationTemplates.systemAlert(
-          `تم رفع تسجيل الجلسة عن بُعد للمريض ${data.patients?.name || 'مريض'}. إن شاء الله يكون مفيد.`
+          `تم رفع تسجيل الجلسة عن بُعد للمريض ${patientName || 'مريض'}. إن شاء الله يكون مفيد.`
         ),
         title: 'تسجيل جلسة جاهز',
         entityType: 'video_session',
@@ -182,10 +187,12 @@ export async function POST(
       logError('Failed to create notification', e, { sessionId: data.id, endpoint: '/api/doctor/video-sessions/[id]' })
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

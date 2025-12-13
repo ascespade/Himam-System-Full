@@ -49,7 +49,9 @@ export async function GET(
       throw error
     }
 
-    return NextResponse.json(successResponse(appointment))
+    const response = NextResponse.json(successResponse(appointment))
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     return handleApiError(error)
   }
@@ -108,7 +110,7 @@ export async function PUT(
       .from('appointments')
       .update(updateData)
       .eq('id', id)
-      .select()
+      .select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, created_at, updated_at')
       .single()
 
     if (error) {

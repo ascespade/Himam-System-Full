@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 /**
  * GET /api/knowledge/[id]
@@ -9,10 +10,14 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { data, error } = await supabaseAdmin
       .from('knowledge_base')
-      .select('*')
+      .select('id, title, content, category, tags, views, created_at, updated_at')
       .eq('id', params.id)
       .single()
 
@@ -32,10 +37,12 @@ export async function GET(
       .update({ views: (data.views || 0) + 1 })
       .eq('id', params.id)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -57,6 +64,10 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const body = await req.json()
     const { title, content, category, tags } = body
@@ -88,15 +99,17 @@ export async function PUT(
       .from('knowledge_base')
       .update(updateData)
       .eq('id', params.id)
-      .select()
+      .select('id, title, content, category, tags, views, created_at, updated_at')
       .single()
 
     if (error) throw error
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -118,6 +131,10 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { error } = await supabaseAdmin
       .from('knowledge_base')
@@ -126,10 +143,12 @@ export async function DELETE(
 
     if (error) throw error
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Knowledge item deleted successfully'
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

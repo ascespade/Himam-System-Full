@@ -1,10 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -36,17 +37,17 @@ export async function GET(req: NextRequest) {
     // 2. Appointment Stats
     const { count: totalAppointments } = await supabaseAdmin
       .from('appointments')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
 
     const { count: todayAppointments } = await supabaseAdmin
       .from('appointments')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .gte('date', new Date().toISOString().split('T')[0])
 
     // 3. Patient Stats
     const { count: totalPatients } = await supabaseAdmin
       .from('patients')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
 
     // 4. Doctor Stats
     const { data: doctors } = await supabaseAdmin
@@ -78,4 +79,4 @@ export async function GET(req: NextRequest) {
     logError('Error fetching report stats', error, { endpoint: '/api/reports/stats' })
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
-}
+}, 'api')

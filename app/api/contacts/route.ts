@@ -8,6 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { successResponse, errorResponse } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/contacts
  * Get all contacts from unified view
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -61,7 +62,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('contacts_view')
-      .select('*')
+      .select('id, name, phone, email, contact_type, created_at, updated_at')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -95,4 +96,4 @@ export async function GET(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')

@@ -6,10 +6,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -37,14 +38,14 @@ export async function GET(req: NextRequest) {
     let patternEmbeddings = 0
 
     try {
-      // Try to query vector embeddings table
+      // Try to query vector embeddings table - select specific column for count
       const { count: claimCount } = await supabaseAdmin
         .from('insurance_claim_embeddings')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
 
       const { count: patternCount } = await supabaseAdmin
         .from('insurance_pattern_embeddings')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
 
       vectorEnabled = true
       claimEmbeddings = claimCount || 0
@@ -83,5 +84,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

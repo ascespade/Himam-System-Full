@@ -7,8 +7,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams
     const search = searchParams.get('search')
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('specialists')
-      .select('*')
+      .select('id, name, specialty, nationality, email, phone, created_at, updated_at')
       .order('name')
       .limit(limit)
 
@@ -32,9 +33,9 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { name, specialty, nationality, email } = body
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
         nationality: nationality || '',
         email: email || '',
       })
-      .select()
+      .select('id, name, specialty, nationality, email, phone, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -63,5 +64,5 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')
 

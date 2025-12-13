@@ -6,28 +6,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     // 1. Get Conversation Stats (unique users)
     const { count: conversationCount, error: convError } = await supabaseAdmin
       .from('whatsapp_conversations')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
     
     // 2. Get Message Stats
     const { count: messageCount, error: msgError } = await supabaseAdmin
       .from('whatsapp_messages')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
     
     // Get inbound/outbound breakdown
     const { count: inboundCount } = await supabaseAdmin
       .from('whatsapp_messages')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('direction', 'inbound')
     
     const { count: outboundCount } = await supabaseAdmin
       .from('whatsapp_messages')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('direction', 'outbound')
 
     // 3. Get Appointment Stats
@@ -66,4 +67,4 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')

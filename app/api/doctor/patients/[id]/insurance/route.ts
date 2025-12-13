@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -33,10 +37,10 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get patient insurance
+    // Get patient insurance - select specific columns
     const { data, error } = await supabaseAdmin
       .from('patient_insurance')
-      .select('*')
+      .select('id, patient_id, insurance_company, policy_number, coverage_percentage, effective_date, expiry_date, is_active, notes, created_at, updated_at')
       .eq('patient_id', params.id)
       .eq('is_active', true)
       .order('effective_date', { ascending: false })
@@ -52,10 +56,12 @@ export async function GET(
       throw error
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: data || []
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { askAI } from '@/lib/ai'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/insurance/ai-agent/monitor
  * Get claims that need attention or follow-up
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -44,34 +45,34 @@ export async function GET(req: NextRequest) {
     const now = new Date()
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
-    // Get claims that need follow-up
+    // Get claims that need follow-up - select specific columns
     const { data: claimsNeedingFollowUp } = await supabaseAdmin
       .from('insurance_claims')
       .select(`
-        *,
-        patients (name, phone)
+        id, patient_id, claim_number, claim_type, service_date, service_description, amount, status, submitted_date, created_at,
+        patients (id, name, phone)
       `)
       .in('status', ['submitted', 'under_review'])
       .lte('submitted_date', sevenDaysAgo.toISOString())
       .order('submitted_date', { ascending: true })
 
-    // Get rejected claims that need resubmission
+    // Get rejected claims that need resubmission - select specific columns
     const { data: rejectedClaims } = await supabaseAdmin
       .from('insurance_claims')
       .select(`
-        *,
-        patients (name, phone)
+        id, patient_id, claim_number, claim_type, service_date, service_description, amount, status, processed_date, resubmission_notes, created_at,
+        patients (id, name, phone)
       `)
       .eq('status', 'rejected')
       .is('resubmission_notes', null)
       .order('processed_date', { ascending: false })
 
-    // Get claims with special cases (low confidence, multiple rejections, etc.)
+    // Get claims with special cases (low confidence, multiple rejections, etc.) - select specific columns
     const { data: specialCases } = await supabaseAdmin
       .from('insurance_claims')
       .select(`
-        *,
-        patients (name, phone)
+        id, patient_id, claim_number, claim_type, service_date, service_description, amount, status, ai_confidence, rejection_count, created_at,
+        patients (id, name, phone)
       `)
       .or('ai_confidence.lt.70,rejection_count.gt.2')
       .in('status', ['pending', 'rejected'])
@@ -102,13 +103,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/doctor/insurance/ai-agent/monitor/auto-followup
  * Automated follow-up on pending claims
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -145,10 +146,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Get claim
+    // Get claim - select specific columns
     const { data: claim } = await supabaseAdmin
       .from('insurance_claims')
-      .select('*, patients (name, phone)')
+      .select('id, patient_id, claim_number, claim_type, service_date, service_description, amount, status, rejection_reason, rejection_count, resubmission_notes, created_at, patients (id, name, phone)')
       .eq('id', claim_id)
       .single()
 
@@ -257,5 +258,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

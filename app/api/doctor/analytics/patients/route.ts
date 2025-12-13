@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/analytics/patients
  * Get patient analytics for a doctor
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -35,10 +36,10 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const doctorId = searchParams.get('doctor_id') || user.id
 
-    // Get total patients
+    // Get total patients - select specific column for count
     const { count: totalPatients } = await supabaseAdmin
       .from('doctor_patient_relationships')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('doctor_id', doctorId)
       .is('end_date', null)
 
@@ -52,10 +53,10 @@ export async function GET(req: NextRequest) {
       .eq('doctor_id', doctorId)
       .gte('date', thirtyDaysAgo.toISOString())
 
-    // Get new patients (last 30 days)
+    // Get new patients (last 30 days) - select specific column for count
     const { count: newPatients } = await supabaseAdmin
       .from('doctor_patient_relationships')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('doctor_id', doctorId)
       .gte('start_date', thirtyDaysAgo.toISOString())
 
@@ -84,5 +85,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 /**
  * GET /api/cms/[id]
@@ -9,10 +10,14 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(request, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { data, error } = await supabaseAdmin
       .from('content_items')
-      .select('*')
+      .select('id, type, title_ar, description_ar, is_active, order_index, created_at, updated_at')
       .eq('id', params.id)
       .single()
 
@@ -26,7 +31,9 @@ export async function GET(
       throw error
     }
 
-    return NextResponse.json({ success: true, data })
+    const response = NextResponse.json({ success: true, data })
+    addRateLimitHeadersToResponse(response, request, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
 
@@ -42,6 +49,10 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(request, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const body = await request.json()
     const { title, description, type, category, status, author } = body
@@ -61,12 +72,14 @@ export async function PUT(
       .from('content_items')
       .update(updateData)
       .eq('id', params.id)
-      .select()
+      .select('id, type, title_ar, description_ar, is_active, order_index, created_at, updated_at')
       .single()
 
     if (error) throw error
 
-    return NextResponse.json({ success: true, data })
+    const response = NextResponse.json({ success: true, data })
+    addRateLimitHeadersToResponse(response, request, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
 
@@ -82,6 +95,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(request, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { error } = await supabaseAdmin
       .from('content_items')
@@ -89,7 +106,9 @@ export async function DELETE(
       .eq('id', params.id)
 
     if (error) throw error
-    return NextResponse.json({ success: true })
+    const response = NextResponse.json({ success: true })
+    addRateLimitHeadersToResponse(response, request, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
 

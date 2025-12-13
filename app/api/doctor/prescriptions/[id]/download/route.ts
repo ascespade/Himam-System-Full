@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,23 +13,22 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const prescriptionId = params.id
 
-    // Fetch prescription data
+    // Fetch prescription data - select specific columns
     const { data: prescription, error: prescriptionError } = await supabaseAdmin
       .from('prescriptions')
       .select(`
-        *,
+        id, patient_id, doctor_id, prescription_number, medications, instructions, created_at, updated_at,
         patients (
-          id,
-          name,
-          phone,
-          date_of_birth
+          id, name, phone, date_of_birth
         ),
         doctors:users!prescriptions_doctor_id_fkey (
-          id,
-          name
+          id, name
         )
       `)
       .eq('id', prescriptionId)
@@ -56,19 +56,27 @@ export async function GET(
     doc.text(`التاريخ: ${new Date(prescription.created_at).toLocaleDateString('ar-SA')}`, 14, 42)
     
     // Patient info
-    if (prescription.patients && typeof prescription.patients === 'object') {
-      const patient = prescription.patients as Record<string, unknown>
-      doc.text(`المريض: ${patient.name || 'غير محدد'}`, 14, 49)
-      doc.text(`الهاتف: ${patient.phone || 'غير محدد'}`, 14, 56)
-      if (patient.date_of_birth) {
-        doc.text(`تاريخ الميلاد: ${new Date(patient.date_of_birth as string).toLocaleDateString('ar-SA')}`, 14, 63)
+    if (prescription.patients) {
+      const patient = Array.isArray(prescription.patients) 
+        ? (prescription.patients[0] as Record<string, unknown> | undefined)
+        : (prescription.patients as Record<string, unknown>)
+      if (patient) {
+        doc.text(`المريض: ${patient.name || 'غير محدد'}`, 14, 49)
+        doc.text(`الهاتف: ${patient.phone || 'غير محدد'}`, 14, 56)
+        if (patient.date_of_birth) {
+          doc.text(`تاريخ الميلاد: ${new Date(patient.date_of_birth as string).toLocaleDateString('ar-SA')}`, 14, 63)
+        }
       }
     }
     
     // Doctor info
-    if (prescription.doctors && typeof prescription.doctors === 'object') {
-      const doctor = prescription.doctors as Record<string, unknown>
-      doc.text(`الطبيب: ${doctor.name || 'غير محدد'}`, 14, 70)
+    if (prescription.doctors) {
+      const doctor = Array.isArray(prescription.doctors)
+        ? (prescription.doctors[0] as Record<string, unknown> | undefined)
+        : (prescription.doctors as Record<string, unknown>)
+      if (doctor) {
+        doc.text(`الطبيب: ${doctor.name || 'غير محدد'}`, 14, 70)
+      }
     }
     
     // Medications
@@ -114,12 +122,14 @@ export async function GET(
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'))
     
-    return new NextResponse(pdfBuffer, {
+    const response = new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="prescription-${prescriptionId}.pdf"`,
       },
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error) {
     const { logError } = await import('@/shared/utils/logger')
     logError('Failed to generate prescription PDF', error, { prescriptionId: params.id, endpoint: '/api/doctor/prescriptions/[id]/download' })

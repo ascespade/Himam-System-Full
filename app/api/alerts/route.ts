@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/alerts
  * Get alert instances
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('alert_instances')
-      .select('*')
+      .select('id, alert_type, severity, status, message, entity_type, entity_id, metadata, created_at, updated_at, resolved_at')
       .order('created_at', { ascending: false })
       .limit(limit)
 
@@ -76,5 +77,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

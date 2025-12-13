@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/knowledge
  * Get all knowledge items with optional filtering
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams
     const category = searchParams.get('category')
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('knowledge_base')
-      .select('*', { count: 'exact' })
+      .select('id, title, content, category, tags, views, created_at, updated_at', { count: 'exact' })
 
     // Filter by category
     if (category && category !== 'all') {
@@ -72,13 +73,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/knowledge
  * Create a new knowledge item
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { title, content, category, tags } = body
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabaseAdmin
       .from('knowledge_base')
       .insert(knowledgeData)
-      .select()
+      .select('id, title, content, category, tags, views, created_at, updated_at')
       .single()
 
     // If table doesn't exist, return error suggesting to create it
@@ -134,5 +135,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

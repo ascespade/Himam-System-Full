@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export const dynamic = 'force-dynamic'
  * - detect_risks: Detect potential risks
  */
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -99,32 +100,32 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 async function generateInitialAnalysis(patientId: string, doctorId: string, aiApiKey: string) {
   // Fetch patient data
   const [patientData, sessions, plans, records] = await Promise.all([
     supabaseAdmin
       .from('patients')
-      .select('*')
+      .select('id, name, date_of_birth, gender, allergies, chronic_diseases')
       .eq('id', patientId)
       .single(),
     supabaseAdmin
       .from('sessions')
-      .select('*')
+      .select('id, patient_id, doctor_id, date, session_type, chief_complaint, assessment, notes')
       .eq('patient_id', patientId)
       .eq('doctor_id', doctorId)
       .order('date', { ascending: false })
       .limit(10),
     supabaseAdmin
       .from('treatment_plans')
-      .select('*, goals(*)')
+      .select('id, patient_id, doctor_id, title, status, progress_percentage, goals(id, title, status)')
       .eq('patient_id', patientId)
       .eq('doctor_id', doctorId)
       .eq('status', 'active'),
     supabaseAdmin
       .from('medical_records')
-      .select('*')
+      .select('id, patient_id, date, record_type, title, description, notes')
       .eq('patient_id', patientId)
       .order('date', { ascending: false })
       .limit(10)

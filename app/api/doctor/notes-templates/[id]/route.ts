@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -79,16 +83,19 @@ export async function PUT(
       updateData.is_default = body.is_default
     }
 
+    // Select specific columns for better performance
     const { data, error } = await supabaseAdmin
       .from('doctor_notes_templates')
       .update(updateData)
       .eq('id', templateId)
-      .select()
+      .select('id, created_by, name, category, template_content, is_active, is_default, created_at, updated_at')
       .single()
 
     if (error) throw error
 
-    return NextResponse.json({ success: true, data })
+    const response = NextResponse.json({ success: true, data })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -110,6 +117,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -155,11 +165,12 @@ export async function DELETE(
 
     // Don't allow deletion of default templates, only deactivation
     if (template.is_default) {
+      // Select specific columns for better performance
       const { data, error } = await supabaseAdmin
         .from('doctor_notes_templates')
         .update({ is_active: false, updated_at: new Date().toISOString() })
         .eq('id', templateId)
-        .select()
+        .select('id, created_by, name, category, template_content, is_active, is_default, created_at, updated_at')
         .single()
 
       if (error) throw error
@@ -167,16 +178,19 @@ export async function DELETE(
     }
 
     // Soft delete (set is_active to false) instead of hard delete
+    // Select specific columns for better performance
     const { data, error } = await supabaseAdmin
       .from('doctor_notes_templates')
       .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq('id', templateId)
-      .select()
+      .select('id, created_by, name, category, template_content, is_active, is_default, created_at, updated_at')
       .single()
 
     if (error) throw error
 
-    return NextResponse.json({ success: true, data, message: 'Template deleted' })
+    const response = NextResponse.json({ success: true, data, message: 'Template deleted' })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

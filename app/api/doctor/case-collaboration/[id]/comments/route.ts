@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -56,10 +60,11 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
+    // Select specific columns for better performance
     const { data, error } = await supabaseAdmin
       .from('case_collaboration_comments')
       .select(`
-        *,
+        id, case_id, doctor_id, comment_text, attachments, is_internal, created_at, updated_at,
         doctor:doctor_id (id, name, role)
       `)
       .eq('case_id', caseId)
@@ -67,7 +72,9 @@ export async function GET(
 
     if (error) throw error
 
-    return NextResponse.json({ success: true, data: data || [] })
+    const response = NextResponse.json({ success: true, data: data || [] })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -89,6 +96,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -139,6 +149,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
+    // Select specific columns for better performance
     const { data, error } = await supabaseAdmin
       .from('case_collaboration_comments')
       .insert({
@@ -149,7 +160,7 @@ export async function POST(
         is_internal: is_internal || false,
       })
       .select(`
-        *,
+        id, case_id, doctor_id, comment_text, attachments, is_internal, created_at, updated_at,
         doctor:doctor_id (id, name, role)
       `)
       .single()
@@ -180,7 +191,9 @@ export async function POST(
       logError('Failed to notify doctors', e, { caseId: params.id, endpoint: '/api/doctor/case-collaboration/[id]/comments' })
     }
 
-    return NextResponse.json({ success: true, data }, { status: 201 })
+    const response = NextResponse.json({ success: true, data }, { status: 201 })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

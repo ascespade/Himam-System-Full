@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic'
  * Get current patient visit for doctor (from reception confirmation)
  * يستخدم لتحديد المريض تلقائياً في PatientContext
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -37,12 +38,13 @@ export async function GET(req: NextRequest) {
     let error: Record<string, unknown> | null = null
 
     try {
+      // Select specific columns for better performance
       const result = await supabaseAdmin
         .from('patient_visits')
         .select(`
-          *,
-          patients (*),
-          appointments (*)
+          id, patient_id, doctor_id, appointment_id, visit_date, status, notes, confirmed_to_doctor_time, doctor_seen_time, visit_completed_time, created_at, updated_at,
+          patients (id, name, phone),
+          appointments (id, date, time, status)
         `)
         .eq('doctor_id', user.id)
         .eq('status', 'confirmed_to_doctor')
@@ -57,12 +59,13 @@ export async function GET(req: NextRequest) {
       const errorMessage = tableError instanceof Error ? tableError.message : String(tableError)
       if (errorCode === '42P01' || errorMessage.includes('does not exist')) {
         try {
+          // Select specific columns for better performance
           const queueResult = await supabaseAdmin
             .from('reception_queue')
             .select(`
-              *,
-              patients (*),
-              appointments (*)
+              id, patient_id, appointment_id, queue_number, status, checked_in_at, confirmed_at, notes, created_at, updated_at,
+              patients (id, name, phone),
+              appointments (id, date, time, status)
             `)
             .eq('doctor_id', user.id)
             .eq('status', 'confirmed')
@@ -151,7 +154,7 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * PUT /api/doctor/patient-visit/[id]
@@ -161,6 +164,10 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const { applyRateLimitCheck, addRateLimitHeadersToResponse } = await import('@/core/api/middleware/applyRateLimit')
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -204,15 +211,18 @@ export async function PUT(
       .update(updateData)
       .eq('id', params.id)
       .eq('doctor_id', user.id)
-      .select()
+      // Select specific columns for better performance
+      .select('id, patient_id, doctor_id, appointment_id, visit_date, status, notes, confirmed_to_doctor_time, doctor_seen_time, visit_completed_time, created_at, updated_at')
       .single()
 
     if (error) throw error
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

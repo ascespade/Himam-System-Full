@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 /**
  * GET /api/patients/:id
@@ -16,6 +17,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { id } = params
 
@@ -28,7 +33,7 @@ export async function GET(
 
     const { data: patient, error } = await supabaseAdmin
       .from('patients')
-      .select('*')
+      .select('id, name, phone, email, nationality, date_of_birth, gender, address, status, allergies, chronic_diseases, emergency_contact, notes, created_at, updated_at')
       .eq('id', id)
       .single()
 
@@ -56,6 +61,10 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { id } = params
     const body = await req.json()
@@ -77,7 +86,7 @@ export async function PUT(
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
-      .select()
+      .select('id, name, phone, email, nationality, date_of_birth, gender, address, status, allergies, chronic_diseases, emergency_contact, notes, created_at, updated_at')
       .single()
 
     if (error) {
@@ -90,7 +99,9 @@ export async function PUT(
       throw error
     }
 
-    return NextResponse.json(successResponse(patient))
+    const response = NextResponse.json(successResponse(patient))
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     return handleApiError(error)
   }
@@ -104,6 +115,10 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { id } = params
 
@@ -133,7 +148,9 @@ export async function DELETE(
       throw error
     }
 
-    return NextResponse.json(successResponse({ id, deleted: true }))
+    const response = NextResponse.json(successResponse({ id, deleted: true }))
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     return handleApiError(error)
   }

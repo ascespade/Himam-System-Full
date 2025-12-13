@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 // Get all content
-export async function GET() {
+export const GET = withRateLimit(async function GET() {
   try {
     const { data, error } = await supabaseAdmin
       .from('content_items')
-      .select('*')
+      .select('id, type, title_ar, description_ar, is_active, order_index, created_at, updated_at')
       .order('order_index', { ascending: true })
 
     // If table doesn't exist, return empty or mock for now to prevent crash
@@ -22,10 +23,10 @@ export async function GET() {
 
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
-}
+}, 'api')
 
 // Create/Update content
-export async function POST(req: Request) {
+export const POST = withRateLimit(async function POST(req: Request) {
   try {
     const body = await req.json()
     const { id, type, title_ar, description_ar, is_active } = body // Simplified for MVP
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
          is_active,
          updated_at: new Date().toISOString()
       })
-      .select()
+      .select('id, type, title_ar, description_ar, is_active, order_index, created_at, updated_at')
       .single()
 
     if (error) throw error

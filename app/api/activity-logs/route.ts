@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/activity-logs
  * Get activity logs with filtering
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('activity_logs')
-      .select('*')
+      .select('id, user_id, user_role, action_type, entity_type, entity_id, description, metadata, ip_address, user_agent, created_at')
       .order('created_at', { ascending: false })
       .limit(limit)
 
@@ -82,13 +83,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/activity-logs
  * Create activity log (usually called by other APIs)
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -149,7 +150,7 @@ export async function POST(req: NextRequest) {
         ip_address: ipAddress,
         user_agent: userAgent
       })
-      .select()
+      .select('id, user_id, user_role, action_type, entity_type, entity_id, description, metadata, ip_address, user_agent, created_at')
       .single()
 
     if (error) throw error
@@ -167,5 +168,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

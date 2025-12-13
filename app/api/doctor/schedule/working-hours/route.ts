@@ -8,10 +8,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -36,9 +37,10 @@ export async function GET(req: NextRequest) {
     const validFrom = searchParams.get('valid_from')
     const validUntil = searchParams.get('valid_until')
 
+    // Select specific columns for better performance
     let query = supabaseAdmin
       .from('doctor_working_hours')
-      .select('*')
+      .select('id, doctor_id, day_of_week, start_time, end_time, break_start, break_end, slot_duration_minutes, max_appointments_per_day, is_active, is_working_day, valid_from, valid_until, notes, created_at, updated_at')
       .eq('doctor_id', user.id)
       .eq('is_active', true)
       .order('day_of_week', { ascending: true })
@@ -70,9 +72,9 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -156,5 +158,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

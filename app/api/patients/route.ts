@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
         nationality: nationality || '',
         status: status || 'active',
       })
-      .select()
+      .select('id, name, phone, email, nationality, status, created_at, updated_at')
       .single()
 
     if (error) throw error

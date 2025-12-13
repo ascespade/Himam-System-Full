@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { askAI } from '@/lib/ai'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +33,7 @@ interface LearningPattern {
  * GET /api/doctor/insurance/ai-agent
  * Get AI agent status and learning patterns
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -53,33 +54,33 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get learning patterns from database
+    // Get learning patterns from database - select specific columns
     const { data: patterns, error: patternsError } = await supabaseAdmin
       .from('insurance_learning_patterns')
-      .select('*')
+      .select('id, insurance_provider, claim_type, common_errors, required_fields, success_patterns, rejection_reasons, success_count, rejection_count, updated_at, created_at')
       .order('updated_at', { ascending: false })
 
-    // Get pending claims that need attention
+    // Get pending claims that need attention - select specific columns
     const { data: pendingClaims } = await supabaseAdmin
       .from('insurance_claims')
-      .select('*, patients (name)')
+      .select('id, patient_id, claim_number, claim_type, service_date, service_description, amount, status, created_at, patients (id, name)')
       .in('status', ['pending', 'rejected', 'under_review'])
       .order('created_at', { ascending: false })
       .limit(10)
 
-    // Get statistics
+    // Get statistics - select specific column for count
     const { count: totalClaims } = await supabaseAdmin
       .from('insurance_claims')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
 
     const { count: approvedClaims } = await supabaseAdmin
       .from('insurance_claims')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .in('status', ['approved', 'paid'])
 
     const { count: rejectedClaims } = await supabaseAdmin
       .from('insurance_claims')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('status', 'rejected')
 
     return NextResponse.json({
@@ -106,13 +107,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/doctor/insurance/ai-agent/submit
  * AI-powered automated claim submission with validation
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -136,10 +137,10 @@ export async function POST(req: NextRequest) {
     const body: ClaimSubmission = await req.json()
     const { patient_id, claim_type, service_date, service_description, amount, insurance_provider } = body
 
-    // Step 1: Get patient insurance info
+    // Step 1: Get patient insurance info - select specific columns
     const { data: patientInsurance } = await supabaseAdmin
       .from('patient_insurance')
-      .select('*')
+      .select('id, patient_id, insurance_company, policy_number, coverage_percentage, effective_date, expiry_date, is_active, notes, created_at, updated_at')
       .eq('patient_id', patient_id)
       .eq('is_active', true)
       .single()
@@ -152,10 +153,10 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    // Step 2: Get learning patterns for this insurance provider and claim type
+    // Step 2: Get learning patterns for this insurance provider and claim type - select specific columns
     const { data: pattern } = await supabaseAdmin
       .from('insurance_learning_patterns')
-      .select('*')
+      .select('id, insurance_provider, claim_type, common_errors, required_fields, success_patterns, rejection_reasons, success_count, rejection_count, updated_at, created_at')
       .eq('insurance_provider', patientInsurance.insurance_company || insurance_provider)
       .eq('claim_type', claim_type)
       .single()
@@ -413,13 +414,13 @@ ${service_description}
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * PUT /api/doctor/insurance/ai-agent/learn
  * Learn from claim outcome (approval/rejection)
  */
-export async function PUT(req: NextRequest) {
+export const PUT = withRateLimit(async function PUT(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -450,10 +451,10 @@ export async function PUT(req: NextRequest) {
       )
     }
 
-    // Get claim details
+    // Get claim details - select specific columns
     const { data: claim } = await supabaseAdmin
       .from('insurance_claims')
-      .select('*')
+      .select('id, patient_id, claim_number, claim_type, service_date, service_description, amount, insurance_provider, status, rejection_reason, created_at, updated_at')
       .eq('id', claim_id)
       .single()
 
@@ -464,10 +465,10 @@ export async function PUT(req: NextRequest) {
       )
     }
 
-    // Get or create learning pattern
+    // Get or create learning pattern - select specific columns
     const { data: existingPattern } = await supabaseAdmin
       .from('insurance_learning_patterns')
-      .select('*')
+      .select('id, insurance_provider, claim_type, common_errors, required_fields, success_patterns, rejection_reasons, success_count, rejection_count, updated_at, created_at')
       .eq('insurance_provider', claim.insurance_provider || '')
       .eq('claim_type', claim.claim_type)
       .single()
@@ -592,5 +593,5 @@ export async function PUT(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

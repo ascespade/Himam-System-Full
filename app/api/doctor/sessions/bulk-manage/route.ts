@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic'
  * Bulk manage doctor sessions (reschedule day, cancel day, etc.)
  * إدارة الجلسات بشكل جماعي - تأجيل يوم كامل، إلغاء، إعادة جدولة
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -46,10 +47,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Get affected sessions
+    // Get affected sessions - select specific columns
     let query = supabaseAdmin
       .from('sessions')
-      .select('*')
+      .select('id, patient_id, doctor_id, appointment_id, date, duration, session_type, status, notes')
       .eq('doctor_id', user.id)
       .eq('status', 'scheduled')
 
@@ -253,5 +254,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

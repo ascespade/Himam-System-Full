@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -33,29 +37,29 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get treatment plans with progress
+    // Get treatment plans with progress - select specific columns
     const { data: treatmentPlans } = await supabaseAdmin
       .from('treatment_plans')
-      .select('*')
+      .select('id, patient_id, doctor_id, title, description, start_date, end_date, status, goals, progress_percentage, notes, created_at, updated_at')
       .eq('patient_id', params.id)
       .eq('doctor_id', user.id)
       .order('start_date', { ascending: false })
 
-    // Get sessions for progress tracking
+    // Get sessions for progress tracking - select specific columns
     const { data: sessions } = await supabaseAdmin
       .from('sessions')
-      .select('*')
+      .select('id, patient_id, doctor_id, appointment_id, date, duration, session_type, status, chief_complaint, assessment, plan, notes, created_at, updated_at')
       .eq('patient_id', params.id)
       .eq('doctor_id', user.id)
       .order('date', { ascending: false })
       .limit(50)
 
-    // Get progress entries if table exists
+    // Get progress entries if table exists - select specific columns
     let progressEntries: Array<Record<string, unknown>> = []
     try {
       const { data: progress } = await supabaseAdmin
         .from('progress_tracking')
-        .select('*')
+        .select('id, patient_id, doctor_id, metric_name, metric_value, notes, created_at, updated_at')
         .eq('patient_id', params.id)
         .order('created_at', { ascending: false })
         .limit(50)
@@ -76,7 +80,7 @@ export async function GET(
     }, 0)
     const overallProgress = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         treatmentPlans: treatmentPlans || [],
@@ -92,6 +96,8 @@ export async function GET(
         }
       }
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

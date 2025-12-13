@@ -154,7 +154,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
         status: 'scheduled',
         notes: notes || null,
       })
-      .select()
+      .select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, created_at, updated_at')
       .single()
 
     if (error) throw error

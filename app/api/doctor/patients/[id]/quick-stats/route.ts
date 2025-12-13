@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -54,12 +58,12 @@ export async function GET(
     ] = await Promise.all([
       supabaseAdmin
         .from('sessions')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('patient_id', params.id)
         .eq('doctor_id', user.id),
       supabaseAdmin
         .from('treatment_plans')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('patient_id', params.id)
         .eq('doctor_id', user.id)
         .eq('status', 'active'),
@@ -82,7 +86,7 @@ export async function GET(
         .single()
     ])
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         total_sessions: totalSessions || 0,
@@ -91,6 +95,8 @@ export async function GET(
         last_session: lastSession?.date || null
       }
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

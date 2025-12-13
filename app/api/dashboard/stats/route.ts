@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -45,37 +46,37 @@ export async function GET(req: NextRequest) {
     // 1. Pending Appointments Count
     const { count: pendingAppointments } = await supabaseAdmin
       .from('appointments')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('status', 'pending')
 
     // 2. Today's Appointments
     const { count: todayAppointments } = await supabaseAdmin
       .from('appointments')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .gte('date', today.toISOString())
       .lt('date', tomorrow.toISOString())
 
     // 3. Unread Notifications Count
     const { count: unreadNotifications } = await supabaseAdmin
       .from('notifications')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('is_read', false)
 
     // 4. Total Patients
     const { count: totalPatients } = await supabaseAdmin
       .from('patients')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
 
     // 5. Total Doctors
     const { count: totalDoctors } = await supabaseAdmin
       .from('users')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('role', 'doctor')
 
     // 6. Pending Invoices
     const { count: pendingInvoices } = await supabaseAdmin
       .from('invoices')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('status', 'pending')
 
     // 7. Today's Revenue (paid invoices)
@@ -104,7 +105,7 @@ export async function GET(req: NextRequest) {
       // Pending claims
       const { count: pendingClaims } = await supabaseAdmin
         .from('insurance_claims_enhanced')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('status', 'pending')
 
       roleStats.pending_claims = pendingClaims || 0
@@ -123,13 +124,13 @@ export async function GET(req: NextRequest) {
       // Doctor-specific stats
       const { count: myPatients } = await supabaseAdmin
         .from('doctor_patient_relationships')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('doctor_id', user.id)
         .is('end_date', null)
 
       const { count: todaySessions } = await supabaseAdmin
         .from('sessions')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('doctor_id', user.id)
         .eq('status', 'scheduled')
         .gte('date', today.toISOString())
@@ -137,7 +138,7 @@ export async function GET(req: NextRequest) {
 
       const { count: pendingPlans } = await supabaseAdmin
         .from('treatment_plans')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('doctor_id', user.id)
         .eq('status', 'active')
 
@@ -151,13 +152,13 @@ export async function GET(req: NextRequest) {
     } else if (requestedRole === 'reception') {
       const { count: queueToday } = await supabaseAdmin
         .from('reception_queue')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .gte('created_at', today.toISOString())
         .lt('created_at', tomorrow.toISOString())
 
       const { count: newPatientsToday } = await supabaseAdmin
         .from('patients')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .gte('created_at', today.toISOString())
         .lt('created_at', tomorrow.toISOString())
 
@@ -170,14 +171,14 @@ export async function GET(req: NextRequest) {
     } else if (requestedRole === 'insurance') {
       const { count: approvedToday } = await supabaseAdmin
         .from('insurance_claims_enhanced')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('status', 'approved')
         .gte('approved_at', today.toISOString())
         .lt('approved_at', tomorrow.toISOString())
 
       const { count: rejectedToday } = await supabaseAdmin
         .from('insurance_claims_enhanced')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('status', 'rejected')
         .gte('updated_at', today.toISOString())
         .lt('updated_at', tomorrow.toISOString())
@@ -223,5 +224,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

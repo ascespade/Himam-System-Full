@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import OpenAI from 'openai'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,7 +41,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
  * POST /api/doctor/insurance/ai-agent/embeddings/check-similarity
  * Check if new claim is similar to previously rejected claims
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -198,13 +199,13 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * PUT /api/doctor/insurance/ai-agent/embeddings/store
  * Store embedding for a claim after submission
  */
-export async function PUT(req: NextRequest) {
+export const PUT = withRateLimit(async function PUT(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -280,7 +281,7 @@ export async function PUT(req: NextRequest) {
         }, {
           onConflict: 'claim_id'
         })
-        .select()
+        .select('id, claim_id, insurance_provider, claim_type, claim_description_embedding, rejection_reason_embedding, claim_metadata, outcome, rejection_reason, error_patterns, created_at, updated_at')
         .single()
 
       if (!claimError) {
@@ -375,5 +376,5 @@ export async function PUT(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
