@@ -48,8 +48,9 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const status = searchParams.get('status')
     const assignedTo = searchParams.get('assigned_to')
     const search = searchParams.get('search')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
 
     let query = supabaseAdmin
       .from('whatsapp_conversations')
@@ -57,7 +58,7 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
         id, phone_number, patient_id, status, last_message_at, unread_count, assigned_to, tags, notes, created_at, updated_at,
         patients (id, name, phone),
         users:assigned_to (id, name, role)
-      `)
+      `, { count: 'exact' })
       .order('last_message_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -77,13 +78,19 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
 
     if (error) throw error
 
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
+
     return NextResponse.json({
       success: true,
       data: data || [],
       pagination: {
+        page,
         limit,
-        offset,
-        total: count || 0,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
       },
     })
   } catch (error: unknown) {

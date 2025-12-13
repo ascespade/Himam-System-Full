@@ -57,12 +57,13 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const search = searchParams.get('search')
     const contactType = searchParams.get('type') // 'patient', 'doctor', 'staff', etc.
-    const limit = parseInt(searchParams.get('limit') || '100')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
 
     let query = supabaseAdmin
       .from('contacts_view')
-      .select('id, name, phone, email, contact_type, created_at, updated_at')
+      .select('id, name, phone, email, contact_type, created_at, updated_at', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -78,13 +79,19 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
 
     if (error) throw error
 
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
+
     return NextResponse.json({
       success: true,
       data: data || [],
       pagination: {
+        page,
         limit,
-        offset,
-        total: count || 0,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
       },
     })
   } catch (error: unknown) {

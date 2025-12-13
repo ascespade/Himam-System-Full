@@ -44,13 +44,15 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')
     const severity = searchParams.get('severity')
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
 
     let query = supabaseAdmin
       .from('alert_instances')
-      .select('id, alert_type, severity, status, message, entity_type, entity_id, metadata, created_at, updated_at, resolved_at')
+      .select('id, alert_type, severity, status, message, entity_type, entity_id, metadata, created_at, updated_at, resolved_at', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(limit)
+      .range(offset, offset + limit - 1)
 
     if (status) {
       query = query.eq('status', status)
@@ -60,13 +62,24 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       query = query.eq('severity', severity)
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query
 
     if (error) throw error
 
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
+
     return NextResponse.json({
       success: true,
-      data: data || []
+      data: data || [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
     })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب التنبيهات'

@@ -13,23 +13,38 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams
     const search = searchParams.get('search')
-    const limit = parseInt(searchParams.get('limit') || '100')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
 
     let query = supabaseAdmin
       .from('specialists')
-      .select('id, name, specialty, nationality, email, phone, created_at, updated_at')
+      .select('id, name, specialty, nationality, email, phone, created_at, updated_at', { count: 'exact' })
       .order('name')
-      .limit(limit)
+      .range(offset, offset + limit - 1)
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,specialty.ilike.%${search}%,email.ilike.%${search}%`)
     }
 
-    const { data: specialists, error } = await query
+    const { data: specialists, error, count } = await query
 
     if (error) throw error
 
-    return NextResponse.json(successResponse(specialists || []))
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
+
+    return NextResponse.json(successResponse({
+      data: specialists || [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    }))
   } catch (error: unknown) {
     return handleApiError(error)
   }

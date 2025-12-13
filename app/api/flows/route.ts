@@ -57,12 +57,16 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const category = searchParams.get('category')
     const isActive = searchParams.get('is_active')
     const tag = searchParams.get('tag')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
 
     let query = supabaseAdmin
       .from('flows')
-      .select('id, name, description, module, category, trigger_type, trigger_config, nodes, edges, execution_mode, retry_config, timeout_seconds, ai_enabled, ai_model, ai_prompt, ai_context, is_active, priority, tags, metadata, created_by, created_at, updated_at')
+      .select('id, name, description, module, category, trigger_type, trigger_config, nodes, edges, execution_mode, retry_config, timeout_seconds, ai_enabled, ai_model, ai_prompt, ai_context, is_active, priority, tags, metadata, created_by, created_at, updated_at', { count: 'exact' })
       .order('priority', { ascending: false })
       .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (flowModule) {
       query = query.eq('module', flowModule)
@@ -80,13 +84,24 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       query = query.contains('tags', [tag])
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query
 
     if (error) throw error
+
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
 
     return NextResponse.json({
       success: true,
       data: data || [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
     })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'

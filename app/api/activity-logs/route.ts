@@ -31,7 +31,9 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url)
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
     const role = searchParams.get('role')
     const entityType = searchParams.get('entity_type')
     const actionType = searchParams.get('action_type')
@@ -45,9 +47,9 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('activity_logs')
-      .select('id, user_id, user_role, action_type, entity_type, entity_id, description, metadata, ip_address, user_agent, created_at')
+      .select('id, user_id, user_role, action_type, entity_type, entity_id, description, metadata, ip_address, user_agent, created_at', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(limit)
+      .range(offset, offset + limit - 1)
 
     // Filter by user role (non-admins can only see their own logs)
     if (userData?.role !== 'admin') {
@@ -66,13 +68,24 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       query = query.eq('action_type', actionType)
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query
 
     if (error) throw error
 
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
+
     return NextResponse.json({
       success: true,
-      data: data || []
+      data: data || [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
     })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب سجلات النشاط'

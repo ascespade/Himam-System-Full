@@ -44,11 +44,15 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const category = searchParams.get('category')
     const isActive = searchParams.get('is_active')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
 
     let query = supabaseAdmin
       .from('workflow_definitions')
-      .select('id, name, description, category, trigger_type, trigger_config, steps, ai_model, is_active, created_by, created_at, updated_at')
+      .select('id, name, description, category, trigger_type, trigger_config, steps, ai_model, is_active, created_by, created_at, updated_at', { count: 'exact' })
       .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (category) {
       query = query.eq('category', category)
@@ -58,13 +62,24 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       query = query.eq('is_active', isActive === 'true')
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query
 
     if (error) throw error
 
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
+
     return NextResponse.json({
       success: true,
-      data: data || []
+      data: data || [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
     })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
@@ -166,5 +181,5 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
