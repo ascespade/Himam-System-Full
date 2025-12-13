@@ -31,6 +31,9 @@
     "*.{ts,tsx}": [
       "eslint --fix --max-warnings 0",
       "tsc-files --noEmit"
+    ],
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write"
     ]
   },
   "dependencies": {
