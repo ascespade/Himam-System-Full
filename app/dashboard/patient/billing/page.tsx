@@ -61,7 +61,8 @@ export default function PatientBillingPage() {
         }
       }
     } catch (error) {
-      console.error('Error loading invoices:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error loading invoices', error, { endpoint: '/dashboard/patient/billing' })
     } finally {
       setLoading(false)
     }
@@ -267,9 +268,14 @@ export default function PatientBillingPage() {
 
               <div className="flex justify-end">
                 <button
-                  onClick={() => {
-                    // TODO: Implement invoice download
-                    toast.info('قريباً: ميزة تحميل الفاتورة قيد التطوير')
+                  onClick={async () => {
+                    try {
+                      const { downloadInvoice } = await import('@/shared/utils/download')
+                      await downloadInvoice(invoice.id)
+                      toast.success('تم تحميل الفاتورة بنجاح')
+                    } catch (error) {
+                      toast.error('فشل تحميل الفاتورة')
+                    }
                   }}
                   className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700 transition-colors"
                 >

@@ -101,7 +101,8 @@ export default function ContentPage() {
         setError(data.error || 'فشل تحميل المحتوى')
       }
     } catch (error) {
-      console.error('Error fetching content:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching content', error, { endpoint: '/dashboard/content' })
       setError('حدث خطأ في الاتصال')
     } finally {
       setLoading(false)
@@ -193,7 +194,8 @@ export default function ContentPage() {
         setError(data.error || 'فشل الحفظ')
       }
     } catch (error) {
-      console.error('Error saving content:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error saving content', error, { endpoint: '/dashboard/content' })
       setError('حدث خطأ في الحفظ')
     } finally {
       setSaving(false)
@@ -223,7 +225,8 @@ export default function ContentPage() {
         setError(data.error || 'فشل الحذف')
       }
     } catch (error) {
-      console.error('Error deleting content:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error deleting content', error, { contentId: selectedItem?.id, endpoint: '/dashboard/content' })
       setError('حدث خطأ في الحذف')
     } finally {
       setSaving(false)

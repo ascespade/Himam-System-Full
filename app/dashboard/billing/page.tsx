@@ -50,7 +50,8 @@ export default function BillingPage() {
         setInvoices(data.data || [])
       }
     } catch (error) {
-      console.error('Error fetching invoices:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching invoices', error, { endpoint: '/dashboard/billing' })
     } finally {
       setLoading(false)
     }
@@ -64,7 +65,8 @@ export default function BillingPage() {
         setPatients(data.data || [])
       }
     } catch (error) {
-      console.error('Error fetching patients:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching patients', error, { endpoint: '/dashboard/billing' })
     }
   }
 
@@ -89,7 +91,8 @@ export default function BillingPage() {
         alert('فشل إنشاء الفاتورة: ' + data.error)
       }
     } catch (error) {
-      console.error('Error creating invoice:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error creating invoice', error, { endpoint: '/dashboard/billing' })
     }
   }
 
@@ -105,7 +108,8 @@ export default function BillingPage() {
         fetchInvoices()
       }
     } catch (error) {
-      console.error('Error updating invoice:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error updating invoice', error, { invoiceId: id, endpoint: '/dashboard/billing' })
     }
   }
 

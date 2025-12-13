@@ -53,7 +53,8 @@ export default function ReceptionAppointmentsPage() {
         setAppointments(data.data || [])
       }
     } catch (error) {
-      console.error('Error loading appointments:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error loading appointments', error, { endpoint: '/dashboard/reception/appointments' })
     } finally {
       setLoading(false)
     }
@@ -78,7 +79,8 @@ export default function ReceptionAppointmentsPage() {
         toast.error('فشل تحديث الموعد')
       }
     } catch (error) {
-      console.error('Error updating appointment:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error updating appointment', error, { appointmentId: id, endpoint: '/dashboard/reception/appointments' })
       toast.error('فشل تحديث الموعد')
     }
   }

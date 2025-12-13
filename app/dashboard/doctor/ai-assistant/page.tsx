@@ -15,7 +15,7 @@ interface QuickAction {
   id: string
   label: string
   prompt: string
-  icon: React.ComponentType<{ size?: number; className?: string }>
+  icon: React.ComponentType<{ size?: number; className?: string; [key: string]: unknown }>
 }
 
 export default function AIAssistantPage() {
@@ -50,7 +50,8 @@ export default function AIAssistantPage() {
         setPatientContext(data.data.patient)
       }
     } catch (error) {
-      console.error('Error fetching current patient:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching current patient', error, { endpoint: '/dashboard/doctor/ai-assistant' })
     }
   }
 
@@ -59,25 +60,25 @@ export default function AIAssistantPage() {
       id: 'symptoms',
       label: 'تحليل الأعراض',
       prompt: 'ساعدني في تحليل أعراض المريض الحالي',
-      icon: Sparkles
+      icon: Sparkles as React.ComponentType<{ size?: number; className?: string }>
     },
     {
       id: 'diagnosis',
       label: 'اقتراح تشخيص',
       prompt: 'اقترح تشخيصاً محتملاً بناءً على التاريخ المرضي',
-      icon: FileText
+      icon: FileText as React.ComponentType<{ size?: number; className?: string }>
     },
     {
       id: 'treatment',
       label: 'خطة علاجية',
       prompt: 'ساعدني في وضع خطة علاجية مناسبة',
-      icon: FileText
+      icon: FileText as React.ComponentType<{ size?: number; className?: string }>
     },
     {
       id: 'documentation',
       label: 'كتابة ملاحظات',
       prompt: 'اكتب ملخصاً احترافياً للجلسة الحالية',
-      icon: FileText
+      icon: FileText as React.ComponentType<{ size?: number; className?: string }>
     }
   ]
 

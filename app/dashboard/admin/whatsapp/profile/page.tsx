@@ -116,7 +116,8 @@ export default function WhatsAppBusinessProfilePage() {
         setPhoneNumberDetails(data.data)
       }
     } catch (error) {
-      console.error('Error fetching phone number details:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching phone number details', error, { endpoint: '/dashboard/admin/whatsapp/profile' })
     }
   }
 
@@ -128,7 +129,8 @@ export default function WhatsAppBusinessProfilePage() {
         setVerificationStatus(data.data)
       }
     } catch (error) {
-      console.error('Error fetching verification status:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching verification status', error, { endpoint: '/dashboard/admin/whatsapp/profile' })
     }
   }
 

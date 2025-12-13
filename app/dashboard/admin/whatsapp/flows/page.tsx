@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { Plus, Bot, Calendar, MessageSquare, Settings, Zap } from 'lucide-react'
 import { FlowList } from '@/shared/components/flows/FlowList'
 import type { Flow } from '@/shared/components/flows/FlowTypes'
+import { FlowModal } from '@/shared/components/modals/FlowModal'
 
 export default function WhatsAppFlowsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -46,7 +47,7 @@ export default function WhatsAppFlowsPage() {
           {whatsappFlow.ai_model && (
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Bot size={14} />
-              <span>نموذج AI: {whatsappFlow.ai_model}</span>
+              <span>نموذج AI: {String(whatsappFlow.ai_model || '')}</span>
             </div>
           )}
           {Array.isArray(whatsappFlow.appointment_actions) && whatsappFlow.appointment_actions.length > 0 && (
@@ -101,32 +102,34 @@ export default function WhatsAppFlowsPage() {
         emptyStateMessage="لا توجد تدفقات واتساب بعد"
       />
 
-      {/* Create/Edit Modal - TODO: Extract to shared component */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {editingFlow ? 'تعديل التدفق' : 'إنشاء تدفق جديد'}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false)
-                  setEditingFlow(null)
-                }}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-6">
-              <p className="text-gray-500">
-                سيتم إضافة نموذج إنشاء/تعديل التدفق هنا قريباً
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Create/Edit Modal */}
+      <FlowModal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false)
+          setEditingFlow(null)
+        }}
+        onSubmit={async (data) => {
+          const url = editingFlow ? `/api/whatsapp/flows/${editingFlow.id}` : '/api/whatsapp/flows'
+          const method = editingFlow ? 'PUT' : 'POST'
+          
+          const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          })
+          
+          const result = await res.json()
+          if (!result.success) {
+            throw new Error(result.error || 'فشل الحفظ')
+          }
+          
+          // Refresh flows list
+          window.location.reload()
+        }}
+        initialData={editingFlow ? (editingFlow as unknown as Record<string, unknown>) : undefined}
+        title={editingFlow ? 'تعديل التدفق' : 'إنشاء تدفق جديد'}
+      />
     </div>
   )
 }

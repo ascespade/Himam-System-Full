@@ -95,7 +95,8 @@ export default function WhatsAppTemplatesPage() {
         toast.error('فشل نسخ القالب: ' + (data.error || 'خطأ غير معروف'))
       }
     } catch (error) {
-      console.error('Error copying template:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error copying template', error, { templateId: template.id, endpoint: '/dashboard/admin/whatsapp/templates' })
       toast.error('حدث خطأ أثناء نسخ القالب')
     }
   }
@@ -115,7 +116,8 @@ export default function WhatsAppTemplatesPage() {
         toast.error('فشل حذف القالب: ' + (data.error || 'خطأ غير معروف'))
       }
     } catch (error) {
-      console.error('Error deleting template:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error deleting template', error, { templateId, endpoint: '/dashboard/admin/whatsapp/templates' })
       toast.error('حدث خطأ أثناء حذف القالب')
     }
   }

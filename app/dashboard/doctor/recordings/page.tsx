@@ -43,11 +43,13 @@ export default function RecordingsPage() {
           }))
         setRecordings(transformedRecordings)
       } else {
-        console.error('Error fetching recordings:', data.error)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Error fetching recordings', data.error, { endpoint: '/dashboard/doctor/recordings' })
         setRecordings([])
       }
     } catch (error) {
-      console.error('Error fetching recordings:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching recordings', error, { endpoint: '/dashboard/doctor/recordings' })
       setRecordings([])
     } finally {
       setLoading(false)

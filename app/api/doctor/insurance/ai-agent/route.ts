@@ -503,7 +503,7 @@ export async function PUT(req: NextRequest) {
       })
     } catch (e) {
       const { logWarn } = await import('@/shared/utils/logger')
-      logWarn('Failed to update embeddings with outcome', { error: e, patient_id: claimSubmission.patient_id, outcome, endpoint: '/api/doctor/insurance/ai-agent' })
+      logWarn('Failed to update embeddings with outcome', { error: e, patient_id: claim.patient_id, outcome, endpoint: '/api/doctor/insurance/ai-agent' })
     }
 
     if (outcome === 'approved') {
@@ -557,7 +557,7 @@ export async function PUT(req: NextRequest) {
         }
       } catch (e) {
         const { logWarn } = await import('@/shared/utils/logger')
-        logWarn('Could not parse error analysis', { error: e, patient_id: claimSubmission.patient_id, endpoint: '/api/doctor/insurance/ai-agent' })
+        logWarn('Could not parse error analysis', { error: e, patient_id: claim.patient_id, endpoint: '/api/doctor/insurance/ai-agent' })
       }
     }
 

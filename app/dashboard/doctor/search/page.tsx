@@ -94,7 +94,8 @@ export default function SearchPage() {
         setResults([])
       }
     } catch (error) {
-      console.error('Error searching:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error searching', error, { searchQuery, typeFilter, endpoint: '/dashboard/doctor/search' })
       setResults([])
     } finally {
       setLoading(false)

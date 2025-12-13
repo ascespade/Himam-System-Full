@@ -92,7 +92,8 @@ export default function CurrentPatientPage() {
         router.push('/dashboard/doctor/queue')
       }
     } catch (error) {
-      console.error('Error fetching current patient:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching current patient', error, { endpoint: '/dashboard/doctor/current-patient' })
       toast.error('حدث خطأ في تحميل بيانات المريض')
     } finally {
       setLoading(false)

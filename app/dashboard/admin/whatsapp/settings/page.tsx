@@ -128,7 +128,8 @@ export default function WhatsAppSettingsPage() {
         })
       }
     } catch (error) {
-      console.error('Error loading AI settings:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error loading AI settings', error, { endpoint: '/dashboard/admin/whatsapp/settings' })
     }
   }
 
@@ -182,7 +183,8 @@ export default function WhatsAppSettingsPage() {
       
       setConnectionStatus('disconnected')
     } catch (error) {
-      console.error('Error checking connection:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error checking connection', error, { endpoint: '/dashboard/admin/whatsapp/settings' })
       setConnectionStatus('disconnected')
     }
   }
@@ -363,9 +365,11 @@ export default function WhatsAppSettingsPage() {
       // If we get here, connection failed
       toast.error('❌ فشل الاتصال: تحقق من صحة Access Token و Phone Number ID')
       setConnectionStatus('disconnected')
-    } catch (error: any) {
-      console.error('Error testing connection:', error)
-      toast.error('حدث خطأ أثناء اختبار الاتصال: ' + (error.message || 'خطأ غير معروف'))
+    } catch (error: unknown) {
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error testing connection', error, { endpoint: '/dashboard/admin/whatsapp/settings' })
+      const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف'
+      toast.error('حدث خطأ أثناء اختبار الاتصال: ' + errorMessage)
       setConnectionStatus('disconnected')
     } finally {
       setTesting(false)

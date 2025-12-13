@@ -42,7 +42,8 @@ export default function BookAppointmentPage() {
         setDoctors(data.data)
       }
     } catch (err) {
-      console.error('Error fetching doctors:', err)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching doctors', err, { endpoint: '/dashboard/reception/book-appointment' })
     }
   }, [])
 
@@ -54,7 +55,8 @@ export default function BookAppointmentPage() {
         setPatients(data.data)
       }
     } catch (err) {
-      console.error('Error searching patients:', err)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error searching patients', err, { searchTerm, endpoint: '/dashboard/reception/book-appointment' })
     }
   }, [searchTerm])
 

@@ -36,7 +36,8 @@ export default function BusinessRulesPage() {
         setRules(data.data || [])
       }
     } catch (error) {
-      console.error('Error fetching rules:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching rules', error, { endpoint: '/dashboard/admin/business-rules' })
       toast.error('فشل تحميل القواعد')
     } finally {
       setLoading(false)

@@ -33,7 +33,8 @@ export default function ReceptionReportsPage() {
         setReportData(data.data)
       }
     } catch (error) {
-      console.error('Error loading report data:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error loading report data', error, { period, endpoint: '/dashboard/reception/reports' })
     } finally {
       setLoading(false)
     }
@@ -44,10 +45,43 @@ export default function ReceptionReportsPage() {
   }, [loadReportData])
 
   const handleExport = async (format: 'pdf' | 'excel') => {
-    // TODO: Implement export functionality
-    const { logInfo } = await import('@/shared/utils/logger')
-    logInfo(`Exporting report as ${format}`, { format, endpoint: '/dashboard/reception/reports' })
-    toast.info('قريباً: ميزة التصدير قيد التطوير')
+    try {
+      const { exportToPDF, exportToExcel, downloadFile } = await import('@/shared/utils/export')
+      
+      // Prepare data for export
+      const columns = [
+        { key: 'period', label: 'الفترة' },
+        { key: 'totalAppointments', label: 'إجمالي المواعيد' },
+        { key: 'totalPatients', label: 'إجمالي المرضى' },
+        { key: 'totalRevenue', label: 'إجمالي الإيرادات' },
+      ]
+      
+      // Convert reportData to array format
+      const exportData: Record<string, unknown>[] = reportData ? [{
+        period: reportData.period,
+        totalAppointments: reportData.totalAppointments,
+        totalPatients: reportData.totalPatients,
+        totalRevenue: reportData.totalRevenue,
+      }] : []
+      
+      let blob: Blob
+      let filename: string
+      
+      if (format === 'pdf') {
+        blob = await exportToPDF(exportData, columns, 'تقرير الاستقبال')
+        filename = `reception-report-${new Date().toISOString().split('T')[0]}.pdf`
+      } else {
+        blob = await exportToExcel(exportData, columns, 'تقرير الاستقبال')
+        filename = `reception-report-${new Date().toISOString().split('T')[0]}.xlsx`
+      }
+      
+      downloadFile(blob, filename)
+      toast.success(`تم تصدير التقرير بنجاح كـ ${format === 'pdf' ? 'PDF' : 'Excel'}`)
+    } catch (error) {
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to export report', error, { format, endpoint: '/dashboard/reception/reports' })
+      toast.error('فشل تصدير التقرير')
+    }
   }
 
   if (loading) {

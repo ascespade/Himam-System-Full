@@ -39,7 +39,8 @@ export default function PatientsPage() {
         setPatients(data.data || [])
       }
     } catch (error) {
-      console.error('Error fetching patients:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching patients', error, { endpoint: '/dashboard/patients' })
     } finally {
       setLoading(false)
     }

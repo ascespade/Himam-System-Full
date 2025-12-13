@@ -74,9 +74,33 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // TODO: Send message to Slack API
-    // For now, just store in database
-    const slackMessageTs = `${Date.now() / 1000}.${Math.random().toString(36).substr(2, 9)}`
+    // Send message to Slack API
+    let slackMessageTs: string | null = null
+    try {
+      const { sendSlackMessage } = await import('@/lib/slack-api')
+      
+      // Get conversation to find channel ID
+      const { data: conversation } = await supabaseAdmin
+        .from('slack_conversations')
+        .select('slack_channel_id')
+        .eq('id', conversation_id)
+        .single()
+      
+      if (conversation?.slack_channel_id) {
+        const ts = await sendSlackMessage(conversation.slack_channel_id, message_text)
+        slackMessageTs = ts
+      }
+    } catch (slackError) {
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Failed to send message to Slack API, storing in database only', { error: slackError, conversation_id, endpoint: '/api/slack/messages' })
+      // Fallback to generated timestamp
+      slackMessageTs = `${Date.now() / 1000}.${Math.random().toString(36).substr(2, 9)}`
+    }
+    
+    // If Slack API failed, use generated timestamp
+    if (!slackMessageTs) {
+      slackMessageTs = `${Date.now() / 1000}.${Math.random().toString(36).substr(2, 9)}`
+    }
 
     const { data, error } = await supabaseAdmin
       .from('slack_messages')

@@ -101,9 +101,38 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // TODO: Create Slack channel via Slack API
-    // For now, generate a channel ID
-    const channelId = `C${Date.now()}${Math.random().toString(36).substr(2, 9)}`
+    // Create Slack channel via Slack API
+    let channelId: string
+    try {
+      const { createSlackChannel, inviteToSlackChannel } = await import('@/lib/slack-api')
+      
+      // Get doctor and patient info for channel name
+      const { data: doctor } = await supabaseAdmin
+        .from('users')
+        .select('name, email')
+        .eq('id', doctor_id)
+        .single()
+      
+      const { data: patient } = await supabaseAdmin
+        .from('patients')
+        .select('name')
+        .eq('id', patient_id)
+        .single()
+      
+      const channelName = `doctor-${doctor_id.slice(0, 8)}-patient-${patient_id.slice(0, 8)}`
+      const channel = await createSlackChannel(channelName, true) // Private channel
+      channelId = channel.id
+      
+      // Try to invite doctor if we have their Slack user ID
+      // Note: This requires Slack user lookup which needs additional setup
+      const { logInfo } = await import('@/shared/utils/logger')
+      logInfo('Slack channel created', { channelId, doctor_id, patient_id, endpoint: '/api/slack/conversations' })
+    } catch (slackError) {
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Failed to create Slack channel via API, using generated ID', { error: slackError, doctor_id, patient_id, endpoint: '/api/slack/conversations' })
+      // Fallback to generated channel ID
+      channelId = `C${Date.now()}${Math.random().toString(36).substr(2, 9)}`
+    }
 
     const { data, error } = await supabaseAdmin
       .from('slack_conversations')

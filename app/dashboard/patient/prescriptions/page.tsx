@@ -62,7 +62,8 @@ export default function PatientPrescriptionsPage() {
         }
       }
     } catch (error) {
-      console.error('Error loading prescriptions:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error loading prescriptions', error, { endpoint: '/dashboard/patient/prescriptions' })
     } finally {
       setLoading(false)
     }
@@ -85,10 +86,15 @@ export default function PatientPrescriptionsPage() {
   })
 
   const handleDownload = async (prescriptionId: string) => {
-    // TODO: Implement prescription download
-    const { logInfo } = await import('@/shared/utils/logger')
-    logInfo('Prescription download requested', { prescriptionId, endpoint: '/dashboard/patient/prescriptions' })
-    toast.info('قريباً: ميزة تحميل الوصفة قيد التطوير')
+    try {
+      const { downloadPrescription } = await import('@/shared/utils/download')
+      await downloadPrescription(prescriptionId)
+      toast.success('تم تحميل الوصفة بنجاح')
+    } catch (error) {
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to download prescription', error, { prescriptionId, endpoint: '/dashboard/patient/prescriptions' })
+      toast.error('فشل تحميل الوصفة')
+    }
   }
 
   if (loading) {

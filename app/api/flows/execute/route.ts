@@ -420,10 +420,44 @@ async function executeNotificationNode(node: Record<string, unknown>, inputData:
   const resolvedMessage = message ? resolveValue(message, { input: inputData, ...nodeResults }) : ''
   const resolvedSubject = subject ? resolveValue(subject, { input: inputData, ...nodeResults }) : ''
 
-  // In production, integrate with notification service
-  // For now, just log
-  // TODO: Implement actual notification sending
-  // logInfo(`Notification [${type}]`, { recipient, subject: resolvedSubject, message: resolvedMessage })
+  // Send notification via notification service
+  try {
+    const { createNotification } = await import('@/lib/notifications')
+    
+    // Determine notification type based on type parameter
+    const notificationType = type === 'email' ? 'message' : 
+                            type === 'sms' ? 'message' : 
+                            'system' as const
+    
+    // Try to find user by email/phone if recipient is provided
+    if (recipient && typeof recipient === 'string') {
+      // Check if recipient is an email
+      if (recipient.includes('@')) {
+        const { data: user } = await supabaseAdmin
+          .from('users')
+          .select('id')
+          .eq('email', recipient)
+          .single()
+        
+        if (user) {
+          await createNotification({
+            userId: user.id,
+            type: notificationType,
+            title: typeof resolvedSubject === 'string' ? resolvedSubject : 'إشعار جديد',
+            message: typeof resolvedMessage === 'string' ? resolvedMessage : String(resolvedMessage || ''),
+          })
+        }
+      }
+    }
+    
+    const { logInfo } = await import('@/shared/utils/logger')
+    const messagePreview = typeof resolvedMessage === 'string' ? resolvedMessage.substring(0, 100) : String(resolvedMessage || '').substring(0, 100)
+    logInfo(`Notification sent [${type}]`, { recipient: typeof recipient === 'string' ? recipient : '', subject: typeof resolvedSubject === 'string' ? resolvedSubject : '', message: messagePreview })
+  } catch (error) {
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Failed to send notification', error, { type, recipient, endpoint: '/api/flows/execute' })
+    // Don't fail the flow execution if notification fails
+  }
 
   return { success: true, sent: true }
 }

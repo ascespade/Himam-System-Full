@@ -64,7 +64,8 @@ export default function InsuranceAIAgentPage() {
         setStatistics(data.data.statistics)
       }
     } catch (error) {
-      console.error('Error fetching AI agent data:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching AI agent data', error, { endpoint: '/dashboard/doctor/insurance/ai-agent' })
     } finally {
       setLoading(false)
     }
@@ -78,7 +79,8 @@ export default function InsuranceAIAgentPage() {
         setMonitoring(data.data)
       }
     } catch (error) {
-      console.error('Error fetching monitoring data:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching monitoring data', error, { endpoint: '/dashboard/doctor/insurance/ai-agent' })
     }
   }
 

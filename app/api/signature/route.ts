@@ -51,18 +51,27 @@ export async function POST(req: NextRequest) {
       .select()
       .single()
 
+    let signatureId: string | null = null
     if (dbError) {
       const { logError } = await import('@/shared/utils/logger')
-      const signatureId = signatureRecord?.id
+      const record = signatureRecord as Record<string, unknown> | null
+      if (record && typeof record === 'object' && record !== null && 'id' in record) {
+        signatureId = record.id as string
+      }
       logError('Error saving signature metadata', dbError, { signatureId, endpoint: '/api/signature' })
       // Still return success if storage worked
+    } else {
+      const record = signatureRecord as Record<string, unknown> | null
+      if (record && typeof record === 'object' && record !== null && 'id' in record) {
+        signatureId = record.id as string
+      }
     }
 
     return NextResponse.json({
       success: true,
       signatureUrl: urlData.publicUrl,
       fileName,
-      signatureRecord,
+      signatureId,
     })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
