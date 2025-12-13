@@ -6,10 +6,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -35,9 +36,10 @@ export async function GET(req: NextRequest) {
     let patientId: string | null = null
 
     try {
+      // Select specific columns for better performance
       const visitResult = await supabaseAdmin
         .from('patient_visits')
-        .select('*, patients (*), appointments (*)')
+        .select('id, patient_id, doctor_id, appointment_id, visit_date, status, notes, created_at, updated_at, patients (id, name, phone), appointments (id, date, time, status)')
         .eq('doctor_id', user.id)
         .in('status', ['confirmed_to_doctor', 'with_doctor'])
         .order('confirmed_to_doctor_time', { ascending: false })
@@ -53,9 +55,10 @@ export async function GET(req: NextRequest) {
     } catch (e: unknown) {
       // Table might not exist, try reception_queue
       try {
+        // Select specific columns for better performance
         const queueResult = await supabaseAdmin
           .from('reception_queue')
-          .select('*, patients (*), appointments (*)')
+          .select('id, patient_id, appointment_id, queue_number, status, checked_in_at, notes, created_at, updated_at, patients (id, name, phone), appointments (id, date, time, status)')
           .eq('doctor_id', user.id)
           .in('status', ['confirmed', 'in_progress'])
           .order('confirmed_at', { ascending: false })
@@ -95,14 +98,14 @@ export async function GET(req: NextRequest) {
       // Patient basic info
       supabaseAdmin
         .from('patients')
-        .select('*')
+        .select('id, name, phone, date_of_birth, gender, blood_type, allergies, chronic_diseases, emergency_contact_name, emergency_contact_phone, notes, created_at, updated_at')
         .eq('id', patientId)
         .single(),
 
       // Medical records
       supabaseAdmin
         .from('medical_records')
-        .select('*')
+        .select('id, patient_id, doctor_id, date, diagnosis, treatment, notes, created_at, updated_at')
         .eq('patient_id', patientId)
         .eq('doctor_id', user.id)
         .order('date', { ascending: false })
@@ -111,7 +114,7 @@ export async function GET(req: NextRequest) {
       // Treatment plans
       supabaseAdmin
         .from('treatment_plans')
-        .select('*')
+        .select('id, patient_id, doctor_id, start_date, end_date, status, goals, interventions, created_at, updated_at')
         .eq('patient_id', patientId)
         .eq('doctor_id', user.id)
         .order('start_date', { ascending: false }),
@@ -119,7 +122,7 @@ export async function GET(req: NextRequest) {
       // Appointments
       supabaseAdmin
         .from('appointments')
-        .select('*')
+        .select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, created_at, updated_at')
         .eq('patient_id', patientId)
         .order('date', { ascending: false })
         .limit(10),
@@ -127,7 +130,7 @@ export async function GET(req: NextRequest) {
       // Vital signs (recent)
       supabaseAdmin
         .from('vital_signs')
-        .select('*')
+        .select('id, patient_id, visit_date, blood_pressure, heart_rate, temperature, weight, height, notes, created_at')
         .eq('patient_id', patientId)
         .order('visit_date', { ascending: false })
         .limit(10),
@@ -135,7 +138,7 @@ export async function GET(req: NextRequest) {
       // Insurance
       supabaseAdmin
         .from('patient_insurance')
-        .select('*')
+        .select('id, patient_id, insurance_provider, policy_number, coverage_type, is_active, created_at, updated_at')
         .eq('patient_id', patientId)
         .eq('is_active', true)
         .maybeSingle(),
@@ -143,7 +146,7 @@ export async function GET(req: NextRequest) {
       // Diagnoses
       supabaseAdmin
         .from('diagnoses')
-        .select('*')
+        .select('id, patient_id, diagnosis_code, diagnosis_name, diagnosed_date, status, notes, created_at')
         .eq('patient_id', patientId)
         .order('diagnosed_date', { ascending: false })
         .limit(10),
@@ -151,7 +154,7 @@ export async function GET(req: NextRequest) {
       // Prescriptions
       supabaseAdmin
         .from('prescriptions')
-        .select('*')
+        .select('id, patient_id, medication_name, dosage, frequency, duration, prescribed_date, status, created_at')
         .eq('patient_id', patientId)
         .order('prescribed_date', { ascending: false })
         .limit(10)
@@ -182,5 +185,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

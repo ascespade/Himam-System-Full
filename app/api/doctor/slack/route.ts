@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/slack
  * Get all Slack conversations for the logged-in doctor
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -29,10 +30,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Select specific columns for better performance
     const { data, error } = await supabaseAdmin
       .from('slack_conversations')
       .select(`
-        *,
+        id, doctor_id, patient_id, slack_channel_id, slack_channel_name, is_active, last_message_at, created_at, updated_at,
         patients (
           id,
           name,
@@ -60,13 +62,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/doctor/slack
  * Create or get Slack conversation with a patient
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -94,10 +96,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Patient ID is required' }, { status: 400 })
     }
 
-    // Check if conversation already exists
+    // Check if conversation already exists - select specific columns
     const { data: existing } = await supabaseAdmin
       .from('slack_conversations')
-      .select('*')
+      .select('id, doctor_id, patient_id, slack_channel_id, slack_channel_name, is_active, last_message_at, created_at, updated_at')
       .eq('doctor_id', user.id)
       .eq('patient_id', patient_id)
       .single()
@@ -158,8 +160,9 @@ export async function POST(req: NextRequest) {
         slack_channel_name: channelName,
         is_active: true
       })
+      // Select specific columns for better performance
       .select(`
-        *,
+        id, doctor_id, patient_id, slack_channel_id, slack_channel_name, is_active, last_message_at, created_at, updated_at,
         patients (
           id,
           name,
@@ -197,5 +200,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

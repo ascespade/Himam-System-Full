@@ -5,10 +5,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -34,12 +35,13 @@ export async function GET(req: NextRequest) {
     let error: Record<string, unknown> | null = null
 
     try {
+      // Select specific columns for better performance
       const visitsResult = await supabaseAdmin
         .from('patient_visits')
         .select(`
-          *,
-          patients (*),
-          appointments (*)
+          id, patient_id, doctor_id, appointment_id, visit_date, status, notes, created_at, updated_at,
+          patients (id, name, phone),
+          appointments (id, date, time, status)
         `)
         .eq('doctor_id', user.id)
         .in('status', ['pending', 'confirmed_to_doctor'])
@@ -53,12 +55,13 @@ export async function GET(req: NextRequest) {
     } catch (err: unknown) {
       // Table doesn't exist, try reception_queue
       try {
+        // Select specific columns for better performance
         const queueResult = await supabaseAdmin
           .from('reception_queue')
           .select(`
-            *,
-            patients (*),
-            appointments (*)
+            id, patient_id, appointment_id, queue_number, status, checked_in_at, notes, created_at, updated_at,
+            patients (id, name, phone),
+            appointments (id, date, time, status)
           `)
           .eq('doctor_id', user.id)
           .in('status', ['pending', 'confirmed'])
@@ -93,5 +96,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

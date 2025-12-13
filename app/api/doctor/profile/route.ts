@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/profile
  * Get doctor's profile
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -34,10 +35,11 @@ export async function GET(req: NextRequest) {
     let profileError: Record<string, unknown> | null = null
 
     try {
+      // Select specific columns for better performance
       const result = await supabaseAdmin
         .from('doctor_profiles')
         .select(`
-          *,
+          id, user_id, specialty, license_number, years_of_experience, education, certifications, languages, consultation_fee, bio_ar, bio_en, created_at, updated_at,
           users (
             name,
             email,
@@ -214,13 +216,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * PUT /api/doctor/profile
  * Update doctor's profile
  */
-export async function PUT(req: NextRequest) {
+export const PUT = withRateLimit(async function PUT(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -282,7 +284,7 @@ export async function PUT(req: NextRequest) {
         .update(profileUpdate)
         .eq('user_id', user.id)
         .select(`
-          *,
+          id, user_id, specialty, license_number, years_of_experience, education, certifications, languages, consultation_fee, bio_ar, bio_en, created_at, updated_at,
           users (
             name,
             email,
@@ -301,7 +303,7 @@ export async function PUT(req: NextRequest) {
           ...profileUpdate
         })
         .select(`
-          *,
+          id, user_id, specialty, license_number, years_of_experience, education, certifications, languages, consultation_fee, bio_ar, bio_en, created_at, updated_at,
           users (
             name,
             email,
@@ -329,5 +331,5 @@ export async function PUT(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

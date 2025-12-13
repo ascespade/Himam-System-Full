@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/insurance/claims
  * Get all insurance claims
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -33,10 +34,11 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status')
     const provider = searchParams.get('provider')
 
+    // Select specific columns for better performance
     let query = supabaseAdmin
       .from('insurance_claims')
       .select(`
-        *,
+        id, patient_id, claim_number, claim_type, service_date, service_description, amount, covered_amount, patient_responsibility, insurance_provider, status, created_at, updated_at,
         patients (
           id,
           name
@@ -79,13 +81,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'strict')
 
 /**
  * POST /api/insurance/claims
  * Create new insurance claim
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -197,5 +199,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'strict')
 

@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/notes-templates
  * Get all notes templates (doctor's own + defaults)
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -35,9 +36,10 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const category = searchParams.get('category')
 
+    // Select specific columns for better performance
     let query = supabaseAdmin
       .from('doctor_notes_templates')
-      .select('*')
+      .select('id, name, category, template_content, is_default, is_active, created_by, created_at, updated_at')
       .eq('is_active', true)
       .or(`created_by.eq.${user.id},is_default.eq.true`)
       .order('is_default', { ascending: false })
@@ -63,13 +65,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/doctor/notes-templates
  * Create a new notes template
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -141,5 +143,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

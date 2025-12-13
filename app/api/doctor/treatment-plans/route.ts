@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/treatment-plans
  * Get doctor's treatment plans
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -29,10 +30,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Select specific columns for better performance
     const { data, error } = await supabaseAdmin
       .from('treatment_plans')
       .select(`
-        *,
+        id, patient_id, doctor_id, title, description, start_date, end_date, status, goals, interventions, progress_percentage, created_at, updated_at,
         patients (
           name,
           phone
@@ -58,13 +60,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/doctor/treatment-plans
  * Create new treatment plan
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -110,8 +112,9 @@ export async function POST(req: NextRequest) {
         status: 'active',
         progress_percentage: progressPercentage
       })
+      // Select specific columns for better performance
       .select(`
-        *,
+        id, patient_id, doctor_id, title, description, start_date, end_date, status, goals, interventions, progress_percentage, created_at, updated_at,
         patients (
           name,
           phone
@@ -136,5 +139,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

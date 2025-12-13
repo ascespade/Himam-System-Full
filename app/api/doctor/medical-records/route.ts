@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/medical-records
  * Get medical records for doctor's patients
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -33,10 +34,11 @@ export async function GET(req: NextRequest) {
     const patientId = searchParams.get('patient_id')
     const recordType = searchParams.get('type')
 
+    // Select specific columns for better performance
     let query = supabaseAdmin
       .from('medical_records')
       .select(`
-        *,
+        id, patient_id, doctor_id, date, record_type, chief_complaint, diagnosis, treatment, notes, created_at, updated_at,
         patients (
           id,
           name
@@ -82,4 +84,4 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')

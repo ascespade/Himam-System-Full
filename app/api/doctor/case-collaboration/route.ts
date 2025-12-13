@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/case-collaboration
  * Get case collaborations for a doctor
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -37,10 +38,11 @@ export async function GET(req: NextRequest) {
     const patientId = searchParams.get('patient_id')
     const status = searchParams.get('status')
 
+    // Select specific columns for better performance
     let query = supabaseAdmin
       .from('case_collaborations')
       .select(`
-        *,
+        id, patient_id, primary_doctor_id, collaborating_doctors, status, priority, description, created_at, updated_at,
         patients (id, name, phone),
         primary_doctor:primary_doctor_id (id, name),
         comments:case_collaboration_comments (
@@ -77,13 +79,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/doctor/case-collaboration
  * Create a new case collaboration
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -191,5 +193,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

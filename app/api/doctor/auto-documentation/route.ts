@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 import { askAI } from '@/lib/ai'
 import { getAIPromptTemplate } from '@/lib/ai-prompts'
 
@@ -14,7 +15,7 @@ export const dynamic = 'force-dynamic'
  * POST /api/doctor/auto-documentation
  * Generate automatic documentation for a session, treatment plan, or assessment
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -50,13 +51,14 @@ export async function POST(req: NextRequest) {
     let patientData: Record<string, unknown> | null = null
 
     if (entity_type === 'session') {
+      // Select specific columns for better performance
       const { data: session } = await supabaseAdmin
         .from('sessions')
         .select(`
-          *,
-          patients (*),
-          doctors:doctor_id (*),
-          medical_records (*)
+          id, patient_id, doctor_id, appointment_id, date, duration, session_type, status, chief_complaint, assessment, plan, notes, created_at, updated_at,
+          patients (id, name, phone),
+          doctors:doctor_id (id, name),
+          medical_records (id, date, record_type, notes)
         `)
         .eq('id', entity_id)
         .eq('doctor_id', user.id)
@@ -67,15 +69,16 @@ export async function POST(req: NextRequest) {
       }
 
       entityData = session
-      patientData = session.patients
+      patientData = Array.isArray(session.patients) ? (session.patients[0] as Record<string, unknown>) : (session.patients as Record<string, unknown> | null)
     } else if (entity_type === 'treatment_plan') {
+      // Select specific columns for better performance
       const { data: plan } = await supabaseAdmin
         .from('treatment_plans')
         .select(`
-          *,
-          patients (*),
-          sessions (*),
-          medical_records (*)
+          id, patient_id, doctor_id, title, description, start_date, end_date, status, goals, interventions, created_at, updated_at,
+          patients (id, name, phone),
+          sessions (id, date, session_type, status),
+          medical_records (id, date, record_type, notes)
         `)
         .eq('id', entity_id)
         .eq('doctor_id', user.id)
@@ -86,14 +89,15 @@ export async function POST(req: NextRequest) {
       }
 
       entityData = plan
-      patientData = plan.patients
+      patientData = Array.isArray(plan.patients) ? (plan.patients[0] as Record<string, unknown>) : (plan.patients as Record<string, unknown> | null)
     } else if (entity_type === 'assessment') {
       // Fetch assessment data
+      // Select specific columns for better performance
       const { data: assessment } = await supabaseAdmin
         .from('medical_records')
         .select(`
-          *,
-          patients (*)
+          id, patient_id, doctor_id, date, record_type, chief_complaint, diagnosis, treatment, notes, created_at, updated_at,
+          patients (id, name, phone)
         `)
         .eq('id', entity_id)
         .eq('record_type', 'assessment')
@@ -105,7 +109,7 @@ export async function POST(req: NextRequest) {
       }
 
       entityData = assessment
-      patientData = assessment.patients
+      patientData = Array.isArray(assessment.patients) ? (assessment.patients[0] as Record<string, unknown>) : (assessment.patients as Record<string, unknown> | null)
     } else {
       return NextResponse.json(
         { success: false, error: 'Invalid entity type' },
@@ -276,13 +280,13 @@ ${context || 'لا يوجد سياق إضافي'}
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * GET /api/doctor/auto-documentation
  * Get auto-documentation logs for a doctor
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -308,9 +312,10 @@ export async function GET(req: NextRequest) {
     const entityId = searchParams.get('entity_id')
     const limit = parseInt(searchParams.get('limit') || '50')
 
+    // Select specific columns for better performance
     let query = supabaseAdmin
       .from('auto_documentation_logs')
-      .select('*')
+      .select('id, entity_type, entity_id, doctor_id, documentation_type, generated_content, ai_model, prompt_used, metadata, created_at, updated_at')
       .eq('doctor_id', user.id)
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -339,5 +344,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

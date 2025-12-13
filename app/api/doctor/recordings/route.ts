@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/recordings
  * Get video session recordings for a doctor
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -38,10 +39,11 @@ export async function GET(req: NextRequest) {
     const dateFrom = searchParams.get('date_from')
     const dateTo = searchParams.get('date_to')
 
+    // Select specific columns for better performance
     let query = supabaseAdmin
       .from('video_sessions')
       .select(`
-        *,
+        id, session_id, doctor_id, patient_id, meeting_url, recording_url, recording_status, start_time, end_time, created_at, updated_at,
         sessions (
           id,
           date,
@@ -90,7 +92,7 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * DELETE /api/doctor/recordings/[id]
@@ -100,6 +102,10 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const { applyRateLimitCheck, addRateLimitHeadersToResponse } = await import('@/core/api/middleware/applyRateLimit')
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -165,11 +171,13 @@ export async function DELETE(
       }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Recording deleted successfully',
       data: updated,
     })
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

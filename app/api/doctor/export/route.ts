@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * POST /api/doctor/export
  * Export patient data in various formats
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -59,10 +60,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Fetch patient data
+    // Fetch patient data - select specific columns
     const { data: patient } = await supabaseAdmin
       .from('patients')
-      .select('*')
+      .select('id, name, phone, date_of_birth, gender, blood_type, allergies, chronic_diseases, emergency_contact_name, emergency_contact_phone, notes, created_at, updated_at')
       .eq('id', patient_id)
       .single()
 
@@ -83,11 +84,11 @@ export async function POST(req: NextRequest) {
       exported_by: user.id,
     }
 
-    // Include sessions if requested
+    // Include sessions if requested - select specific columns
     if (include_sessions) {
       const { data: sessions } = await supabaseAdmin
         .from('sessions')
-        .select('*')
+        .select('id, patient_id, doctor_id, appointment_id, date, duration, session_type, status, chief_complaint, assessment, plan, notes, created_at, updated_at')
         .eq('patient_id', patient_id)
         .eq('doctor_id', user.id)
         .order('date', { ascending: false })
@@ -95,11 +96,11 @@ export async function POST(req: NextRequest) {
       exportData.sessions = sessions || []
     }
 
-    // Include medical records if requested
+    // Include medical records if requested - select specific columns
     if (include_records) {
       const { data: records } = await supabaseAdmin
         .from('medical_records')
-        .select('*')
+        .select('id, patient_id, doctor_id, date, record_type, chief_complaint, diagnosis, treatment, notes, created_at, updated_at')
         .eq('patient_id', patient_id)
         .eq('doctor_id', user.id)
         .order('created_at', { ascending: false })
@@ -107,11 +108,11 @@ export async function POST(req: NextRequest) {
       exportData.medical_records = records || []
     }
 
-    // Include progress tracking if requested
+    // Include progress tracking if requested - select specific columns
     if (include_progress) {
       const { data: progress } = await supabaseAdmin
         .from('patient_progress_tracking')
-        .select('*')
+        .select('id, patient_id, doctor_id, treatment_plan_id, session_id, progress_type, progress_value, notes, created_at, updated_at')
         .eq('patient_id', patient_id)
         .eq('doctor_id', user.id)
         .order('created_at', { ascending: false })
@@ -119,10 +120,10 @@ export async function POST(req: NextRequest) {
       exportData.progress_tracking = progress || []
     }
 
-    // Include treatment plans
+    // Include treatment plans - select specific columns
     const { data: treatmentPlans } = await supabaseAdmin
       .from('treatment_plans')
-      .select('*')
+      .select('id, patient_id, doctor_id, title, description, start_date, end_date, status, goals, interventions, created_at, updated_at')
       .eq('patient_id', patient_id)
       .eq('doctor_id', user.id)
       .order('created_at', { ascending: false })
@@ -238,5 +239,5 @@ ${'='.repeat(50)}
       { status: 500 }
     )
   }
-}
+}, 'api')
 

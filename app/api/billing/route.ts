@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib'
 import { getSettings } from '@/lib/config'
 import { parseRequestBody } from '@/core/api/middleware'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 import { successResponse, errorResponse, validateRequestBody } from '@/shared/utils/api'
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '@/shared/constants'
 import { logError, logWarn } from '@/shared/utils/logger'
@@ -20,7 +21,7 @@ interface CreateBillingRequest {
   invoiceNumber?: string
 }
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await parseRequestBody<CreateBillingRequest>(req)
     
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'strict')
 
 interface UpdateBillingRequest {
   id: string
@@ -99,7 +100,7 @@ interface UpdateBillingRequest {
   notes?: string
 }
 
-export async function PUT(req: NextRequest) {
+export const PUT = withRateLimit(async function PUT(req: NextRequest) {
   try {
     const body = await parseRequestBody<UpdateBillingRequest>(req)
     
@@ -144,15 +145,19 @@ export async function PUT(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'strict')
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams
     const patientName = searchParams.get('patientName')
     const paid = searchParams.get('paid')
 
-    let query = supabaseAdmin.from('billing').select('*').order('created_at', { ascending: false })
+    // Select specific columns for better performance
+    let query = supabaseAdmin
+      .from('billing')
+      .select('id, patient_name, phone, amount, paid, invoice_number, notes, created_at, updated_at')
+      .order('created_at', { ascending: false })
 
     if (patientName) {
       query = query.ilike('patient_name', `%${patientName}%`)
@@ -166,8 +171,19 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
+    // Map database columns to Billing type
+    const mappedBilling: Billing[] = (billing || []).map((item: Record<string, unknown>) => ({
+      id: String(item.id || ''),
+      patientName: String(item.patient_name || ''),
+      amount: Number(item.amount || 0),
+      paid: Boolean(item.paid),
+      notes: item.notes ? String(item.notes) : undefined,
+      createdAt: item.created_at ? String(item.created_at) : new Date().toISOString(),
+      updatedAt: item.updated_at ? String(item.updated_at) : undefined,
+    }))
+
     return NextResponse.json(
-      successResponse<Billing[]>(billing || [])
+      successResponse<Billing[]>(mappedBilling)
     )
   } catch (error) {
     logError('Billing GET error', error)
@@ -176,7 +192,7 @@ export async function GET(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'strict')
 
 
 

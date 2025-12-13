@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/search
  * Advanced search with multiple filters
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -78,9 +79,10 @@ export async function GET(req: NextRequest) {
 
     // Search sessions
     if (!entityType || entityType === 'session') {
+      // Select specific columns for better performance
       let sessionQuery = supabaseAdmin
         .from('sessions')
-        .select('*')
+        .select('id, patient_id, doctor_id, appointment_id, date, duration, session_type, status, chief_complaint, assessment, plan, notes, created_at, updated_at')
         .eq('doctor_id', user.id)
 
       if (query) {
@@ -108,9 +110,10 @@ export async function GET(req: NextRequest) {
 
     // Search medical records
     if (!entityType || entityType === 'record') {
+      // Select specific columns for better performance
       let recordQuery = supabaseAdmin
         .from('medical_records')
-        .select('*')
+        .select('id, patient_id, doctor_id, date, record_type, chief_complaint, diagnosis, treatment, notes, created_at, updated_at')
         .eq('doctor_id', user.id)
 
       if (query) {
@@ -134,9 +137,10 @@ export async function GET(req: NextRequest) {
 
     // Search treatment plans
     if (!entityType || entityType === 'treatment_plan') {
+      // Select specific columns for better performance
       let planQuery = supabaseAdmin
         .from('treatment_plans')
-        .select('*')
+        .select('id, patient_id, doctor_id, title, description, start_date, end_date, status, goals, interventions, created_at, updated_at')
         .eq('doctor_id', user.id)
 
       if (query) {
@@ -177,5 +181,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

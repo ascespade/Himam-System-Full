@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/progress-tracking
  * Get progress tracking entries for a patient
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -44,10 +45,11 @@ export async function GET(req: NextRequest) {
       )
     }
 
+    // Select specific columns for better performance
     let query = supabaseAdmin
       .from('patient_progress_tracking')
       .select(`
-        *,
+        id, patient_id, doctor_id, treatment_plan_id, session_id, progress_type, progress_value, notes, created_at, updated_at,
         patients (id, name),
         treatment_plans (id, title),
         sessions (id, date, session_type)
@@ -80,13 +82,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/doctor/progress-tracking
  * Create a new progress tracking entry
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -198,5 +200,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

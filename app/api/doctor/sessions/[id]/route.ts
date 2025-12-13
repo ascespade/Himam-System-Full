@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -32,10 +36,11 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Select specific columns for better performance
     const { data, error } = await supabaseAdmin
       .from('sessions')
       .select(`
-        *,
+        id, patient_id, doctor_id, appointment_id, date, duration, session_type, status, chief_complaint, assessment, plan, notes, created_at, updated_at,
         patients (
           name,
           phone,
@@ -43,7 +48,7 @@ export async function GET(
           gender
         ),
         video_sessions (
-          *
+          id, session_id, meeting_url, recording_url, recording_status, start_time, end_time
         )
       `)
       .eq('id', params.id)
@@ -77,6 +82,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -124,8 +132,9 @@ export async function PUT(
       .from('sessions')
       .update(updateData)
       .eq('id', params.id)
+      // Select specific columns for better performance
       .select(`
-        *,
+        id, patient_id, doctor_id, appointment_id, date, duration, session_type, status, chief_complaint, assessment, plan, notes, created_at, updated_at,
         patients (
           name,
           phone

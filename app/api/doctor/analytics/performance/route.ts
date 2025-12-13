@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/analytics/performance
  * Get comprehensive performance metrics for a doctor
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -53,9 +54,10 @@ export async function GET(req: NextRequest) {
     }
 
     // Check if metrics are cached
+    // Select specific columns for better performance
     const { data: cachedMetrics } = await supabaseAdmin
       .from('doctor_performance_metrics')
-      .select('*')
+      .select('id, doctor_id, period_start, period_end, total_patients, total_sessions, total_appointments, average_session_duration, patient_satisfaction_score, calculated_at, created_at, updated_at')
       .eq('doctor_id', doctorId)
       .eq('period_start', periodStart)
       .eq('period_end', periodEnd)
@@ -74,13 +76,13 @@ export async function GET(req: NextRequest) {
     // 1. Patient Statistics
     const { count: totalPatients } = await supabaseAdmin
       .from('doctor_patient_relationships')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('doctor_id', doctorId)
       .is('end_date', null)
 
     const { count: newPatients } = await supabaseAdmin
       .from('doctor_patient_relationships')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('doctor_id', doctorId)
       .gte('start_date', periodStart)
       .lte('start_date', periodEnd)
@@ -106,20 +108,20 @@ export async function GET(req: NextRequest) {
     // 3. Treatment Plans Statistics
     const { count: totalTreatmentPlans } = await supabaseAdmin
       .from('treatment_plans')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('doctor_id', doctorId)
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString())
 
     const { count: activeTreatmentPlans } = await supabaseAdmin
       .from('treatment_plans')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('doctor_id', doctorId)
       .eq('status', 'active')
 
     const { count: completedTreatmentPlans } = await supabaseAdmin
       .from('treatment_plans')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('doctor_id', doctorId)
       .eq('status', 'completed')
       .gte('completed_at', startDate.toISOString())
@@ -205,5 +207,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
