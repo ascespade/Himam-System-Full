@@ -7,8 +7,30 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
+import { withRateLimit, type RateLimitConfig } from '@/core/api/middleware/rateLimit'
+import { apiRateLimiter, getRateLimitIdentifier, checkRateLimit, createRateLimitHeaders } from '@/core/security/rateLimit'
 
 export async function GET(req: NextRequest) {
+  // Apply rate limiting
+  const identifier = getRateLimitIdentifier(req)
+  const rateLimitResult = await checkRateLimit(req, apiRateLimiter, identifier)
+
+  if (!rateLimitResult.success) {
+    const headers = createRateLimitHeaders(
+      rateLimitResult.limit,
+      rateLimitResult.remaining,
+      rateLimitResult.reset
+    )
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Too many requests',
+        message: 'Rate limit exceeded. Please try again later.',
+      },
+      { status: 429, headers }
+    )
+  }
+
   try {
     const searchParams = req.nextUrl.searchParams
     const search = searchParams.get('search')
@@ -17,9 +39,10 @@ export async function GET(req: NextRequest) {
     const phone = searchParams.get('phone')
     const limit = parseInt(searchParams.get('limit') || '100')
 
+    // Select specific columns instead of *
     let query = supabaseAdmin
       .from('patients')
-      .select('*')
+      .select('id, name, phone, email, nationality, status, created_at, updated_at')
       .order('created_at', { ascending: false })
       .limit(limit)
 
@@ -52,13 +75,44 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    return NextResponse.json(successResponse(patients || []))
+    // Add rate limit headers to response
+    const response = NextResponse.json(successResponse(patients || []))
+    const headers = createRateLimitHeaders(
+      rateLimitResult.limit,
+      rateLimitResult.remaining,
+      rateLimitResult.reset
+    )
+    Object.entries(headers).forEach(([key, value]) => {
+      response.headers.set(key, value)
+    })
+
+    return response
   } catch (error: unknown) {
     return handleApiError(error)
   }
 }
 
 export async function POST(req: NextRequest) {
+  // Apply rate limiting
+  const identifier = getRateLimitIdentifier(req)
+  const rateLimitResult = await checkRateLimit(req, apiRateLimiter, identifier)
+
+  if (!rateLimitResult.success) {
+    const headers = createRateLimitHeaders(
+      rateLimitResult.limit,
+      rateLimitResult.remaining,
+      rateLimitResult.reset
+    )
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Too many requests',
+        message: 'Rate limit exceeded. Please try again later.',
+      },
+      { status: 429, headers }
+    )
+  }
+
   try {
     const body = await req.json()
     const { name, phone, nationality, status } = body
@@ -107,7 +161,18 @@ export async function POST(req: NextRequest) {
       logError('Failed to create patient registration notification', e, { patientId: patient.id, endpoint: '/api/patients' })
     }
 
-    return NextResponse.json(successResponse(patient), { status: HTTP_STATUS.CREATED })
+    // Add rate limit headers to response
+    const response = NextResponse.json(successResponse(patient), { status: HTTP_STATUS.CREATED })
+    const headers = createRateLimitHeaders(
+      rateLimitResult.limit,
+      rateLimitResult.remaining,
+      rateLimitResult.reset
+    )
+    Object.entries(headers).forEach(([key, value]) => {
+      response.headers.set(key, value)
+    })
+
+    return response
   } catch (error: unknown) {
     return handleApiError(error)
   }

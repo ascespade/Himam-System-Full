@@ -1,6 +1,24 @@
 {
   "extends": ["next/core-web-vitals"],
   "rules": {
-    "react/no-unescaped-entities": "off"
+    "react/no-unescaped-entities": "off",
+    "no-console": ["error", {
+      "allow": ["warn", "error"]
+    }],
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "CallExpression[callee.property.name='select'][arguments.0.value='*']",
+        "message": "Use specific column selection instead of select('*') for better performance"
+      },
+      {
+        "selector": "CallExpression[callee.property.name='select'][arguments.0.raw='\"*\"']",
+        "message": "Use specific column selection instead of select('*') for better performance"
+      },
+      {
+        "selector": "CallExpression[callee.property.name='select'][arguments.0.raw=\"'*'\"]",
+        "message": "Use specific column selection instead of select('*') for better performance"
+      }
+    ]
   }
 }
