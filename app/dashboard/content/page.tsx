@@ -75,8 +75,8 @@ export default function ContentPage() {
 
         // Sort
         items.sort((a: ContentItem, b: ContentItem) => {
-          let aVal: any = a[sortBy]
-          let bVal: any = b[sortBy]
+          let aVal: string | number = a[sortBy] as string | number
+          let bVal: string | number = b[sortBy] as string | number
           if (sortBy === 'created_at') {
             aVal = new Date(aVal).getTime()
             bVal = new Date(bVal).getTime()

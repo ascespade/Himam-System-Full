@@ -33,7 +33,8 @@ export default function DashboardLayout({
           setUserRole(userData?.role || null)
         }
       } catch (error) {
-        console.error('Error fetching user role:', error)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Error fetching user role', error, { endpoint: 'DashboardLayout' })
       } finally {
         setLoading(false)
       }

@@ -57,7 +57,8 @@ export default function ReceptionPage() {
         calculateStats(data.data || [])
       }
     } catch (error) {
-      console.error('Error fetching queue:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching queue', error, { endpoint: '/dashboard/reception' })
     } finally {
       setLoading(false)
     }
@@ -81,7 +82,8 @@ export default function ReceptionPage() {
         fetchQueue()
       }
     } catch (error) {
-      console.error('Error updating queue:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error updating queue', error, { queueId: id, status, endpoint: '/dashboard/reception' })
     }
   }
 

@@ -252,7 +252,8 @@ async function startClaimAutomationWorkflow(claimId: string) {
         entityId: claimId
       })
     } catch (e) {
-      console.error('Failed to notify doctor:', e)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to notify doctor', e, { claimId, endpoint: '/api/insurance/claims/auto-generate' })
     }
     return
   }
@@ -329,7 +330,8 @@ async function sendClaimWhatsAppNotifications(claimId: string) {
         sent_at: new Date().toISOString()
       })
   } catch (e) {
-    console.error('Failed to send WhatsApp message:', e)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Failed to send WhatsApp message', e, { claimId, endpoint: '/api/insurance/claims/auto-generate' })
   }
 }
 

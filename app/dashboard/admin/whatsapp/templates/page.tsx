@@ -8,7 +8,7 @@ interface Template {
   id: string
   name: string
   category: string
-  template_content: any
+  template_content: Record<string, unknown>
   is_default: boolean
   is_active: boolean
   created_at: string
@@ -45,13 +45,16 @@ export default function WhatsAppTemplatesPage() {
       if (data.success) {
         setTemplates(data.data || [])
       } else {
-        console.error('Error fetching templates:', data.error)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Error fetching templates', data.error, { endpoint: '/dashboard/admin/whatsapp/templates' })
         toast.error('فشل تحميل القوالب: ' + (data.error?.message || data.error || 'خطأ غير معروف'))
         setTemplates([])
       }
-    } catch (error: any) {
-      console.error('Error fetching templates:', error)
-      toast.error('حدث خطأ أثناء تحميل القوالب: ' + (error.message || 'خطأ غير معروف'))
+    } catch (error: unknown) {
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching templates', error, { endpoint: '/dashboard/admin/whatsapp/templates' })
+      const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف'
+      toast.error('حدث خطأ أثناء تحميل القوالب: ' + errorMessage)
       setTemplates([])
     } finally {
       setLoading(false)

@@ -80,7 +80,8 @@ export async function GET(req: NextRequest) {
       const { logError } = await import('@/shared/utils/logger')
       logError('Error creating/updating business profile', dbError, { phoneNumberId })
       // Table might not exist, continue to fetch from Meta API
-      console.warn('whatsapp_business_profiles table not found, will fetch from Meta API:', errorMessage)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('whatsapp_business_profiles table not found, will fetch from Meta API', { error: errorMessage, phoneNumberId, endpoint: '/api/whatsapp/business-profile' })
     }
 
     if (profile) {
@@ -135,11 +136,13 @@ export async function GET(req: NextRequest) {
           if (profileResponse.ok) {
             profileData = await profileResponse.json()
           } else {
-            console.warn('Failed to fetch business profile from WABA endpoint, using phone number data only')
+            const { logWarn } = await import('@/shared/utils/logger')
+            logWarn('Failed to fetch business profile from WABA endpoint, using phone number data only', { phoneNumberId, endpoint: '/api/whatsapp/business-profile' })
           }
         } catch (profileError: unknown) {
           const errorMessage = profileError instanceof Error ? profileError.message : String(profileError)
-          console.warn('Error fetching business profile from WABA endpoint:', errorMessage)
+          const { logWarn } = await import('@/shared/utils/logger')
+          logWarn('Error fetching business profile from WABA endpoint', { error: errorMessage, phoneNumberId, endpoint: '/api/whatsapp/business-profile' })
           // Continue with phone number data only
         }
       }
@@ -180,7 +183,8 @@ export async function GET(req: NextRequest) {
         const { logError } = await import('@/shared/utils/logger')
         logError('Error creating/updating business profile', dbError, { phoneNumberId })
         // Table doesn't exist, return data from Meta API
-        console.warn('Could not save to database, returning Meta API data:', errorMessage)
+        const { logWarn } = await import('@/shared/utils/logger')
+        logWarn('Could not save to database, returning Meta API data', { error: errorMessage, phoneNumberId, endpoint: '/api/whatsapp/business-profile' })
         return NextResponse.json({
           success: true,
           data: mergedData,
@@ -322,7 +326,8 @@ export async function PUT(req: NextRequest) {
       logError('Error creating/updating business profile', dbError, { phoneNumberId })
       // Table might not exist or other DB error
       // Return success anyway since we're just storing locally
-      console.warn('Database operation failed, but continuing:', errorMessage)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Database operation failed, but continuing', { error: errorMessage, phoneNumberId, endpoint: '/api/whatsapp/business-profile' })
       return NextResponse.json({
         success: true,
         data: {

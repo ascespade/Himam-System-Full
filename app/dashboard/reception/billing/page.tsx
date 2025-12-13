@@ -266,7 +266,7 @@ export default function ReceptionBillingPage() {
                 <button
                   onClick={() => {
                     // TODO: Implement invoice download
-                    console.log('Download invoice:', invoice.id)
+                    toast.info('قريباً: ميزة تحميل الفاتورة قيد التطوير')
                   }}
                   className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700 transition-colors"
                 >

@@ -9,6 +9,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { DollarSign, Calendar, Download, CheckCircle, Clock, AlertCircle, Search } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Invoice {
   id: string
@@ -268,7 +269,7 @@ export default function PatientBillingPage() {
                 <button
                   onClick={() => {
                     // TODO: Implement invoice download
-                    console.log('Download invoice:', invoice.id)
+                    toast.info('قريباً: ميزة تحميل الفاتورة قيد التطوير')
                   }}
                   className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700 transition-colors"
                 >

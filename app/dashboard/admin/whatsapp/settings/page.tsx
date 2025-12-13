@@ -88,8 +88,10 @@ export default function WhatsAppSettingsPage() {
         })
       }
     } catch (error) {
-      console.error('Error loading settings:', error)
-      toast.error('فشل تحميل الإعدادات')
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error loading WhatsApp settings', error, { endpoint: '/dashboard/admin/whatsapp/settings' })
+      const errorMessage = error instanceof Error ? error.message : 'فشل تحميل الإعدادات'
+      toast.error(errorMessage)
       setSettings({
         name: 'WhatsApp Business Account',
         phone_number_id: '',
@@ -108,7 +110,7 @@ export default function WhatsAppSettingsPage() {
       const data = await res.json()
       
       if (data.success && data.data) {
-        const settingsMap = new Map(data.data.map((s: any) => [s.key, s.value]))
+        const settingsMap = new Map(data.data.map((s: { key: string; value: unknown }) => [s.key, s.value]))
         const geminiKey = (settingsMap.get('GEMINI_KEY') as string) || ''
         const openaiKey = (settingsMap.get('OPENAI_KEY') as string) || ''
         
@@ -276,9 +278,11 @@ export default function WhatsAppSettingsPage() {
       await loadSettings()
       await loadAISettings()
       await checkConnection()
-    } catch (error: any) {
-      console.error('Error saving settings:', error)
-      toast.error('حدث خطأ أثناء حفظ الإعدادات: ' + error.message)
+    } catch (error: unknown) {
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error saving WhatsApp settings', error, { endpoint: '/dashboard/admin/whatsapp/settings' })
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء حفظ الإعدادات'
+      toast.error(errorMessage)
     } finally {
       setSaving(false)
     }
@@ -338,7 +342,9 @@ export default function WhatsAppSettingsPage() {
           setConnectionStatus('disconnected')
           return
         }
-      } catch (apiError: any) {
+      } catch (apiError: unknown) {
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Error testing WhatsApp connection', apiError, { endpoint: '/dashboard/admin/whatsapp/settings' })
         // If direct API call fails, try the business profile endpoint as fallback
         const res = await fetch('/api/whatsapp/business-profile')
         const data = await res.json()

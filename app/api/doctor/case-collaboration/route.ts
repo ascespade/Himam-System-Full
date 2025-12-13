@@ -174,7 +174,8 @@ export async function POST(req: NextRequest) {
           })
         }
       } catch (e) {
-        console.error('Failed to notify collaborating doctors:', e)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Failed to notify collaborating doctors', e, { caseId: data.id, endpoint: '/api/doctor/case-collaboration' })
       }
     }
 

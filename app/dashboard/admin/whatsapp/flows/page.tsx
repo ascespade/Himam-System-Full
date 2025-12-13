@@ -40,7 +40,7 @@ export default function WhatsAppFlowsPage() {
 
   const renderCustomContent = (flow: Flow) => {
     if (flow.module === 'whatsapp') {
-      const whatsappFlow = flow as any
+      const whatsappFlow = flow as unknown as Record<string, unknown>
       return (
         <>
           {whatsappFlow.ai_model && (
@@ -49,10 +49,10 @@ export default function WhatsAppFlowsPage() {
               <span>نموذج AI: {whatsappFlow.ai_model}</span>
             </div>
           )}
-          {whatsappFlow.appointment_actions && whatsappFlow.appointment_actions.length > 0 && (
+          {Array.isArray(whatsappFlow.appointment_actions) && whatsappFlow.appointment_actions.length > 0 && (
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Calendar size={14} />
-              <span>إجراءات: {whatsappFlow.appointment_actions.join(', ')}</span>
+              <span>إجراءات: {(whatsappFlow.appointment_actions as string[]).join(', ')}</span>
             </div>
           )}
         </>

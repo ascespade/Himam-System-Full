@@ -63,8 +63,11 @@ export default function WhatsAppDebugPage() {
       } else {
         toast.error('فشل في تحميل البيانات: ' + result.error)
       }
-    } catch (error: any) {
-      toast.error('خطأ: ' + error.message)
+    } catch (error: unknown) {
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error in WhatsApp debug', error, { endpoint: '/dashboard/admin/whatsapp/debug' })
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+      toast.error('خطأ: ' + errorMessage)
     } finally {
       setLoading(false)
       setRefreshing(false)

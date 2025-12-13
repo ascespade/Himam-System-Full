@@ -161,7 +161,8 @@ export async function PUT(
           entityId: data.id
         })
       } catch (e) {
-        console.error('Failed to create payment notifications:', e)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Failed to create payment notifications', e, { invoiceId: params.id, endpoint: '/api/billing/invoices/[id]' })
       }
     }
 

@@ -330,7 +330,8 @@ async function handleRejection(claimId: string, analysis: any) {
           entityId: claimId
         })
       } catch (e) {
-        console.error('Failed to notify doctor:', e)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Failed to notify doctor', e, { claimId, endpoint: '/api/insurance/claims/[id]/analyze-response' })
       }
     }
   }
@@ -398,7 +399,8 @@ async function notifyClaimApproval(claimId: string) {
       const { sendTextMessage } = await import('@/lib/whatsapp')
       await sendTextMessage(claim.patients.phone, message)
     } catch (e) {
-      console.error('Failed to send WhatsApp:', e)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to send WhatsApp', e, { claimId, endpoint: '/api/insurance/claims/[id]/analyze-response' })
     }
   }
 }

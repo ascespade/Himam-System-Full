@@ -149,7 +149,7 @@ export default function BillingPage() {
     setInvoiceItems(newItems)
   }
 
-  const updateItem = (index: number, field: keyof InvoiceItem, value: any) => {
+  const updateItem = (index: number, field: keyof InvoiceItem, value: string | number) => {
     const newItems = [...invoiceItems]
     newItems[index] = { ...newItems[index], [field]: value }
     setInvoiceItems(newItems)

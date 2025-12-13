@@ -117,7 +117,8 @@ export async function POST(
         entityId: visit.id
       })
     } catch (e) {
-      console.error('Failed to create notification:', e)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to create notification', e, { queueId: params.id, endpoint: '/api/reception/queue/[id]/confirm-to-doctor' })
     }
 
     return NextResponse.json({

@@ -203,7 +203,8 @@ export async function POST(req: NextRequest) {
         )
       }
     } catch (whatsappError) {
-      console.error('Error sending WhatsApp notification:', whatsappError)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error sending WhatsApp notification', whatsappError, { sessionId: data.id, endpoint: '/api/doctor/video-sessions' })
       // Don't fail the request if WhatsApp fails
     }
 
@@ -218,7 +219,8 @@ export async function POST(req: NextRequest) {
           `🎥 تم إنشاء جلسة فيديو\nالتاريخ: ${new Date(scheduled_date).toLocaleDateString('ar-SA')}\n${recordingEnabled ? '✅ التسجيل مفعّل' : '❌ التسجيل معطّل'}\n\nلبدء الجلسة، اضغط على زر Huddle في القناة.`
         )
       } catch (slackError) {
-        console.error('Error sending Slack notification:', slackError)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Error sending Slack notification', slackError, { sessionId: data.id, endpoint: '/api/doctor/video-sessions' })
         // Don't fail the request if Slack fails
       }
     }

@@ -161,7 +161,8 @@ export async function GET(req: NextRequest) {
       }
     } catch (feedbackError) {
       // Ignore if feedback column doesn't exist yet
-      console.warn('Patient satisfaction feedback not available:', feedbackError)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Patient satisfaction feedback not available', { error: feedbackError, endpoint: '/api/doctor/analytics/performance' })
     }
 
     // Build metrics object

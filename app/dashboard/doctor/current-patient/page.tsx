@@ -8,6 +8,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'sonner'
+import type { MedicalRecord as SharedMedicalRecord, TreatmentPlan as SharedTreatmentPlan } from '@/shared/types/dashboard'
 
 interface Patient {
   id: string
@@ -35,22 +36,7 @@ interface Visit {
   reception_notes?: string
 }
 
-interface MedicalRecord {
-  id: string
-  record_type: string
-  title: string
-  description?: string
-  date: string
-  attachments?: string[]
-}
-
-interface TreatmentPlan {
-  id: string
-  title: string
-  status: string
-  start_date: string
-  progress_percentage: number
-}
+// Using shared types from @/shared/types/dashboard
 
 interface Appointment {
   id: string
@@ -75,8 +61,8 @@ export default function CurrentPatientPage() {
   const router = useRouter()
   const [patient, setPatient] = useState<Patient | null>(null)
   const [visit, setVisit] = useState<Visit | null>(null)
-  const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([])
-  const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>([])
+  const [medicalRecords, setMedicalRecords] = useState<SharedMedicalRecord[]>([])
+  const [treatmentPlans, setTreatmentPlans] = useState<SharedTreatmentPlan[]>([])
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [vitalSigns, setVitalSigns] = useState<any[]>([])
   const [insurance, setInsurance] = useState<Insurance | null>(null)
@@ -286,7 +272,7 @@ export default function CurrentPatientPage() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id as 'overview' | 'records' | 'treatment' | 'insurance')}
                   className={`flex items-center gap-2 px-4 py-4 border-b-2 transition-colors ${
                     activeTab === tab.id
                       ? 'border-primary text-primary font-medium'
@@ -430,13 +416,13 @@ export default function CurrentPatientPage() {
               </div>
               {medicalRecords.length > 0 ? (
                 <div className="space-y-3">
-                  {medicalRecords.map((record: any) => (
+                  {medicalRecords.map((record: SharedMedicalRecord & { created_at?: string; notes?: string; chief_complaint?: string }) => (
                     <div key={record.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
                       onClick={() => router.push(`/dashboard/doctor/patients/${patient.id}?record=${record.id}`)}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <h4 className="font-medium text-gray-900">{record.chief_complaint || record.record_type || 'سجل طبي'}</h4>
-                        <span className="text-xs text-gray-500">{new Date(record.date || record.created_at).toLocaleDateString('ar-SA')}</span>
+                        <span className="text-xs text-gray-500">{new Date(record.date || record.created_at || '').toLocaleDateString('ar-SA')}</span>
                       </div>
                       {record.notes && (
                         <p className="text-sm text-gray-600 mb-2 line-clamp-2">{record.notes}</p>
@@ -482,7 +468,7 @@ export default function CurrentPatientPage() {
               </div>
               {treatmentPlans.length > 0 ? (
                 <div className="space-y-3">
-                  {treatmentPlans.map((plan: any) => (
+                  {treatmentPlans.map((plan: SharedTreatmentPlan) => (
                     <div 
                       key={plan.id} 
                       className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
@@ -498,8 +484,8 @@ export default function CurrentPatientPage() {
                           {plan.status === 'active' ? 'نشط' : plan.status === 'completed' ? 'مكتمل' : 'متوقف'}
                         </span>
                       </div>
-                      {plan.description && (
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{plan.description}</p>
+                      {(plan as unknown as SharedTreatmentPlan & { description?: string }).description && (
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{(plan as unknown as SharedTreatmentPlan & { description: string }).description}</p>
                       )}
                       <div className="mb-2">
                         <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
@@ -514,9 +500,9 @@ export default function CurrentPatientPage() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between text-xs text-gray-400 mt-2">
-                        <span>تاريخ البدء: {new Date(plan.start_date || plan.created_at).toLocaleDateString('ar-SA')}</span>
-                        {plan.end_date && (
-                          <span>تاريخ الانتهاء: {new Date(plan.end_date).toLocaleDateString('ar-SA')}</span>
+                        <span>تاريخ البدء: {new Date((plan as SharedTreatmentPlan & { start_date?: string }).start_date || plan.created_at).toLocaleDateString('ar-SA')}</span>
+                        {(plan as SharedTreatmentPlan & { end_date?: string }).end_date && (
+                          <span>تاريخ الانتهاء: {new Date((plan as unknown as SharedTreatmentPlan & { end_date: string }).end_date).toLocaleDateString('ar-SA')}</span>
                         )}
                       </div>
                     </div>

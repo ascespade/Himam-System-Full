@@ -180,7 +180,8 @@ export async function POST(req: NextRequest) {
         vectorAnalysis = await similarityRes.json()
       }
     } catch (e) {
-      console.warn('Vector similarity check failed, continuing with regular validation:', e)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Vector similarity check failed, continuing with regular validation', { error: e, patient_id, endpoint: '/api/doctor/insurance/ai-agent' })
     }
 
     // Step 4: AI Validation using learned patterns + vector analysis
@@ -248,7 +249,8 @@ ${(() => {
         validationResult = JSON.parse(jsonMatch[0])
       }
     } catch (e) {
-      console.warn('Could not parse AI validation response, using defaults')
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Could not parse AI validation response, using defaults', { error: e, patient_id, endpoint: '/api/doctor/insurance/ai-agent' })
     }
 
     // Merge vector analysis with AI validation
@@ -289,7 +291,8 @@ ${(() => {
           entityId: 'pending'
         })
       } catch (e) {
-        console.error('Failed to create notification:', e)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Failed to create notification', e, { claimId: patient_id, endpoint: '/api/doctor/insurance/ai-agent' })
       }
 
       return NextResponse.json({
@@ -369,7 +372,8 @@ ${service_description}
         })
       })
     } catch (e) {
-      console.warn('Failed to store embeddings, continuing:', e)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Failed to store embeddings, continuing', { error: e, patient_id, endpoint: '/api/doctor/insurance/ai-agent' })
     }
 
     // Step 8: Auto-submit if confidence is high
@@ -385,7 +389,8 @@ ${service_description}
           entityId: claim.id
         })
       } catch (e) {
-        console.error('Failed to create notification:', e)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Failed to create notification', e, { claimId: patient_id, endpoint: '/api/doctor/insurance/ai-agent' })
       }
     }
 
@@ -497,7 +502,8 @@ export async function PUT(req: NextRequest) {
         })
       })
     } catch (e) {
-      console.warn('Failed to update embeddings with outcome:', e)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Failed to update embeddings with outcome', { error: e, patient_id: claimSubmission.patient_id, outcome, endpoint: '/api/doctor/insurance/ai-agent' })
     }
 
     if (outcome === 'approved') {
@@ -550,7 +556,8 @@ export async function PUT(req: NextRequest) {
           }
         }
       } catch (e) {
-        console.warn('Could not parse error analysis')
+        const { logWarn } = await import('@/shared/utils/logger')
+        logWarn('Could not parse error analysis', { error: e, patient_id: claimSubmission.patient_id, endpoint: '/api/doctor/insurance/ai-agent' })
       }
     }
 

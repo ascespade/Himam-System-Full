@@ -126,7 +126,8 @@ export async function GET(req: NextRequest) {
     } catch (updateError: unknown) {
       // Ignore update errors (table might not exist or field might not exist)
       const errorMessage = updateError instanceof Error ? updateError.message : String(updateError)
-      console.warn('Could not update visit status:', errorMessage)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Could not update visit status', { error: errorMessage, visitId: visit?.id, endpoint: '/api/doctor/patient-visit' })
     }
 
     return NextResponse.json({

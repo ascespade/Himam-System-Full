@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     .order('order_index', { ascending: true });
 
   if (error) {
-    console.error('Error fetching content items:', error);
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching content items', error, { endpoint: '/api/content' })
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

@@ -73,9 +73,11 @@ export default function WhatsAppBusinessProfilePage() {
       } else {
         toast.error('فشل في تحميل البروفايل: ' + data.error)
       }
-    } catch (error: any) {
-      console.error('Error fetching profile:', error)
-      toast.error('خطأ في تحميل البروفايل')
+    } catch (error: unknown) {
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching WhatsApp profile', error, { endpoint: '/dashboard/admin/whatsapp/profile' })
+      const errorMessage = error instanceof Error ? error.message : 'خطأ في تحميل البروفايل'
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -96,9 +98,11 @@ export default function WhatsAppBusinessProfilePage() {
       } else {
         toast.error('فشل في حفظ البروفايل: ' + data.error)
       }
-    } catch (error: any) {
-      console.error('Error saving profile:', error)
-      toast.error('خطأ في حفظ البروفايل')
+    } catch (error: unknown) {
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error saving WhatsApp profile', error, { endpoint: '/dashboard/admin/whatsapp/profile' })
+      const errorMessage = error instanceof Error ? error.message : 'خطأ في حفظ البروفايل'
+      toast.error(errorMessage)
     } finally {
       setIsSaving(false)
     }

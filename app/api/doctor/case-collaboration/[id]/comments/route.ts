@@ -176,7 +176,8 @@ export async function POST(
         })
       }
     } catch (e) {
-      console.error('Failed to notify doctors:', e)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to notify doctors', e, { caseId: params.id, endpoint: '/api/doctor/case-collaboration/[id]/comments' })
     }
 
     return NextResponse.json({ success: true, data }, { status: 201 })

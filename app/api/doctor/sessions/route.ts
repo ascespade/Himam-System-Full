@@ -151,7 +151,8 @@ export async function POST(req: NextRequest) {
         entityId: data.id
       })
     } catch (e) {
-      console.error('Failed to create notification:', e)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to create notification', e, { sessionId: data.id, endpoint: '/api/doctor/sessions' })
     }
 
     return NextResponse.json({

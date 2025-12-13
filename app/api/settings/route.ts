@@ -37,7 +37,8 @@ export async function GET() {
       successResponse(settings || [])
     )
   } catch (error) {
-    console.error('Error fetching settings:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching settings', error, { endpoint: '/api/settings' })
     return NextResponse.json(
       errorResponse(error),
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
@@ -98,7 +99,8 @@ export async function POST(req: NextRequest) {
       successResponse(null, SUCCESS_MESSAGES.UPDATED)
     )
   } catch (error) {
-    console.error('Error updating settings:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error updating settings', error, { endpoint: '/api/settings' })
     return NextResponse.json(
       errorResponse(error),
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }

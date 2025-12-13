@@ -143,7 +143,8 @@ export async function POST(req: NextRequest) {
         sendSlackMessage(slackChannelId, `مرحباً! تم إنشاء قناة التواصل بين الطبيب والمريض.`)
       )
     } catch (error) {
-      console.error('Error creating Slack channel:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error creating Slack channel', error, { endpoint: '/api/doctor/slack' })
       // Fallback to generated ID if Slack API fails
       slackChannelId = `C${Date.now()}${Math.random().toString(36).substr(2, 9)}`
     }
@@ -176,7 +177,8 @@ export async function POST(req: NextRequest) {
         text: `[Channel: ${slackChannelId}] تم إنشاء قناة تواصل جديدة بين الطبيب ${doctor?.name || 'طبيب'} والمريض ${patient.name}`
       })
     } catch (e) {
-      console.error('Failed to send Slack notification:', e)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to send Slack notification', e, { endpoint: '/api/doctor/slack' })
     }
 
     return NextResponse.json({

@@ -15,14 +15,14 @@ interface QuickAction {
   id: string
   label: string
   prompt: string
-  icon: any
+  icon: React.ComponentType<{ size?: number; className?: string }>
 }
 
 export default function AIAssistantPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [patientContext, setPatientContext] = useState<any>(null)
+  const [patientContext, setPatientContext] = useState<Record<string, unknown> | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -124,11 +124,14 @@ export default function AIAssistantPage() {
       } else {
         throw new Error(data.error || 'فشل في الحصول على إجابة')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessageText = error instanceof Error ? error.message : 'حدث خطأ غير متوقع'
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error in AI assistant', error, { endpoint: '/dashboard/doctor/ai-assistant' })
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `عذراً، حدث خطأ: ${error.message}. يرجى المحاولة مرة أخرى.`,
+        content: `عذراً، حدث خطأ: ${errorMessageText}. يرجى المحاولة مرة أخرى.`,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, errorMessage])
@@ -158,7 +161,7 @@ export default function AIAssistantPage() {
           {patientContext && (
             <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
               <span className="text-sm text-blue-700">المريض الحالي:</span>
-              <span className="font-medium text-blue-900">{patientContext.name}</span>
+              <span className="font-medium text-blue-900">{typeof patientContext === 'object' && patientContext !== null && 'name' in patientContext ? String(patientContext.name) : 'غير محدد'}</span>
               <button
                 onClick={() => setPatientContext(null)}
                 className="text-blue-500 hover:text-blue-700"

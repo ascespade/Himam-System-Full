@@ -687,8 +687,7 @@ export async function POST(req: NextRequest) {
             outboundMessageId = textResponse?.messageId || null
             logInfo('WhatsApp message sent', { messageId: outboundMessageId, success: textResponse.success })
           } catch (sendError: unknown) {
-            console.error('❌ Error sending WhatsApp message:', sendError)
-            logError('Failed to send WhatsApp message', sendError)
+            logError('Failed to send WhatsApp message', sendError, { from, messageId: outboundMessageId, endpoint: '/api/whatsapp' })
             // Don't block the response - webhook should return success to avoid retries
           }
         }

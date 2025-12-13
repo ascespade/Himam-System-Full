@@ -9,6 +9,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { FileText, Calendar, User, Download, Search, Filter } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Prescription {
   id: string
@@ -83,9 +84,11 @@ export default function PatientPrescriptionsPage() {
     return matchesSearch && matchesStatus
   })
 
-  const handleDownload = (prescriptionId: string) => {
+  const handleDownload = async (prescriptionId: string) => {
     // TODO: Implement prescription download
-    console.log('Download prescription:', prescriptionId)
+    const { logInfo } = await import('@/shared/utils/logger')
+    logInfo('Prescription download requested', { prescriptionId, endpoint: '/dashboard/patient/prescriptions' })
+    toast.info('قريباً: ميزة تحميل الوصفة قيد التطوير')
   }
 
   if (loading) {

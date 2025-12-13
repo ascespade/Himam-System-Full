@@ -7,6 +7,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { FileText, Calendar, Download, BarChart, TrendingUp, Users, DollarSign, Filter } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface ReportData {
   period: string
@@ -42,9 +43,11 @@ export default function ReceptionReportsPage() {
     loadReportData()
   }, [loadReportData])
 
-  const handleExport = (format: 'pdf' | 'excel') => {
+  const handleExport = async (format: 'pdf' | 'excel') => {
     // TODO: Implement export functionality
-    console.log(`Exporting report as ${format}`)
+    const { logInfo } = await import('@/shared/utils/logger')
+    logInfo(`Exporting report as ${format}`, { format, endpoint: '/dashboard/reception/reports' })
+    toast.info('قريباً: ميزة التصدير قيد التطوير')
   }
 
   if (loading) {

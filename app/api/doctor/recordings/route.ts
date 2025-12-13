@@ -157,7 +157,10 @@ export async function DELETE(
           .from('recordings')
           .remove([`video-sessions/${recordingId}/${fileName}`])
       } catch (storageError) {
-        console.error('Error deleting from storage:', storageError)
+        const { logError } = await import('@/shared/utils/logger')
+        const urlParts = recording.recording_url.split('/')
+        const fileName = urlParts[urlParts.length - 1]
+        logError('Error deleting from storage', storageError, { recordingId, fileName, endpoint: '/api/doctor/recordings' })
         // Don't fail if storage deletion fails
       }
     }

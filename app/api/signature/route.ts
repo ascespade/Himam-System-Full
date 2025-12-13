@@ -52,7 +52,9 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (dbError) {
-      console.error('Error saving signature metadata:', dbError)
+      const { logError } = await import('@/shared/utils/logger')
+      const signatureId = signatureRecord?.id
+      logError('Error saving signature metadata', dbError, { signatureId, endpoint: '/api/signature' })
       // Still return success if storage worked
     }
 

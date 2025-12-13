@@ -106,7 +106,8 @@ export async function GET(req: NextRequest) {
         }
       }
       // For other errors, try to return basic user info instead of throwing
-      console.error('Error fetching doctor profile:', profileError)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching doctor profile', profileError, { userId: user.id, endpoint: '/api/doctor/profile' })
       try {
         const { data: userData } = await supabaseAdmin
           .from('users')

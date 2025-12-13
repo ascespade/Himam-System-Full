@@ -134,7 +134,8 @@ export async function PUT(
         }
       } catch (whatsappError) {
         // Log but don't fail the request
-        console.error('Failed to send WhatsApp notification:', whatsappError)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Failed to send WhatsApp notification', whatsappError, { appointmentId: params.id, endpoint: '/api/appointments/[id]' })
       }
     }
 

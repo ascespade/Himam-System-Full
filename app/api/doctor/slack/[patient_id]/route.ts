@@ -164,7 +164,8 @@ export async function POST(
         text: `[Channel: ${conversation.slack_channel_id}] ${message_text}`
       })
     } catch (e) {
-      console.error('Failed to send Slack message:', e)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to send Slack message', e, { patientId: params.patient_id, endpoint: '/api/doctor/slack/[patient_id]' })
     }
 
     // Store message in database

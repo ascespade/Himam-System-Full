@@ -186,7 +186,8 @@ export async function POST(req: NextRequest) {
                 )
               }
             } catch (e) {
-              console.error('Failed to notify patient:', e)
+              const { logError } = await import('@/shared/utils/logger')
+              logError('Failed to notify patient', e, { patientId: session.patient_id, sessionId: session.id, endpoint: '/api/doctor/sessions/bulk-manage' })
             }
           }
         }
@@ -227,7 +228,8 @@ export async function POST(req: NextRequest) {
         entityId: bulkOp.id
       })
     } catch (e) {
-      console.error('Failed to create notification:', e)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to create notification', e, { bulkOpId: bulkOp.id, endpoint: '/api/doctor/sessions/bulk-manage' })
     }
 
     return NextResponse.json({

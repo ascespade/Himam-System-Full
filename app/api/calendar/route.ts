@@ -39,7 +39,10 @@ export async function POST(req: NextRequest) {
 
       if (dbError) {
         // Rollback: delete calendar event if DB insert fails
-        await deleteEvent(calendarEventId).catch(console.error)
+        await deleteEvent(calendarEventId).catch(async (error) => {
+          const { logError } = await import('@/shared/utils/logger')
+          logError('Error deleting calendar event during rollback', error, { calendarEventId, endpoint: '/api/calendar' })
+        })
         throw dbError
       }
 

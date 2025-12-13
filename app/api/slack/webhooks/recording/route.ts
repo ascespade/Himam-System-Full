@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (!videoSession) {
-      console.warn(`Video session not found for call_id: ${call_id}`)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Video session not found for call_id', { call_id, endpoint: '/api/slack/webhooks/recording' })
       return NextResponse.json({ success: true, message: 'Session not found' })
     }
 
@@ -73,7 +74,8 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch (uploadError) {
-        console.error('Error uploading recording to storage:', uploadError)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Error uploading recording to storage', uploadError, { call_id, endpoint: '/api/slack/webhooks/recording' })
         // Continue with Slack URL if upload fails
       }
     }

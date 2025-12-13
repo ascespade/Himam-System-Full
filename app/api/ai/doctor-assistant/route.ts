@@ -203,7 +203,8 @@ ${context}
     const data = await aiResponse.json()
     return data.choices?.[0]?.message?.content || 'عذراً، لم أتمكن من تحليل الحالة.'
   } catch (error) {
-    console.error('AI API error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('AI API error', error, { patientId, doctorId, endpoint: '/api/ai/doctor-assistant' })
     // Fallback response
     return `ملخص حالة ${patient?.name || 'المريض'}:
 - عدد الجلسات: ${patientSessions.length}

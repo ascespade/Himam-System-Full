@@ -91,7 +91,8 @@ export async function GET(req: NextRequest) {
           metaTemplates = metaData.data || []
         }
       } catch (metaError) {
-        console.error('Error fetching templates from Meta:', metaError)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Error fetching templates from Meta', metaError, { endpoint: '/api/whatsapp/templates' })
         // Continue without Meta templates
       }
     }

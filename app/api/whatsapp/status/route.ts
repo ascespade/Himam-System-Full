@@ -133,7 +133,8 @@ export async function GET(req: NextRequest) {
       )
     }
   } catch (error: unknown) {
-    console.error('Error checking WhatsApp status:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error checking WhatsApp status', error, { endpoint: '/api/whatsapp/status' })
     return NextResponse.json(
       errorResponse(error),
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }

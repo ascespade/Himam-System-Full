@@ -96,11 +96,13 @@ export async function POST(req: NextRequest) {
       if (!similarRejectedResult.error && similarRejectedResult.data) {
         similarRejected = similarRejectedResult.data
       } else if (similarRejectedResult.error) {
-        console.warn('Error finding similar claims (might be first time or pgvector not enabled):', similarRejectedResult.error)
+        const { logWarn } = await import('@/shared/utils/logger')
+        logWarn('Error finding similar claims (might be first time or pgvector not enabled)', { error: similarRejectedResult.error, endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
       }
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e)
-      console.warn('Vector search not available (pgvector extension might not be enabled):', errorMessage)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Vector search not available (pgvector extension might not be enabled)', { error: errorMessage, endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
     }
 
     // Find similar successful patterns
@@ -119,7 +121,8 @@ export async function POST(req: NextRequest) {
       if (!similarSuccessfulResult.error && similarSuccessfulResult.data) {
         similarSuccessful = similarSuccessfulResult.data
       } else if (similarSuccessfulResult.error) {
-        console.warn('Error finding similar patterns:', similarSuccessfulResult.error)
+        const { logWarn } = await import('@/shared/utils/logger')
+        logWarn('Error finding similar patterns', { error: similarSuccessfulResult.error, endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
       }
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e)
@@ -248,7 +251,8 @@ export async function PUT(req: NextRequest) {
       try {
         rejectionEmbedding = await generateEmbedding(rejection_reason)
       } catch (e) {
-        console.warn('Failed to generate rejection embedding:', e)
+        const { logWarn } = await import('@/shared/utils/logger')
+        logWarn('Failed to generate rejection embedding', { error: e, claim_id, endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
       }
     }
 
@@ -281,11 +285,13 @@ export async function PUT(req: NextRequest) {
       if (!claimError) {
         claimEmbedding = data
       } else {
-        console.warn('Error storing claim embedding (pgvector might not be enabled):', claimError)
+        const { logWarn } = await import('@/shared/utils/logger')
+        logWarn('Error storing claim embedding (pgvector might not be enabled)', { error: claimError, claim_id, endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
       }
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e)
-      console.warn('Could not store embedding (pgvector extension might not be enabled):', errorMessage)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Could not store embedding (pgvector extension might not be enabled)', { error: errorMessage, claim_id, endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
       // Continue even if embedding storage fails
     }
 
@@ -306,7 +312,8 @@ export async function PUT(req: NextRequest) {
                 metadata: { claim_id, rejection_reason }
               }
             } catch (e) {
-              console.warn('Failed to generate embedding for pattern:', pattern, e)
+              const { logWarn } = await import('@/shared/utils/logger')
+              logWarn('Failed to generate embedding for pattern', { error: e, pattern, claim_id, endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
               return null
             }
           })

@@ -65,7 +65,8 @@ export async function PUT(
           entityId: data.id
         })
       } catch (e) {
-        console.error('Failed to create claim approval notifications:', e)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Failed to create claim approval notifications', e, { claimId: params.id, endpoint: '/api/insurance/claims/[id]' })
       }
     }
 

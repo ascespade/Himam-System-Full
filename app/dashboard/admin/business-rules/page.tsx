@@ -9,7 +9,7 @@ interface BusinessRule {
   name: string
   description: string
   type: string
-  condition: any
+  condition: Record<string, unknown>
   action: 'allow' | 'block' | 'warn' | 'require_approval'
   priority: number
   is_active: boolean
@@ -319,7 +319,7 @@ function RuleForm({
           <select
             required
             value={formData.action}
-            onChange={(e) => setFormData({ ...formData, action: e.target.value as any })}
+            onChange={(e) => setFormData({ ...formData, action: e.target.value as 'allow' | 'block' | 'warn' | 'require_approval' })}
             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
           >
             <option value="allow">السماح</option>

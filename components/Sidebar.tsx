@@ -70,13 +70,15 @@ export default function Sidebar() {
         .single()
 
       if (roleError) {
-        console.error('Error fetching user role:', roleError)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Error fetching user role', roleError, { endpoint: 'Sidebar' })
         setUserRole('admin') // Fallback to admin
       } else {
         setUserRole(userData?.role || 'admin')
       }
     } catch (error) {
-      console.error('Error fetching user role:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching user role', error, { endpoint: 'Sidebar' })
       setUserRole('admin') // Fallback to admin
     } finally {
       setLoading(false)
@@ -99,7 +101,8 @@ export default function Sidebar() {
       router.push('/login')
       router.refresh()
     } catch (error) {
-      console.error('Error during logout:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error during logout', error, { endpoint: 'Sidebar' })
       // Force redirect even if signOut fails
       router.push('/login')
       router.refresh()
@@ -268,8 +271,11 @@ export default function Sidebar() {
         ) : (
           Object.entries(groupedMenu).map(([category, items]) => (
             <div key={category} className="space-y-1">
-              {/* Category Header */}
-              <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+              {/* Category Header - NOT clickable */}
+              <div 
+                className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider select-none pointer-events-none"
+                onClick={(e) => e.stopPropagation()}
+              >
                 {category}
               </div>
               
@@ -279,7 +285,10 @@ export default function Sidebar() {
                 return (
                   <button
                     key={item.href}
-                    onClick={() => {
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
                       router.push(item.href)
                       router.refresh()
                     }}

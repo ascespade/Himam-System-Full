@@ -93,7 +93,8 @@ export async function GET(req: NextRequest) {
       } catch (dbError: unknown) {
         // Table might not exist, continue anyway
         const errorMessage = dbError instanceof Error ? dbError.message : String(dbError)
-        console.warn('Could not update business profile:', errorMessage)
+        const { logWarn } = await import('@/shared/utils/logger')
+        logWarn('Could not update business profile', { error: errorMessage, phoneNumberId, endpoint: '/api/whatsapp/phone-number' })
       }
 
       return NextResponse.json({

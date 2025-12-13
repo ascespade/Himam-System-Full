@@ -103,7 +103,8 @@ export async function POST(req: NextRequest) {
         entityId: patient.id
       })
     } catch (e) {
-      console.error('Failed to create patient registration notification:', e)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to create patient registration notification', e, { patientId: patient.id, endpoint: '/api/patients' })
     }
 
     return NextResponse.json(successResponse(patient), { status: HTTP_STATUS.CREATED })

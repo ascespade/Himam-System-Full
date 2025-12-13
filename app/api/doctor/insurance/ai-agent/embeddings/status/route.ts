@@ -57,7 +57,8 @@ export async function GET(req: NextRequest) {
       if (errorCode === '42P01' || errorMessage.includes('does not exist')) {
         vectorEnabled = false
       } else {
-        console.warn('Error checking vector status:', e)
+        const { logWarn } = await import('@/shared/utils/logger')
+        logWarn('Error checking vector status', { error: e, endpoint: '/api/doctor/insurance/ai-agent/embeddings/status' })
       }
     }
 

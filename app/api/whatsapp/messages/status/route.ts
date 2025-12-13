@@ -96,7 +96,8 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (error) {
-        console.error(`Error updating message status for ${status.id}:`, error)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Error updating message status', error, { messageId: status.id, endpoint: '/api/whatsapp/messages/status' })
       } else if (data) {
         updates.push({ messageId: status.id, status: status.status })
 

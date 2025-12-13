@@ -203,7 +203,8 @@ export async function POST(req: NextRequest) {
           entityId: claim_id
         })
       } catch (e) {
-        console.error('Failed to create notification:', e)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Failed to create notification', e, { claim_id, endpoint: '/api/doctor/insurance/ai-agent/monitor' })
       }
 
       return NextResponse.json({
