@@ -84,6 +84,7 @@ export function useWhatsAppStatus(options: UseWhatsAppStatusOptions = {}) {
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch status'
+      // eslint-disable-next-line no-console
       console.error('Error fetching WhatsApp status:', err)
       setError(errorMessage)
       setStatus({

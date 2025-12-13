@@ -38,7 +38,8 @@ export async function logActivity(params: ActivityLogParams) {
       })
   } catch (error) {
     // Don't throw - logging should never break the main flow
-    console.error('Failed to log activity:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Failed to log activity', error)
   }
 }
 

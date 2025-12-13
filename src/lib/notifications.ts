@@ -70,7 +70,8 @@ export async function createNotification(params: CreateNotificationParams): Prom
       .single()
 
     if (error) {
-      console.error('Error creating notification:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error creating notification', error)
       return null
     }
 
@@ -88,7 +89,8 @@ export async function createNotification(params: CreateNotificationParams): Prom
       updated_at: data.updated_at,
     }
   } catch (error) {
-    console.error('Error creating notification:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error creating notification', error)
     return null
   }
 }
@@ -108,7 +110,8 @@ export async function createNotificationForRole(
       .eq('role', role)
 
     if (usersError || !users || users.length === 0) {
-      console.error('No users found with role:', role)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('No users found with role', { role })
       return []
     }
 
@@ -124,7 +127,8 @@ export async function createNotificationForRole(
 
     return notifications.filter((n): n is Notification => n !== null)
   } catch (error) {
-    console.error('Error creating notifications for role:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error creating notifications for role', error, { role })
     return []
   }
 }
@@ -144,7 +148,8 @@ export async function createNotificationForUser(
       .single()
 
     if (error || !user) {
-      console.error('User not found:', email)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('User not found', { email })
       return null
     }
 
@@ -153,7 +158,8 @@ export async function createNotificationForUser(
       userId: user.id
     })
   } catch (error) {
-    console.error('Error creating notification for user:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error creating notification for user', error, { email })
     return null
   }
 }

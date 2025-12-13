@@ -27,7 +27,8 @@ export async function logAudit(
       user_agent: userAgent
     })
   } catch (error) {
-    console.error('Audit log failed:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Audit log failed', error)
     // Don't throw error to prevent blocking main flow
   }
 }

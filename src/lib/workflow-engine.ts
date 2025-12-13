@@ -107,7 +107,8 @@ export async function executeWorkflow(execution: WorkflowExecution) {
 
     return { success: true, executionId: execRecord.id, results: stepResults }
   } catch (error: unknown) {
-    console.error('Workflow execution error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Workflow execution error', error)
     throw error
   }
 }
@@ -316,7 +317,8 @@ export async function triggerWorkflowByEvent(
 
     return results
   } catch (error: unknown) {
-    console.error('Error triggering workflow by event:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error triggering workflow by event', error)
     throw error
   }
 }

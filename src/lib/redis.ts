@@ -22,7 +22,8 @@ async function initializeRedis(): Promise<void> {
     const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL
 
     if (!redisUrl) {
-      console.warn('Redis URL not configured, using in-memory fallback')
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Redis URL not configured, using in-memory fallback')
       return
     }
 
@@ -41,7 +42,8 @@ async function initializeRedis(): Promise<void> {
     }
     // Redis connected successfully (logged via logger if needed)
   } catch (error) {
-    console.warn('Redis not available, using in-memory fallback:', error)
+    const { logWarn } = await import('@/shared/utils/logger')
+    logWarn('Redis not available, using in-memory fallback', { error })
     isRedisAvailable = false
     redisClient = null
   }
@@ -72,7 +74,8 @@ export async function getCache(key: string): Promise<unknown | null> {
       return null
     }
   } catch (error) {
-    console.error('Cache get error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Cache get error', error)
     return null
   }
 }
@@ -102,7 +105,8 @@ export async function setCache(
       return true
     }
   } catch (error) {
-    console.error('Cache set error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Cache set error', error)
     return false
   }
 }
@@ -120,7 +124,8 @@ export async function deleteCache(key: string): Promise<boolean> {
       return true
     }
   } catch (error) {
-    console.error('Cache delete error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Cache delete error', error)
     return false
   }
 }
@@ -154,7 +159,8 @@ export async function clearCache(pattern?: string): Promise<boolean> {
       return true
     }
   } catch (error) {
-    console.error('Cache clear error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Cache clear error', error)
     return false
   }
 }

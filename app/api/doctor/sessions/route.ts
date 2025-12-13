@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/sessions
  * Get doctor's therapy sessions
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -33,10 +34,11 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get('type')
     const status = searchParams.get('status')
 
+    // Select specific columns for better performance
     let query = supabaseAdmin
       .from('sessions')
       .select(`
-        *,
+        id, doctor_id, patient_id, appointment_id, date, duration, session_type, status, chief_complaint, assessment, plan, notes, created_at, updated_at,
         patients (
           name,
           phone
@@ -76,13 +78,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/doctor/sessions
  * Create new therapy session
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -127,7 +129,7 @@ export async function POST(req: NextRequest) {
         notes: notes || null
       })
       .select(`
-        *,
+        id, doctor_id, patient_id, appointment_id, date, duration, session_type, status, chief_complaint, assessment, plan, notes, created_at, updated_at,
         patients (
           name,
           phone
@@ -140,8 +142,10 @@ export async function POST(req: NextRequest) {
     // Create notification
     try {
       const { createNotification, NotificationTemplates } = await import('@/lib/notifications')
+      const patients = data.patients as Array<{ name?: string; phone?: string }> | undefined
+      const patientName = Array.isArray(patients) && patients.length > 0 ? patients[0]?.name : undefined
       const template = NotificationTemplates.systemAlert(
-        `تم إنشاء جلسة ${session_type} للمريض ${data.patients?.name || 'مريض'}`
+        `تم إنشاء جلسة ${session_type} للمريض ${patientName || 'مريض'}`
       )
       await createNotification({
         userId: user.id,
@@ -170,5 +174,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'api')
 

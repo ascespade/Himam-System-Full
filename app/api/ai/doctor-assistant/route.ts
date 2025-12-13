@@ -270,7 +270,8 @@ async function generateChatResponse(
 
     return { content, type }
   } catch (error) {
-    console.error('AI API error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('AI API error', error, { endpoint: '/api/ai/doctor-assistant' })
     return {
       content: 'عذراً، حدث خطأ في الاتصال بخدمة الذكاء الاصطناعي. يرجى المحاولة لاحقاً.',
       type: 'general' as const

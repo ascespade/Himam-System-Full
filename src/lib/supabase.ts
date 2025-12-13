@@ -7,7 +7,12 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 // Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
   if (typeof window !== 'undefined') {
-    console.warn('Supabase environment variables are not configured. Some features may not work.')
+    // Dynamic import to avoid circular dependency
+    import('@/shared/utils/logger').then(({ logWarn }) => {
+      logWarn('Supabase environment variables are not configured. Some features may not work.')
+    }).catch(() => {
+      // Logger not available, ignore
+    })
   }
 }
 

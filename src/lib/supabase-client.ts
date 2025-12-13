@@ -26,7 +26,12 @@ export function getSupabaseClient(): SupabaseClient | null {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase environment variables are not configured')
+    // Dynamic import to avoid circular dependency
+    import('@/shared/utils/logger').then(({ logWarn }) => {
+      logWarn('Supabase environment variables are not configured')
+    }).catch(() => {
+      // Logger not available, ignore
+    })
     return null
   }
 
@@ -46,7 +51,12 @@ export function getSupabaseClient(): SupabaseClient | null {
     })
     return supabaseClient
   } catch (error) {
-    console.error('Failed to create Supabase client:', error)
+    // Dynamic import to avoid circular dependency
+    import('@/shared/utils/logger').then(({ logError }) => {
+      logError('Failed to create Supabase client', error)
+    }).catch(() => {
+      // Logger not available, ignore
+    })
     return null
   }
 }

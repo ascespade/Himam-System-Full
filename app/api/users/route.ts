@@ -20,9 +20,10 @@ export const GET = withAuth(async (context) => {
   const role = searchParams.get('role')
   const search = searchParams.get('search')
 
+  // Select specific columns for better performance
   let query = supabaseAdmin
     .from('users')
-    .select('*', { count: 'exact' })
+    .select('id, email, name, phone, role, created_at, updated_at', { count: 'exact' })
 
   // Filter by role
   if (role && role !== 'all') {

@@ -24,6 +24,8 @@ class ToastService {
         warning: '⚠️',
       }[type]
 
+      // Allowed console usage in client-side toast utility for development feedback
+      // eslint-disable-next-line no-console
       console.log(`${emoji} [${type.toUpperCase()}] ${message}`)
     }
 

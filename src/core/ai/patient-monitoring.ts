@@ -35,7 +35,8 @@ export async function monitorAllPatients(): Promise<PatientMonitoringResult[]> {
 
     return results
   } catch (error) {
-    console.error('Error monitoring patients:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error monitoring patients', error)
     return []
   }
 }
@@ -129,7 +130,8 @@ export async function monitorPatient(patientId: string): Promise<PatientMonitori
       recommendations
     }
   } catch (error) {
-    console.error(`Error monitoring patient ${patientId}:`, error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError(`Error monitoring patient ${patientId}`, error, { patientId })
     return {
       patientId,
       riskLevel: 'low',

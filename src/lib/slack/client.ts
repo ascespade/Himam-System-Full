@@ -25,7 +25,8 @@ export class SlackClient {
       this.token = settings.SLACK_BOT_TOKEN || process.env.SLACK_BOT_TOKEN || null
       this.defaultChannel = settings.SLACK_DEFAULT_CHANNEL || process.env.SLACK_DEFAULT_CHANNEL || null
     } catch (error) {
-      console.error('Error initializing Slack client:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error initializing Slack client', error)
     }
   }
 
@@ -38,7 +39,8 @@ export class SlackClient {
     }
 
     if (!this.token) {
-      console.warn('Slack token not configured')
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Slack token not configured')
       return false
     }
 
@@ -60,13 +62,15 @@ export class SlackClient {
       const data = await response.json()
 
       if (!data.ok) {
-        console.error('Slack API error:', data.error)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Slack API error', { error: data.error })
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Error sending Slack message:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error sending Slack message', error)
       return false
     }
   }

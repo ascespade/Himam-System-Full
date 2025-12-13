@@ -126,7 +126,8 @@ export async function POST(req: NextRequest) {
       }
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e)
-      console.warn('Vector search for patterns not available:', errorMessage)
+      const { logWarn } = await import('@/shared/utils/logger')
+      logWarn('Vector search for patterns not available', { error: errorMessage, endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
     }
 
     // Analyze results
@@ -328,7 +329,8 @@ export async function PUT(req: NextRequest) {
         }
       } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : String(e)
-        console.warn('Error storing pattern embeddings (pgvector might not be enabled):', errorMessage)
+        const { logWarn } = await import('@/shared/utils/logger')
+        logWarn('Error storing pattern embeddings (pgvector might not be enabled)', { error: errorMessage, endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
       }
     }
 
@@ -349,7 +351,8 @@ export async function PUT(req: NextRequest) {
           })
       } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : String(e)
-        console.warn('Error storing success pattern (pgvector might not be enabled):', errorMessage)
+        const { logWarn } = await import('@/shared/utils/logger')
+        logWarn('Error storing success pattern (pgvector might not be enabled)', { error: errorMessage, endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
       }
     }
 

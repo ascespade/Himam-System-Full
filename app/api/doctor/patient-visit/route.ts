@@ -85,7 +85,8 @@ export async function GET(req: NextRequest) {
     }
 
     if (error) {
-      console.error('Error fetching patient visits:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching patient visits', error, { endpoint: '/api/doctor/patient-visit' })
       // If it's a table not found error, return empty
       const errorCode = error && typeof error === 'object' && 'code' in error ? error.code : null
       const errorMessage = error instanceof Error ? error.message : String(error)

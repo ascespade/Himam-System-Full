@@ -8,12 +8,13 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { supabaseAdmin } from '@/lib/supabase'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 /**
  * GET /api/appointments
  * Retrieve appointments with optional filters
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     // Check Auth
     const cookieStore = req.cookies
@@ -43,9 +44,10 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status')
     const limit = parseInt(searchParams.get('limit') || '100')
 
+    // Select specific columns for better performance
     let query = supabaseAdmin
       .from('appointments')
-      .select('*')
+      .select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, created_at, updated_at')
       .order('date', { ascending: false })
       .order('time', { ascending: false })
       .limit(limit)
@@ -74,13 +76,13 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')
 
 /**
  * POST /api/appointments
  * Create a new appointment
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     // Check Auth
     const cookieStore = req.cookies
@@ -161,4 +163,4 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')

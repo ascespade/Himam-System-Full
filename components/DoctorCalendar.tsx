@@ -72,6 +72,7 @@ export default function DoctorCalendar() {
         setAppointments(data.data || [])
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching appointments:', e)
     } finally {
       setLoading(false)
@@ -166,6 +167,7 @@ export default function DoctorCalendar() {
 
   const handleAppointmentClick = (appointment: Appointment) => {
     // Could open a modal or navigate to appointment details
+    // eslint-disable-next-line no-console
     console.log('Appointment clicked:', appointment)
   }
 

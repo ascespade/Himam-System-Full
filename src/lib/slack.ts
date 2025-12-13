@@ -13,7 +13,8 @@ interface SlackPayload {
 
 export async function sendSlackNotification(payload: SlackPayload): Promise<boolean> {
   if (!SLACK_WEBHOOK_URL) {
-    console.warn('SLACK_WEBHOOK_URL is not defined. Skipping notification.');
+    const { logWarn } = await import('@/shared/utils/logger')
+    logWarn('SLACK_WEBHOOK_URL is not defined. Skipping notification.')
     return false;
   }
 
@@ -27,13 +28,15 @@ export async function sendSlackNotification(payload: SlackPayload): Promise<bool
     });
 
     if (!response.ok) {
-      console.error(`Failed to send Slack notification: ${response.status} ${response.statusText}`);
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Failed to send Slack notification', { status: response.status, statusText: response.statusText })
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error sending Slack notification:', error);
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error sending Slack notification', error)
     return false;
   }
 }

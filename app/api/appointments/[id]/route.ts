@@ -8,6 +8,7 @@ import { supabaseAdmin } from '@/lib'
 import { sendTextMessage } from '@/lib/whatsapp-messaging'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
+import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
 
 /**
  * GET /api/appointments/:id
@@ -17,6 +18,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { id } = params
 
@@ -27,9 +32,10 @@ export async function GET(
       )
     }
 
+    // Select specific columns for better performance
     const { data: appointment, error } = await supabaseAdmin
       .from('appointments')
-      .select('*')
+      .select('id, patient_id, doctor_id, date, time, duration, appointment_type, status, notes, created_at, updated_at')
       .eq('id', id)
       .single()
 
@@ -57,6 +63,10 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { id } = params
     const body = await req.json()
@@ -139,7 +149,9 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json(successResponse(appointment))
+    const response = NextResponse.json(successResponse(appointment))
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     return handleApiError(error)
   }
@@ -153,6 +165,10 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { id } = params
 
@@ -182,7 +198,9 @@ export async function DELETE(
       throw error
     }
 
-    return NextResponse.json(successResponse({ id, cancelled: true }))
+    const response = NextResponse.json(successResponse({ id, cancelled: true }))
+    addRateLimitHeadersToResponse(response, req, 'api')
+    return response
   } catch (error: unknown) {
     return handleApiError(error)
   }

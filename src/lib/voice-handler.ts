@@ -63,7 +63,8 @@ export async function transcribeAudio(mediaId: string): Promise<string> {
 
     return transcription.text
   } catch (error: unknown) {
-    console.error('Transcription Error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Transcription Error', error)
     return '' // Fallback to empty text
   }
 }
@@ -110,7 +111,8 @@ export async function generateAndUploadVoice(text: string): Promise<string | nul
 
     return uploadRes.data.id
   } catch (error) {
-    console.error('TTS/Upload Error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('TTS/Upload Error', error)
     return null
   }
 }

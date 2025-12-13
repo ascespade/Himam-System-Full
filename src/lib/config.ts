@@ -35,7 +35,8 @@ export async function getSettings(): Promise<SystemSettings> {
       .select('key, value')
 
     if (error) {
-      console.error('Error fetching settings:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching settings', error)
       return {} as SystemSettings
     }
 
@@ -56,7 +57,8 @@ export async function getSettings(): Promise<SystemSettings> {
 
     return settings as SystemSettings
   } catch (error) {
-    console.error('Error in getSettings:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error in getSettings', error)
     return {} as SystemSettings
   }
 }
@@ -91,7 +93,8 @@ export async function getSetting(key: string, defaultValue: string = ''): Promis
 
     return data.value || defaultValue
   } catch (error) {
-    console.error(`Error fetching setting ${key}:`, error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError(`Error fetching setting ${key}`, error)
     return defaultValue
   }
 }
@@ -118,13 +121,15 @@ export async function updateSetting(
       })
 
     if (error) {
-      console.error(`Error updating setting ${key}:`, error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError(`Error updating setting ${key}`, error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error(`Error in updateSetting for ${key}:`, error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError(`Error in updateSetting for ${key}`, error)
     return false
   }
 }
@@ -144,13 +149,15 @@ export async function updateSettings(settings: Record<string, string>): Promise<
     const { error } = await supabaseAdmin.from('settings').upsert(updates)
 
     if (error) {
-      console.error('Error updating settings:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error updating settings', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('Error in updateSettings:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error in updateSettings', error)
     return false
   }
 }

@@ -55,7 +55,12 @@ export function parseBookingFromAI(aiResponse: string): BookingDetails | null {
 
     return details
   } catch (error) {
-    console.error('Error parsing booking details:', error)
+    // Dynamic import to avoid circular dependency
+    import('@/shared/utils/logger').then(({ logError }) => {
+      logError('Error parsing booking details', error)
+    }).catch(() => {
+      // Logger not available, ignore
+    })
     return null
   }
 }

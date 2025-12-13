@@ -68,7 +68,8 @@ export async function sendButtonMessage(
 
   if (!response.ok) {
     const error = await response.json()
-    console.error('WhatsApp API Error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('WhatsApp API Error', error, { endpoint: 'sendButtonMessage' })
     throw new Error(error.error?.message || 'Failed to send button message')
   }
 
@@ -127,7 +128,8 @@ export async function sendListMessage(
 
   if (!response.ok) {
     const error = await response.json()
-    console.error('WhatsApp API Error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('WhatsApp API Error', error)
     throw new Error(error.error?.message || 'Failed to send list message')
   }
 
@@ -170,7 +172,8 @@ export async function sendTextMessage(
 
   if (!response.ok) {
     const error = await response.json()
-    console.error('WhatsApp API Error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('WhatsApp API Error', error)
     throw new Error(error.error?.message || 'Failed to send text message')
   }
 
@@ -294,7 +297,8 @@ export async function sendImageMessage(
 
   if (!response.ok) {
     const error = await response.json()
-    console.error('WhatsApp API Error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('WhatsApp API Error', error)
     throw new Error(error.error?.message || 'Failed to send image message')
   }
 
@@ -351,7 +355,8 @@ export async function sendCenterLocation(to: string): Promise<void> {
   )
 
   if (!response.ok) {
-    console.error('Failed to send location')
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Failed to send location')
   }
 }
 
@@ -401,7 +406,8 @@ export async function sendDocumentMessage(
 
   if (!response.ok) {
     const error = await response.json()
-    console.error('WhatsApp API Error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('WhatsApp API Error', error)
     throw new Error(error.error?.message || 'Failed to send document message')
   }
 
@@ -457,7 +463,8 @@ export async function sendTemplateMessage(
 
   if (!response.ok) {
     const error = await response.json()
-    console.error('WhatsApp API Error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('WhatsApp API Error', error)
     throw new Error(error.error?.message || 'Failed to send template message')
   }
 
@@ -502,7 +509,8 @@ export async function sendAudioMessage(
 
   if (!response.ok) {
     const error = await response.json()
-    console.error('WhatsApp API Error:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('WhatsApp API Error', error)
     throw new Error(error.error?.message || 'Failed to send audio message')
   }
 

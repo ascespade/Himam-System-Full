@@ -30,7 +30,8 @@ export async function executeFlowsForContext(
       .order('priority', { ascending: false })
 
     if (error) {
-      console.error('Error fetching flows:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching flows', error)
       return []
     }
 
@@ -65,13 +66,15 @@ export async function executeFlowsForContext(
           executionIds.push(data.data.execution_id)
         }
       } catch (execError) {
-        console.error(`Error executing flow ${flow.id}:`, execError)
+        const { logError } = await import('@/shared/utils/logger')
+        logError(`Error executing flow ${flow.id}`, execError)
       }
     }
 
     return executionIds
   } catch (error) {
-    console.error('Error executing flows for context:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error executing flows for context', error)
     return []
   }
 }
@@ -198,7 +201,8 @@ export async function executeFlowById(
 
     return null
   } catch (error) {
-    console.error('Error executing flow:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error executing flow', error)
     return null
   }
 }
@@ -217,7 +221,8 @@ export async function getFlowExecutionStatus(executionId: string): Promise<Recor
     if (error) throw error
     return data as Record<string, unknown>
   } catch (error) {
-    console.error('Error fetching flow execution:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching flow execution', error)
     return {} as Record<string, unknown>
   }
 }

@@ -32,7 +32,8 @@ export async function getAIPromptTemplate(
       .single()
 
     if (error || !data) {
-      console.error('Error fetching AI prompt template:', error)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching AI prompt template', error)
       // Fallback to default
       return getDefaultPrompt(name)
     }
@@ -56,7 +57,8 @@ export async function getAIPromptTemplate(
 
     return prompt
   } catch (error) {
-    console.error('Error in getAIPromptTemplate:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error in getAIPromptTemplate', error)
     return getDefaultPrompt(name)
   }
 }
@@ -96,7 +98,8 @@ export async function getAllPromptTemplates(): Promise<AIPromptTemplate[]> {
     if (error) throw error
     return data || []
   } catch (error) {
-    console.error('Error fetching prompt templates:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error fetching prompt templates', error)
     return []
   }
 }

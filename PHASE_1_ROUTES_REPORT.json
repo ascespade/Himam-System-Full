@@ -1,0 +1,1106 @@
+{
+  "totalRoutes": 157,
+  "needsRateLimit": 155,
+  "hasSelectStar": 59,
+  "routes": [
+    {
+      "path": "/apiactivity-logs",
+      "file": "activity-logs/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiai/doctor-assistant",
+      "file": "ai/doctor-assistant/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiai",
+      "file": "ai/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apialerts",
+      "file": "alerts/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apianalytics",
+      "file": "analytics/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiappointments/[id]",
+      "file": "appointments/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiappointments",
+      "file": "appointments/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": false,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apibilling/invoices/[id]/download",
+      "file": "billing/invoices/[id]/download/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apibilling/invoices/[id]",
+      "file": "billing/invoices/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apibilling/invoices",
+      "file": "billing/invoices/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apibilling",
+      "file": "billing/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apicalendar",
+      "file": "calendar/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apicenter/info",
+      "file": "center/info/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apichat/conversations",
+      "file": "chat/conversations/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apichat",
+      "file": "chat/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apichat-history",
+      "file": "chat-history/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apicms/[id]",
+      "file": "cms/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apicms",
+      "file": "cms/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apicontacts",
+      "file": "contacts/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apicontent",
+      "file": "content/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apicrm",
+      "file": "crm/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apicron/reminders",
+      "file": "cron/reminders/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apicron/whatsapp-scheduled",
+      "file": "cron/whatsapp-scheduled/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidashboard/stats",
+      "file": "dashboard/stats/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidashboard/widget-data",
+      "file": "dashboard/widget-data/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidashboard/widgets",
+      "file": "dashboard/widgets/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidebug/ai",
+      "file": "debug/ai/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidebug/auth-users",
+      "file": "debug/auth-users/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidebug/config",
+      "file": "debug/config/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/analytics/patients",
+      "file": "doctor/analytics/patients/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/analytics/performance",
+      "file": "doctor/analytics/performance/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/analytics/revenue",
+      "file": "doctor/analytics/revenue/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/analytics/sessions",
+      "file": "doctor/analytics/sessions/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/appointments",
+      "file": "doctor/appointments/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/auto-documentation",
+      "file": "doctor/auto-documentation/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/case-collaboration/[id]/comments",
+      "file": "doctor/case-collaboration/[id]/comments/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/case-collaboration",
+      "file": "doctor/case-collaboration/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/clinic/close",
+      "file": "doctor/clinic/close/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/clinic/open",
+      "file": "doctor/clinic/open/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/clinic/settings",
+      "file": "doctor/clinic/settings/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/current-patient",
+      "file": "doctor/current-patient/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/dashboard/stats",
+      "file": "doctor/dashboard/stats/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/export",
+      "file": "doctor/export/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/insurance/ai-agent/embeddings",
+      "file": "doctor/insurance/ai-agent/embeddings/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/insurance/ai-agent/embeddings/status",
+      "file": "doctor/insurance/ai-agent/embeddings/status/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/insurance/ai-agent/monitor",
+      "file": "doctor/insurance/ai-agent/monitor/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/insurance/ai-agent",
+      "file": "doctor/insurance/ai-agent/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/insurance/claims/auto-submit",
+      "file": "doctor/insurance/claims/auto-submit/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/medical-records",
+      "file": "doctor/medical-records/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/notes-templates/[id]",
+      "file": "doctor/notes-templates/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/notes-templates",
+      "file": "doctor/notes-templates/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/patient-visit",
+      "file": "doctor/patient-visit/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/patients/[id]/insurance",
+      "file": "doctor/patients/[id]/insurance/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/patients/[id]/progress",
+      "file": "doctor/patients/[id]/progress/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/patients/[id]/quick-stats",
+      "file": "doctor/patients/[id]/quick-stats/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/patients",
+      "file": "doctor/patients/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/prescriptions/[id]/download",
+      "file": "doctor/prescriptions/[id]/download/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/profile",
+      "file": "doctor/profile/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/progress-tracking",
+      "file": "doctor/progress-tracking/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/queue",
+      "file": "doctor/queue/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/recordings",
+      "file": "doctor/recordings/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/risk-detection",
+      "file": "doctor/risk-detection/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/schedule/[id]",
+      "file": "doctor/schedule/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/schedule",
+      "file": "doctor/schedule/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/schedule/working-hours",
+      "file": "doctor/schedule/working-hours/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/search",
+      "file": "doctor/search/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/sessions/[id]",
+      "file": "doctor/sessions/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/sessions/bulk-manage",
+      "file": "doctor/sessions/bulk-manage/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/sessions",
+      "file": "doctor/sessions/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/slack/[patient_id]",
+      "file": "doctor/slack/[patient_id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/slack",
+      "file": "doctor/slack/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/treatment-plans/[id]",
+      "file": "doctor/treatment-plans/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/treatment-plans",
+      "file": "doctor/treatment-plans/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/video-sessions/[id]",
+      "file": "doctor/video-sessions/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apidoctor/video-sessions",
+      "file": "doctor/video-sessions/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctor/video-settings",
+      "file": "doctor/video-settings/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctors/profiles/[id]",
+      "file": "doctors/profiles/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apidoctors/profiles",
+      "file": "doctors/profiles/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiflows/[id]",
+      "file": "flows/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiflows/execute",
+      "file": "flows/execute/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiflows",
+      "file": "flows/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiguardian/approve-procedure",
+      "file": "guardian/approve-procedure/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiguardian/notifications",
+      "file": "guardian/notifications/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiguardian/patients/[id]/records",
+      "file": "guardian/patients/[id]/records/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiguardian/patients/[id]",
+      "file": "guardian/patients/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiguardian/patients",
+      "file": "guardian/patients/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apihealth",
+      "file": "health/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiinsurance/claims/[id]/analyze-response",
+      "file": "insurance/claims/[id]/analyze-response/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiinsurance/claims/[id]",
+      "file": "insurance/claims/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiinsurance/claims/auto-generate",
+      "file": "insurance/claims/auto-generate/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiinsurance/claims",
+      "file": "insurance/claims/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiknowledge/[id]",
+      "file": "knowledge/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiknowledge",
+      "file": "knowledge/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apilab-results/[id]",
+      "file": "lab-results/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apimedical-records",
+      "file": "medical-records/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apimigrations/apply",
+      "file": "migrations/apply/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apinotifications/[id]",
+      "file": "notifications/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apinotifications/mark-all-read",
+      "file": "notifications/mark-all-read/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apinotifications",
+      "file": "notifications/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apipatients/[id]/insurance",
+      "file": "patients/[id]/insurance/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apipatients/[id]/medical-file",
+      "file": "patients/[id]/medical-file/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apipatients/[id]",
+      "file": "patients/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apipatients",
+      "file": "patients/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": false,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiready",
+      "file": "ready/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apireception/queue/[id]/confirm-to-doctor",
+      "file": "reception/queue/[id]/confirm-to-doctor/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apireception/queue/[id]",
+      "file": "reception/queue/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apireception/queue",
+      "file": "reception/queue/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apireports/stats",
+      "file": "reports/stats/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiservices",
+      "file": "services/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apisettings",
+      "file": "settings/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apisignature",
+      "file": "signature/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apislack/conversations",
+      "file": "slack/conversations/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apislack/messages",
+      "file": "slack/messages/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apislack/webhooks/recording",
+      "file": "slack/webhooks/recording/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apispecialists/[id]",
+      "file": "specialists/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apispecialists",
+      "file": "specialists/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apisupervisor/critical-cases",
+      "file": "supervisor/critical-cases/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apisupervisor/dashboard",
+      "file": "supervisor/dashboard/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apisupervisor/quality",
+      "file": "supervisor/quality/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apisupervisor/reviews",
+      "file": "supervisor/reviews/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apisystem/ai-prompts",
+      "file": "system/ai-prompts/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apisystem/config",
+      "file": "system/config/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apisystem/config/video-recording",
+      "file": "system/config/video-recording/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apisystem/health",
+      "file": "system/health/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apisystem/service-types",
+      "file": "system/service-types/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apisystem/working-hours",
+      "file": "system/working-hours/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiusers/[id]",
+      "file": "users/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiusers",
+      "file": "users/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/analytics",
+      "file": "whatsapp/analytics/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiwhatsapp/bulk-send",
+      "file": "whatsapp/bulk-send/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/business-hours",
+      "file": "whatsapp/business-hours/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/business-profile",
+      "file": "whatsapp/business-profile/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiwhatsapp/business-verification",
+      "file": "whatsapp/business-verification/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/conversations/[id]",
+      "file": "whatsapp/conversations/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiwhatsapp/conversations",
+      "file": "whatsapp/conversations/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/debug",
+      "file": "whatsapp/debug/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiwhatsapp/flows/[id]",
+      "file": "whatsapp/flows/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiwhatsapp/flows/execute",
+      "file": "whatsapp/flows/execute/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiwhatsapp/flows",
+      "file": "whatsapp/flows/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiwhatsapp/guardian",
+      "file": "whatsapp/guardian/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/messages",
+      "file": "whatsapp/messages/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/messages/status",
+      "file": "whatsapp/messages/status/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/phone-number",
+      "file": "whatsapp/phone-number/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp",
+      "file": "whatsapp/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiwhatsapp/scheduled",
+      "file": "whatsapp/scheduled/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiwhatsapp/settings/[id]",
+      "file": "whatsapp/settings/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/settings/active",
+      "file": "whatsapp/settings/active/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/settings",
+      "file": "whatsapp/settings/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/stats",
+      "file": "whatsapp/stats/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/status",
+      "file": "whatsapp/status/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/templates/[id]",
+      "file": "whatsapp/templates/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/templates",
+      "file": "whatsapp/templates/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiwhatsapp/test-ai",
+      "file": "whatsapp/test-ai/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/webhook-test",
+      "file": "whatsapp/webhook-test/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiwhatsapp/workflows",
+      "file": "whatsapp/workflows/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    },
+    {
+      "path": "/apiworkflows/[id]",
+      "file": "workflows/[id]/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": false
+    },
+    {
+      "path": "/apiworkflows",
+      "file": "workflows/route.ts",
+      "rateLimitType": "api",
+      "needsRateLimit": true,
+      "hasSelectStar": true
+    }
+  ]
+}

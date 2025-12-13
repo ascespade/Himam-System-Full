@@ -57,7 +57,8 @@ export async function notifyGuardians(options: GuardianNotificationOptions): Pro
       }
     }
   } catch (error) {
-    console.error('Error notifying guardians:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error notifying guardians', error)
   }
 }
 

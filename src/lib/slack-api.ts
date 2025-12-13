@@ -101,7 +101,8 @@ export async function inviteToSlackChannel(
     })
     return true
   } catch (error) {
-    console.error('Error inviting users to Slack channel:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error inviting users to Slack channel', error)
     return false
   }
 }
@@ -147,7 +148,8 @@ export async function getSlackUserIdByEmail(email: string): Promise<string | nul
     // For now, we'll return null and handle it differently
     return null
   } catch (error) {
-    console.error('Error looking up Slack user:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error looking up Slack user', error)
     return null
   }
 }
@@ -244,7 +246,8 @@ export async function archiveSlackChannel(channelId: string): Promise<boolean> {
     })
     return true
   } catch (error) {
-    console.error('Error archiving Slack channel:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error archiving Slack channel', error)
     return false
   }
 }

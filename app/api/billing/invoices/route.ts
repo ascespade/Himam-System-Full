@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/billing/invoices
  * Get all invoices
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -33,10 +34,11 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status')
     const patientId = searchParams.get('patient_id')
 
+    // Select specific columns for better performance
     let query = supabaseAdmin
       .from('invoices')
       .select(`
-        *,
+        id, patient_id, invoice_number, subtotal, tax, discount, total, status, due_date, paid_at, notes, created_at, updated_at,
         patients (
           id,
           name,
@@ -79,13 +81,13 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'strict')
 
 /**
  * POST /api/billing/invoices
  * Create new invoice
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -227,4 +229,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'strict')

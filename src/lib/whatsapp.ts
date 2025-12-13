@@ -8,7 +8,8 @@ export async function sendTextMessage(to: string, text: string) {
   const phoneId = settings.WHATSAPP_PHONE_NUMBER_ID
 
   if (!token || !phoneId) {
-    console.error('WhatsApp credentials missing - check database settings')
+    const { logError } = await import('@/shared/utils/logger')
+    logError('WhatsApp credentials missing - check database settings')
     return null
   }
 
@@ -29,12 +30,14 @@ export async function sendTextMessage(to: string, text: string) {
 
     const data = await response.json()
     if (!response.ok) {
-       console.error('WhatsApp Send Error:', data)
+       const { logError } = await import('@/shared/utils/logger')
+       logError('WhatsApp Send Error', data)
        throw new Error(data.error?.message || 'Failed to send WhatsApp message')
     }
     return data
   } catch (error) {
-    console.error('Error sending WhatsApp message:', error)
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error sending WhatsApp message', error)
     // Don't crash the app if notification fails, just log it
     return null 
   }
