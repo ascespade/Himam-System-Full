@@ -1,19 +1,16 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 /**
  * GET /api/patients/[id]/medical-file
  * Get comprehensive medical file for a patient
  */
-export async function GET(
+export const GET = withRateLimit(async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
 
   try {
     // 1. Check Authentication
@@ -77,7 +74,7 @@ export async function GET(
       supabaseAdmin.from('doctor_patient_relationships').select('id, patient_id, doctor_id, start_date, end_date, status, notes, created_at, updated_at, users!doctor_id(id, name, email)').eq('patient_id', params.id).is('end_date', null)
     ])
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data: {
         patient,
@@ -94,8 +91,6 @@ export async function GET(
         }))
       }
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب الملف الطبي'
     const { logError } = await import('@/shared/utils/logger')
@@ -105,5 +100,5 @@ export async function GET(
       { status: 500 }
     )
   }
-}
+}, 'api')
 

@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { withRateLimit } from '@/core/api/middleware/withRateLimit'
+import { paginatedResponse } from '@/shared/utils/api'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,6 +34,9 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams
     const status = searchParams.get('status')
     const provider = searchParams.get('provider')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = (page - 1) * limit
 
     // Select specific columns for better performance
     let query = supabaseAdmin
@@ -43,7 +47,7 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
           id,
           name
         )
-      `)
+      `, { count: 'exact' })
       .order('created_at', { ascending: false })
 
     if (status && status !== 'all') {
@@ -54,7 +58,7 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       query = query.eq('insurance_provider', provider)
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query.range(offset, offset + limit - 1)
 
     if (error) throw error
 
@@ -66,10 +70,7 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
       }
     })
 
-    return NextResponse.json({
-      success: true,
-      data: transformed
-    })
+    return NextResponse.json(paginatedResponse(transformed, page, limit, count || 0))
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')

@@ -6,17 +6,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(
+export const GET = withRateLimit(async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -80,7 +77,7 @@ export async function GET(
     }, 0)
     const overallProgress = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data: {
         treatmentPlans: treatmentPlans || [],
@@ -96,8 +93,6 @@ export async function GET(
         }
       }
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -109,5 +104,5 @@ export async function GET(
       { status: 500 }
     )
   }
-}
+}, 'api')
 

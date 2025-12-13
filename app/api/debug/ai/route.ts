@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getSettings } from '@/lib/config'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
-export async function GET() {
+export const GET = withRateLimit(async function GET() {
   const settings = await getSettings()
   const debugInfo: Record<string, unknown> = {
     hasGemini: !!settings.GEMINI_KEY,
@@ -41,4 +42,4 @@ export async function GET() {
   }
 
   return NextResponse.json(debugInfo)
-}
+}, 'strict')

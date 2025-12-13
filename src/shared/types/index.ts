@@ -10,7 +10,7 @@ export * from './errors'
 // API Response Types
 // ============================================================================
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
@@ -23,6 +23,8 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
     limit: number
     total: number
     totalPages: number
+    hasNext?: boolean
+    hasPrev?: boolean
   }
 }
 
@@ -188,7 +190,7 @@ export interface LabResult {
   orderedDate: string
   performedDate?: string
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
-  results?: any
+  results?: unknown
   interpretation?: string
   fileUrl?: string
   isAbnormal: boolean
@@ -526,7 +528,7 @@ export interface FormError {
   message: string
 }
 
-export interface FormState<T = any> {
+export interface FormState<T = unknown> {
   data: T
   errors: FormError[]
   isSubmitting: boolean

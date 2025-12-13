@@ -2,8 +2,9 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { withRateLimit } from '@/core/api/middleware/withRateLimit';
 
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   const cookieStore = req.cookies;
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,4 +41,4 @@ export async function GET(req: NextRequest) {
   }));
 
   return NextResponse.json({ items });
-}
+}, 'api')

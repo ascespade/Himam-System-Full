@@ -8,6 +8,7 @@ import { supabaseAdmin } from '@/lib'
 import { logError } from '@/shared/utils/logger'
 import { createUserSchema, updateUserSchema, type CreateUserInput, type UpdateUserInput } from '@/core/validations/schemas'
 import type { User } from '@/shared/types'
+import { userRepository } from '@/infrastructure/supabase/repositories/user.repository'
 
 export class UserService extends BaseService {
   /**
@@ -26,12 +27,8 @@ export class UserService extends BaseService {
       throw new ServiceException('User with this email already exists', 'USER_EXISTS')
     }
 
-    // Check if user exists in public.users
-    const { data: existingUser } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single()
+    // Check if user exists in public.users using repository
+    const existingUser = await userRepository.existsByEmail(email)
 
     if (existingUser) {
       throw new ServiceException('User with this email already exists', 'USER_EXISTS')
@@ -60,53 +57,51 @@ export class UserService extends BaseService {
     // Wait for trigger to create public.users entry
     await new Promise(resolve => setTimeout(resolve, 500))
 
-    // Update the public.users record
-    const { data: updatedUser, error: updateError } = await supabaseAdmin
-      .from('users')
-      .update({
+    try {
+      // Try to update the public.users record (created by trigger)
+      const updatedUser = await userRepository.update(authUser.user.id, {
         name,
-        phone,
+        phone: phone || null,
         role,
-        email
+        email,
       })
-      .eq('id', authUser.user.id)
-      .select()
-      .single()
 
-    if (updateError) {
-      // Try to insert directly if update fails
-      const { data: insertedUser, error: insertError } = await supabaseAdmin
-        .from('users')
-        .insert({
+      return {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone || '',
+        role: updatedUser.role,
+        created_at: updatedUser.created_at,
+        updated_at: updatedUser.updated_at || undefined,
+      } as User
+    } catch (error) {
+      // Try to insert directly if update fails (trigger might not have fired)
+      try {
+        const insertedUser = await userRepository.create({
           id: authUser.user.id,
           name,
           email,
-          phone,
+          phone: phone || null,
           role,
-          created_at: new Date().toISOString()
         })
-        .select()
-        .single()
 
-      if (insertError) {
+        return {
+          id: insertedUser.id,
+          name: insertedUser.name,
+          email: insertedUser.email,
+          phone: insertedUser.phone || '',
+          role: insertedUser.role,
+          created_at: insertedUser.created_at,
+          updated_at: insertedUser.updated_at || undefined,
+        } as User
+      } catch (insertError) {
         // Clean up auth user
         await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
         logError('Error creating user record', insertError, { userId: authUser.user.id })
         throw new ServiceException('Failed to create user record', 'USER_CREATE_ERROR')
       }
-
-      if (!insertedUser) {
-        throw new ServiceException('Failed to create user record', 'USER_CREATE_ERROR')
-      }
-
-      return insertedUser as User
     }
-
-    if (!updatedUser) {
-      throw new ServiceException('Failed to update user record', 'USER_UPDATE_ERROR')
-    }
-
-    return updatedUser as User
   }
 
   /**
@@ -115,65 +110,88 @@ export class UserService extends BaseService {
   async updateUser(userId: string, input: UpdateUserInput): Promise<User> {
     const validated = updateUserSchema.parse(input)
 
-    const { data: user, error } = await supabaseAdmin
-      .from('users')
-      .update(validated)
-      .eq('id', userId)
-      .select()
-      .single()
+    try {
+      const repoInput: {
+        name?: string
+        email?: string
+        phone?: string | null
+        role?: User['role']
+      } = {}
 
-    if (error) {
+      if (validated.name !== undefined) repoInput.name = validated.name
+      if (validated.email !== undefined) repoInput.email = validated.email
+      if (validated.phone !== undefined) repoInput.phone = validated.phone || null
+      if (validated.role !== undefined) repoInput.role = validated.role
+
+      const updatedUser = await userRepository.update(userId, repoInput)
+
+      return {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone || '',
+        role: updatedUser.role,
+        created_at: updatedUser.created_at,
+        updated_at: updatedUser.updated_at || undefined,
+      } as User
+    } catch (error) {
       logError('Error updating user', error, { userId, input: validated })
       throw new ServiceException('Failed to update user', 'USER_UPDATE_ERROR')
     }
-
-    if (!user) {
-      throw new ServiceException('User not found', 'NOT_FOUND')
-    }
-
-    return user as User
   }
 
   /**
    * Finds a user by ID
    */
   async findById(userId: string): Promise<User | null> {
-    const { data, error } = await supabaseAdmin
-      .from('users')
-      .select('id, email, name, role, phone, created_at, updated_at')
-      .eq('id', userId)
-      .single()
+    try {
+      const repoUser = await userRepository.findById(userId)
+      if (!repoUser) return null
 
-    if (error) {
-      if (error.code === 'PGRST116') return null
+      return {
+        id: repoUser.id,
+        name: repoUser.name,
+        email: repoUser.email,
+        phone: repoUser.phone || '',
+        role: repoUser.role,
+        created_at: repoUser.created_at,
+        updated_at: repoUser.updated_at || undefined,
+      } as User
+    } catch (error) {
       logError('Error finding user by ID', error, { userId })
       throw new ServiceException('Failed to find user', 'USER_FETCH_ERROR')
     }
-
-    return data
   }
 
   /**
    * Finds users by role
    */
   async findByRole(role: string, page = 1, limit = 50): Promise<{ data: User[]; total: number }> {
-    const offset = (page - 1) * limit
+    try {
+      const offset = (page - 1) * limit
+      const result = await userRepository.search({
+        role: role as User['role'],
+        limit,
+        offset,
+      })
 
-    const { data, error, count } = await supabaseAdmin
-      .from('users')
-      .select('id, email, name, role, phone, created_at, updated_at', { count: 'exact' })
-      .eq('role', role)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+      const users: User[] = result.users.map((repoUser) => ({
+        id: repoUser.id,
+        name: repoUser.name,
+        email: repoUser.email,
+        phone: repoUser.phone || '',
+        role: repoUser.role,
+        created_at: repoUser.created_at,
+        updated_at: repoUser.updated_at || undefined,
+      } as User))
 
-    if (error) {
+      return {
+        data: users,
+        total: result.total,
+      }
+    } catch (error) {
       logError('Error finding users by role', error, { role, page, limit })
       throw new ServiceException('Failed to find users by role', 'USER_FETCH_ERROR')
-    }
-
-    return {
-      data: data || [],
-      total: count || 0,
     }
   }
 }

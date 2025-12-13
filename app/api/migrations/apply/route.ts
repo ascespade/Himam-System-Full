@@ -10,8 +10,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     // Security: Only allow in development or with proper authentication
     const authHeader = req.headers.get('authorization')
@@ -69,12 +70,12 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'strict')
 
 /**
  * GET all available migrations
  */
-export async function GET() {
+export const GET = withRateLimit(async function GET() {
   try {
     const migrationsDir = join(process.cwd(), 'supabase', 'migrations')
     const fs = require('fs')
@@ -110,5 +111,5 @@ export async function GET() {
       { status: 500 }
     )
   }
-}
+}, 'strict')
 

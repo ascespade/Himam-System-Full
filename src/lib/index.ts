@@ -9,5 +9,14 @@
 export { supabase, supabaseAdmin } from './supabase'
 export { getSettings, getSetting, updateSetting, updateSettings } from './config'
 export { askAI, generateWhatsAppResponse } from './ai'
+export {
+  getCache,
+  setCache,
+  deleteCache,
+  deleteCacheByPattern,
+  invalidateEntityCache,
+  getOrSetCache,
+  isCacheAvailable,
+} from './redis'
 // Calendar functions are server-side only - use /api/calendar instead
 // export { createEvent, updateEvent, deleteEvent, getEvents } from './calendar'

@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { logError } from '@/shared/utils/logger'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -91,7 +92,7 @@ export async function middleware(request: NextRequest) {
           .single()
 
         if (error || !userData) {
-          console.error('Error fetching user role:', error)
+          logError('Error fetching user role', error, { userId: user.id, path: request.nextUrl.pathname })
           // If we can't verify role, maybe let them through to a generic dashboard or error
           // For security, let's redirect to login if we can't verify
            return NextResponse.redirect(new URL('/login', request.url))
@@ -126,7 +127,7 @@ export async function middleware(request: NextRequest) {
         }
 
       } catch (e) {
-        console.error('Middleware error:', e)
+        logError('Middleware error', e, { path: request.nextUrl.pathname, userId: user?.id })
         return NextResponse.redirect(new URL('/login', request.url))
       }
   }

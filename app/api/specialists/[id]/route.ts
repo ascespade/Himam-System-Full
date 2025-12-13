@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 /**
  * PUT /api/specialists/[id] - Update a specialist
  */
-export async function PUT(
+export const PUT = withRateLimit(async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(request, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const body = await request.json()
     const { id } = params
@@ -31,24 +28,19 @@ export async function PUT(
 
     if (error) throw error
 
-    const response = NextResponse.json(successResponse(data, 'تم تحديث الأخصائي بنجاح'))
-    addRateLimitHeadersToResponse(response, request, 'api')
-    return response
+    return NextResponse.json(successResponse(data, 'تم تحديث الأخصائي بنجاح'))
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')
 
 /**
  * DELETE /api/specialists/[id] - Delete a specialist
  */
-export async function DELETE(
+export const DELETE = withRateLimit(async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(request, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const { id} = params
 
@@ -59,10 +51,8 @@ export async function DELETE(
 
     if (error) throw error
 
-    const response = NextResponse.json(successResponse(null, 'تم حذف الأخصائي بنجاح'))
-    addRateLimitHeadersToResponse(response, request, 'api')
-    return response
+    return NextResponse.json(successResponse(null, 'تم حذف الأخصائي بنجاح'))
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')

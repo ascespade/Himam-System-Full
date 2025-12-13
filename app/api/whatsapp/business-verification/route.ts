@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { getSettings } from '@/lib/config'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/whatsapp/business-verification
  * Get business verification status
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -140,5 +141,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'strict')
 

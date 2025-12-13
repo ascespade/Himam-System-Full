@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import {
-  applyRateLimitCheck,
-  addRateLimitHeadersToResponse,
-} from "@/core/api/middleware/applyRateLimit";
+import { withRateLimit } from "@/core/api/middleware/withRateLimit";
 
 /**
  * GET /api/doctors/profiles/[id]
  * Get single doctor profile with full details
  */
-export async function GET(
+export const GET = withRateLimit(async function GET(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, "api");
-  if (rateLimitResponse) return rateLimitResponse;
   try {
     const { data, error } = await supabaseAdmin
       .from("doctor_profiles")
@@ -67,7 +61,7 @@ export async function GET(
       .is("end_date", null);
 
     const users = Array.isArray(data.users) ? data.users[0] : data.users;
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data: {
         ...data,
@@ -79,8 +73,6 @@ export async function GET(
           .filter(Boolean),
       },
     });
-    addRateLimitHeadersToResponse(response, req, "api");
-    return response;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "حدث خطأ";
     const { logError } = await import("@/shared/utils/logger");
@@ -91,19 +83,16 @@ export async function GET(
       { status: 500 },
     );
   }
-}
+}, "api");
 
 /**
  * PUT /api/doctors/profiles/[id]
  * Update doctor profile
  */
-export async function PUT(
+export const PUT = withRateLimit(async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, "api");
-  if (rateLimitResponse) return rateLimitResponse;
   try {
     const body = await req.json();
     const {
@@ -149,12 +138,10 @@ export async function PUT(
 
     if (error) throw error;
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data,
     });
-    addRateLimitHeadersToResponse(response, req, "api");
-    return response;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "حدث خطأ";
     const { logError } = await import("@/shared/utils/logger");
@@ -165,4 +152,4 @@ export async function PUT(
       { status: 500 },
     );
   }
-}
+}, "api");

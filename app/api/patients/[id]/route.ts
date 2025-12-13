@@ -7,19 +7,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib'
 import { successResponse, errorResponse, handleApiError } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 /**
  * GET /api/patients/:id
  * Get patient by ID
  */
-export async function GET(
+export const GET = withRateLimit(async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = params
@@ -51,19 +48,16 @@ export async function GET(
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')
 
 /**
  * PUT /api/patients/:id
  * Update patient
  */
-export async function PUT(
+export const PUT = withRateLimit(async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = params
@@ -99,25 +93,20 @@ export async function PUT(
       throw error
     }
 
-    const response = NextResponse.json(successResponse(patient))
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
+    return NextResponse.json(successResponse(patient))
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')
 
 /**
  * DELETE /api/patients/:id
  * Delete patient (soft delete by setting status to inactive)
  */
-export async function DELETE(
+export const DELETE = withRateLimit(async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = params
@@ -148,10 +137,8 @@ export async function DELETE(
       throw error
     }
 
-    const response = NextResponse.json(successResponse({ id, deleted: true }))
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
+    return NextResponse.json(successResponse({ id, deleted: true }))
   } catch (error: unknown) {
     return handleApiError(error)
   }
-}
+}, 'api')

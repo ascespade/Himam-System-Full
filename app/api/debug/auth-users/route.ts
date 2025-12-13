@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 /**
  * GET /api/debug/auth-users
  * Diagnostic endpoint to check auth users in Supabase
  */
-export async function GET() {
+export const GET = withRateLimit(async function GET() {
   try {
     // List all auth users
     const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers()
@@ -73,5 +74,5 @@ export async function GET() {
       stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
     }, { status: 500 })
   }
-}
+}, 'auth')
 

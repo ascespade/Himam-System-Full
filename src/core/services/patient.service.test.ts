@@ -69,6 +69,8 @@ describe('PatientService', () => {
         name: 'Test Patient',
         phone: '+966501234567',
         email: 'test@example.com',
+        date_of_birth: '1990-01-01',
+        gender: 'male' as const,
       }
 
       // Mock: existing patient found
@@ -86,6 +88,8 @@ describe('PatientService', () => {
         name: 'Test Patient',
         phone: '+966501234567',
         email: 'test@example.com',
+        date_of_birth: '1990-01-01',
+        gender: 'male' as const,
       }
 
       // Mock: no existing patient

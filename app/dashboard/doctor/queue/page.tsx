@@ -4,6 +4,7 @@ import { Clock, Eye, MessageSquare, Phone, UserCheck, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { logError } from '@/shared/utils/logger'
 
 interface QueueItem {
   id: string
@@ -47,7 +48,7 @@ export default function QueuePage() {
         setQueue(json.data || [])
       }
     } catch (error) {
-      console.error('Error fetching queue:', error)
+      logError('Error fetching queue', error, { endpoint: '/api/doctor/queue' })
     } finally {
       setLoading(false)
     }
@@ -64,7 +65,7 @@ export default function QueuePage() {
         })
       }
     } catch (error) {
-      console.error('Error fetching clinic status:', error)
+      logError('Error fetching clinic status', error, { endpoint: '/api/doctor/clinic/settings' })
     }
   }
 

@@ -10,6 +10,8 @@ import { Calendar, Clock, FileText, Save, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { usePatientContext } from '@/contexts/PatientContext'
+import { logError } from '@/shared/utils/logger'
+import { toastError } from '@/shared/utils/toast'
 
 const SESSION_TYPES = [
   { value: 'session', label: 'جلسة علاجية' },
@@ -59,12 +61,12 @@ export default function NewSessionPage() {
     e.preventDefault()
 
     if (!currentPatient) {
-      alert('يرجى اختيار مريض أولاً')
+      toastError('يرجى اختيار مريض أولاً')
       return
     }
 
     if (!formData.date || !formData.session_type) {
-      alert('يرجى ملء جميع الحقول المطلوبة')
+      toastError('يرجى ملء جميع الحقول المطلوبة')
       return
     }
 
@@ -83,11 +85,13 @@ export default function NewSessionPage() {
       if (data.success) {
         router.push(`/dashboard/doctor/sessions/${data.data.id}`)
       } else {
-        alert('فشل في إنشاء الجلسة: ' + (data.error || 'خطأ غير معروف'))
+        const errorMessage = data.error || 'خطأ غير معروف'
+        logError('Failed to create session', new Error(errorMessage), { endpoint: '/api/doctor/sessions' })
+        toastError('فشل في إنشاء الجلسة: ' + errorMessage)
       }
     } catch (error) {
-      console.error('Error creating session:', error)
-      alert('حدث خطأ أثناء إنشاء الجلسة')
+      logError('Error creating session', error, { endpoint: '/api/doctor/sessions' })
+      toastError('حدث خطأ أثناء إنشاء الجلسة')
     } finally {
       setLoading(false)
     }

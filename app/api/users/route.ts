@@ -5,6 +5,7 @@ import { HTTP_STATUS } from '@/shared/constants'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createUserSchema } from '@/core/validations/schemas'
 import { userService } from '@/core/services'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/users
  * Get all users with optional filtering
  */
-export const GET = withAuth(async (context) => {
+export const GET = withRateLimit(withAuth(async (context) => {
   const { request } = context
   const searchParams = getQueryParams(request)
   const { page, limit, offset } = getPaginationParams(request)
@@ -47,14 +48,14 @@ export const GET = withAuth(async (context) => {
   )
 }, {
   requireRoles: ['admin'], // Only admins can list all users
-})
+}), 'strict')
 
 /**
  * POST /api/users
  * Create a new user
  * Creates both auth user and public.users record
  */
-export const POST = withAuth(async (context) => {
+export const POST = withRateLimit(withAuth(async (context) => {
   const { request } = context
 
   // Parse and validate request body
@@ -70,5 +71,5 @@ export const POST = withAuth(async (context) => {
   )
 }, {
   requireRoles: ['admin'], // Only admins can create users
-})
+}), 'strict')
 

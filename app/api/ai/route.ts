@@ -14,8 +14,9 @@ import { parseRequestBody } from '@/core/api/middleware'
 import { successResponse, errorResponse, validateRequestBody } from '@/shared/utils/api'
 import { HTTP_STATUS } from '@/shared/constants'
 import { logError } from '@/shared/utils/logger'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await parseRequestBody<{ message: string; context?: string }>(req)
     
@@ -50,4 +51,4 @@ export async function POST(req: NextRequest) {
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     )
   }
-}
+}, 'api')

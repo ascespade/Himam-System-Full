@@ -34,10 +34,12 @@ import {
 } from "@/lib/booking-parser";
 import { executeFlowsForContext } from "@/lib/flows";
 
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
+
 /**
  * Webhook verification (GET)
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
     const mode = searchParams.get("hub.mode");
@@ -75,12 +77,12 @@ export async function GET(req: NextRequest) {
       headers: { "Content-Type": "text/plain" },
     });
   }
-}
+}, 'none')
 
 /**
  * Webhook handler (POST) - Process incoming WhatsApp messages
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   // Log raw request for debugging
   const requestUrl = req.nextUrl.toString();
   const requestHeaders = Object.fromEntries(req.headers.entries());
@@ -910,4 +912,4 @@ export async function POST(req: NextRequest) {
       status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
     });
   }
-}
+}, 'none')

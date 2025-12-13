@@ -8,11 +8,13 @@ import { sendTextMessage, sendTemplateMessage } from '@/lib/whatsapp-messaging'
 
 export const dynamic = 'force-dynamic'
 
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
+
 /**
  * GET /api/cron/whatsapp-scheduled
  * Process scheduled messages (called by cron job)
  */
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async function GET(req: NextRequest) {
   try {
     // Verify cron secret (optional, for security)
     const authHeader = req.headers.get('authorization')
@@ -118,5 +120,5 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'none')
 

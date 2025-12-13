@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic'
  * Confirm patient to doctor - Creates patient_visit and sets PatientContext for doctor
  * هذا هو الرابط بين الاستقبال والطبيب
  */
-export async function POST(
+export const POST = withRateLimit(async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -137,5 +138,5 @@ export async function POST(
       { status: 500 }
     )
   }
-}
+}, 'api')
 

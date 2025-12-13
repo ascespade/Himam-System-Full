@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { parseRequestBody } from '@/core/api/middleware'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,9 +49,9 @@ interface WhatsAppStatusWebhook {
 
 /**
  * POST /api/whatsapp/messages/status
- * Handle message status updates from Meta
+ * Handle message status updates from Meta (webhook)
  */
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
   try {
     const body = await parseRequestBody<WhatsAppStatusWebhook>(req)
 
@@ -127,5 +128,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'none')
 

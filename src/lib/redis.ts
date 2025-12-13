@@ -1,171 +1,180 @@
 /**
- * Redis Client with Fallback
- * Provides caching with graceful degradation
+ * Redis Cache Manager
+ * Provides caching functionality with TTL and invalidation
  */
 
-let redisClient: {
-  ping: () => Promise<string>
-  get: (key: string) => Promise<string | null>
-  setex: (key: string, seconds: number, value: string) => Promise<string>
-  del: (key: string | string[]) => Promise<number>
-  keys: (pattern: string) => Promise<string[]>
-  flushdb: () => Promise<string>
-} | null = null
+import { Redis } from '@upstash/redis'
+import { logWarn, logError, logInfo } from '@/shared/utils/logger'
+
+let redisClient: Redis | null = null
 let isRedisAvailable = false
 
 /**
  * Initialize Redis client
  */
-async function initializeRedis(): Promise<void> {
+function initializeRedis(): void {
   try {
-    const Redis = require('ioredis')
-    const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL
+    const upstashUrl = process.env.UPSTASH_REDIS_REST_URL
+    const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN
 
-    if (!redisUrl) {
-      const { logWarn } = await import('@/shared/utils/logger')
-      logWarn('Redis URL not configured, using in-memory fallback')
+    if (!upstashUrl || !upstashToken) {
+      logWarn('Redis not configured, caching will be disabled', {
+        hasUrl: !!upstashUrl,
+        hasToken: !!upstashToken,
+      })
       return
     }
 
-    redisClient = new Redis(redisUrl, {
-      retryStrategy: (times: number) => {
-        const delay = Math.min(times * 50, 2000)
-        return delay
-      },
-      maxRetriesPerRequest: 3
+    redisClient = new Redis({
+      url: upstashUrl,
+      token: upstashToken,
     })
 
-    // Test connection
-    if (redisClient) {
-      await redisClient.ping()
-      isRedisAvailable = true
-    }
-    // Redis connected successfully (logged via logger if needed)
+    isRedisAvailable = true
+    logInfo('Redis cache initialized successfully')
   } catch (error) {
-    const { logWarn } = await import('@/shared/utils/logger')
-    logWarn('Redis not available, using in-memory fallback', { error })
+    logError('Failed to initialize Redis', error)
     isRedisAvailable = false
-    redisClient = null
   }
 }
 
-// In-memory cache fallback
-const memoryCache = new Map<string, { value: unknown; expires: number }>()
+// Initialize on module load (server-side only)
+if (typeof window === 'undefined') {
+  initializeRedis()
+}
 
 /**
- * Get value from cache
+ * Get cached value
  */
-export async function getCache(key: string): Promise<unknown | null> {
-  if (!redisClient && !isRedisAvailable) {
-    await initializeRedis()
+export async function getCache<T = unknown>(key: string): Promise<T | null> {
+  if (!isRedisAvailable || !redisClient) {
+    return null
   }
 
   try {
-    if (isRedisAvailable && redisClient) {
-      const value = await redisClient.get(key)
-      return value ? JSON.parse(value) : null
-    } else {
-      // Use memory cache
-      const cached = memoryCache.get(key)
-      if (cached && cached.expires > Date.now()) {
-        return cached.value
-      }
-      memoryCache.delete(key)
-      return null
-    }
+    const value = await redisClient.get<T>(key)
+    return value
   } catch (error) {
-    const { logError } = await import('@/shared/utils/logger')
-    logError('Cache get error', error)
+    logWarn('Cache get failed', { error, key: key.substring(0, 50) })
     return null
   }
 }
 
 /**
- * Set value in cache
+ * Set cached value with TTL
+ * @param key - Cache key
+ * @param value - Value to cache
+ * @param ttlSeconds - Time to live in seconds (default: 300 = 5 minutes)
  */
-export async function setCache(
+export async function setCache<T = unknown>(
   key: string,
-  value: unknown,
-  ttlSeconds: number = 3600
+  value: T,
+  ttlSeconds = 300
 ): Promise<boolean> {
-  if (!redisClient && !isRedisAvailable) {
-    await initializeRedis()
+  if (!isRedisAvailable || !redisClient) {
+    return false
   }
 
   try {
-    if (isRedisAvailable && redisClient) {
-      await redisClient.setex(key, ttlSeconds, JSON.stringify(value))
-      return true
-    } else {
-      // Use memory cache
-      memoryCache.set(key, {
-        value,
-        expires: Date.now() + ttlSeconds * 1000
-      })
-      return true
-    }
+    await redisClient.setex(key, ttlSeconds, value)
+    return true
   } catch (error) {
-    const { logError } = await import('@/shared/utils/logger')
-    logError('Cache set error', error)
+    logWarn('Cache set failed', { error, key: key.substring(0, 50) })
     return false
   }
 }
 
 /**
- * Delete value from cache
+ * Delete cached value
  */
 export async function deleteCache(key: string): Promise<boolean> {
+  if (!isRedisAvailable || !redisClient) {
+    return false
+  }
+
   try {
-    if (isRedisAvailable && redisClient) {
-      await redisClient.del(key)
-      return true
-    } else {
-      memoryCache.delete(key)
-      return true
-    }
+    await redisClient.del(key)
+    return true
   } catch (error) {
-    const { logError } = await import('@/shared/utils/logger')
-    logError('Cache delete error', error)
+    logWarn('Cache delete failed', { error, key: key.substring(0, 50) })
     return false
   }
 }
 
 /**
- * Clear all cache (use with caution)
+ * Delete multiple cached values by pattern
  */
-export async function clearCache(pattern?: string): Promise<boolean> {
+export async function deleteCacheByPattern(pattern: string): Promise<number> {
+  if (!isRedisAvailable || !redisClient) {
+    return 0
+  }
+
   try {
-    if (isRedisAvailable && redisClient) {
-      if (pattern) {
-        const keys = await redisClient.keys(pattern)
-        if (keys.length > 0) {
-          await redisClient.del(keys)
-        }
-      } else {
-        await redisClient.flushdb()
-      }
-      return true
-    } else {
-      if (pattern) {
-        const regex = new RegExp(pattern.replace('*', '.*'))
-        for (const key of memoryCache.keys()) {
-          if (regex.test(key)) {
-            memoryCache.delete(key)
-          }
-        }
-      } else {
-        memoryCache.clear()
-      }
-      return true
-    }
+    // Note: Upstash Redis REST API doesn't support KEYS command
+    // This is a simplified implementation
+    // For production, consider using SCAN or maintaining a key registry
+    logWarn('Pattern-based cache deletion not fully supported in Upstash REST API', { pattern })
+    return 0
   } catch (error) {
-    const { logError } = await import('@/shared/utils/logger')
-    logError('Cache clear error', error)
-    return false
+    logWarn('Cache pattern delete failed', { error, pattern })
+    return 0
   }
 }
 
-// Initialize on module load
-if (typeof window === 'undefined') {
-  initializeRedis()
+/**
+ * Invalidate cache for a specific entity
+ * Useful for cache invalidation on mutations
+ */
+export async function invalidateEntityCache(
+  entityType: string,
+  entityId?: string
+): Promise<void> {
+  if (!isRedisAvailable) {
+    return
+  }
+
+  try {
+    const patterns = [
+      `${entityType}:${entityId || '*'}`,
+      `${entityType}s:*`, // Plural form for list caches
+    ]
+
+    for (const pattern of patterns) {
+      await deleteCacheByPattern(pattern)
+    }
+  } catch (error) {
+    logWarn('Entity cache invalidation failed', { error, entityType, entityId })
+  }
+}
+
+/**
+ * Get or set cached value (cache-aside pattern)
+ */
+export async function getOrSetCache<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  ttlSeconds = 300
+): Promise<T> {
+  // Try to get from cache
+  const cached = await getCache<T>(key)
+  if (cached !== null) {
+    return cached
+  }
+
+  // Fetch fresh data
+  const value = await fetcher()
+
+  // Set in cache (fire and forget)
+  setCache(key, value, ttlSeconds).catch((error) => {
+    logWarn('Failed to set cache after fetch', { error, key: key.substring(0, 50) })
+  })
+
+  return value
+}
+
+/**
+ * Check if Redis is available
+ */
+export function isCacheAvailable(): boolean {
+  return isRedisAvailable
 }

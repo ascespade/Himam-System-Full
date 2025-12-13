@@ -46,6 +46,22 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100
     const offset = (page - 1) * limit
 
+    // Cache key for today's appointments (most common query)
+    const today = new Date().toISOString().split('T')[0]
+    const isTodayQuery = !date || date === today
+    const cacheKey = isTodayQuery 
+      ? `appointments:today:${page}:${limit}:${doctor_id || ''}:${status || ''}`
+      : null
+
+    // Try cache first for today's appointments
+    if (cacheKey) {
+      const { getCache, setCache } = await import('@/lib/redis')
+      const cached = await getCache(cacheKey)
+      if (cached) {
+        return NextResponse.json(successResponse(cached))
+      }
+    }
+
     // Select specific columns for better performance
     let query = supabaseAdmin
       .from('appointments')
@@ -77,7 +93,7 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
     const total = count || 0
     const totalPages = Math.ceil(total / limit)
 
-    return NextResponse.json(successResponse({
+    const responseData = {
       data: appointments || [],
       pagination: {
         page,
@@ -87,7 +103,17 @@ export const GET = withRateLimit(async function GET(req: NextRequest) {
         hasNext: page < totalPages,
         hasPrev: page > 1,
       },
-    }))
+    }
+
+    // Cache today's appointments for 2 minutes
+    if (cacheKey) {
+      const { setCache } = await import('@/lib/redis')
+      setCache(cacheKey, responseData, 120).catch(() => {
+        // Cache set failed, continue without caching
+      })
+    }
+
+    return NextResponse.json(successResponse(responseData))
   } catch (error: unknown) {
     return handleApiError(error)
   }

@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,13 +9,10 @@ export const dynamic = 'force-dynamic'
  * GET /api/doctor/slack/[patient_id]
  * Get Slack conversation with specific patient
  */
-export async function GET(
+export const GET = withRateLimit(async function GET(
   req: NextRequest,
   { params }: { params: { patient_id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -78,15 +75,13 @@ export async function GET(
       }
     }
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data: {
         conversation: conversation || null,
         messages
       }
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -98,19 +93,16 @@ export async function GET(
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 /**
  * POST /api/doctor/slack/[patient_id]
  * Send message to patient via Slack
  */
-export async function POST(
+export const POST = withRateLimit(async function POST(
   req: NextRequest,
   { params }: { params: { patient_id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const cookieStore = req.cookies
     const supabase = createServerClient(
@@ -213,12 +205,10 @@ export async function POST(
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', conversation.id)
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data: message
     }, { status: 201 })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const { logError } = await import('@/shared/utils/logger')
@@ -230,5 +220,5 @@ export async function POST(
       { status: 500 }
     )
   }
-}
+}, 'api')
 

@@ -4,6 +4,8 @@ import { CheckCircle2, Circle, Plus, Target, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { usePatientContext } from '@/contexts/PatientContext'
 import PatientSelector from '@/components/PatientSelector'
+import { logError } from '@/shared/utils/logger'
+import { toastError } from '@/shared/utils/toast'
 
 interface Goal {
   id: string
@@ -64,7 +66,7 @@ export default function TreatmentPlansPage() {
         setPlans(data.data || [])
       }
     } catch (error) {
-      console.error('Error fetching treatment plans:', error)
+      logError('Error fetching treatment plans', error, { endpoint: '/api/doctor/treatment-plans' })
     } finally {
       setLoading(false)
     }
@@ -91,7 +93,7 @@ export default function TreatmentPlansPage() {
   const handleSave = async () => {
     try {
       if (!currentPatient || !formData.patient_id || !formData.title || formData.goals.length === 0) {
-        alert('يرجى اختيار مريض وملء جميع الحقول المطلوبة')
+        toastError('يرجى اختيار مريض وملء جميع الحقول المطلوبة')
         return
       }
 
@@ -122,11 +124,13 @@ export default function TreatmentPlansPage() {
           goals: []
         })
       } else {
-        alert('فشل في حفظ الخطة: ' + (data.error || 'خطأ غير معروف'))
+        const errorMessage = data.error || 'خطأ غير معروف'
+        logError('Failed to save treatment plan', new Error(errorMessage), { endpoint: '/api/doctor/treatment-plans' })
+        toastError('فشل في حفظ الخطة: ' + errorMessage)
       }
     } catch (error) {
-      console.error('Error saving plan:', error)
-      alert('حدث خطأ أثناء حفظ الخطة')
+      logError('Error saving plan', error, { endpoint: '/api/doctor/treatment-plans' })
+      toastError('حدث خطأ أثناء حفظ الخطة')
     }
   }
 

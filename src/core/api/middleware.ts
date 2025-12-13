@@ -105,6 +105,7 @@ export function requireRole(...allowedRoles: UserRole[]) {
 
 /**
  * Wraps an API handler with authentication, authorization, and error handling
+ * Note: Rate limiting should be applied separately using withRateLimit
  */
 export function withAuth(
   handler: ApiHandler,

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { logInfo, logWarn, logError, logDebug } from './logger'
 
 describe('Logger', () => {

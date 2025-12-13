@@ -22,7 +22,13 @@
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     
     // Code Quality
-    "no-console": ["error", { "allow": ["warn", "error"] }],
+    "no-console": ["error", { 
+      "allow": ["warn", "error"],
+      "allowPatterns": [
+        "^src/shared/utils/logger\\.ts$",
+        "^src/shared/utils/toast\\.ts$"
+      ]
+    }],
     "no-debugger": "error",
     "no-alert": "error",
     "prefer-const": "error",

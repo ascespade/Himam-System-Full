@@ -12,7 +12,14 @@ import {
   checkRateLimit,
   createRateLimitHeaders,
 } from '@/core/security/rateLimit'
-import { logWarn } from '@/shared/utils/logger'
+import { logWarn, logError } from '@/shared/utils/logger'
+
+/**
+ * Generate request ID for correlation
+ */
+function generateRequestId(): string {
+  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
 
 export type RateLimitType = 'api' | 'auth' | 'strict' | 'none'
 
@@ -41,8 +48,12 @@ export function withRateLimit<T extends (req: NextRequest, ...args: unknown[]) =
   type: RateLimitType = 'api'
 ): T {
   return (async (req: NextRequest, ...args: unknown[]) => {
+    // Generate request ID for correlation
+    const requestId = req.headers.get('x-request-id') || generateRequestId()
+    const endpoint = req.nextUrl.pathname
+
     // Skip rate limiting for webhooks
-    if (isWebhookRoute(req.nextUrl.pathname)) {
+    if (isWebhookRoute(endpoint)) {
       return handler(req, ...args)
     }
 
@@ -68,9 +79,11 @@ export function withRateLimit<T extends (req: NextRequest, ...args: unknown[]) =
     // If rate limited, return 429
     if (!result.success) {
       logWarn('Rate limit exceeded', {
+        requestId,
+        traceId: requestId,
         identifier,
         type,
-        path: req.nextUrl.pathname,
+        endpoint,
       })
 
       const headers = createRateLimitHeaders(
@@ -78,12 +91,14 @@ export function withRateLimit<T extends (req: NextRequest, ...args: unknown[]) =
         result.remaining,
         result.reset
       )
+      headers['x-request-id'] = requestId
 
       return NextResponse.json(
         {
           success: false,
           error: 'Too many requests',
           message: 'Rate limit exceeded. Please try again later.',
+          requestId,
         },
         {
           status: 429,
@@ -92,19 +107,33 @@ export function withRateLimit<T extends (req: NextRequest, ...args: unknown[]) =
       )
     }
 
-    // Execute handler
-    const response = await handler(req, ...args)
+    // Execute handler with error handling
+    try {
+      const response = await handler(req, ...args)
 
-    // Add rate limit headers to response
-    const rateLimitHeaders = createRateLimitHeaders(
-      result.limit,
-      result.remaining,
-      result.reset
-    )
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value)
-    })
+      // Add rate limit headers to response
+      const rateLimitHeaders = createRateLimitHeaders(
+        result.limit,
+        result.remaining,
+        result.reset
+      )
+      rateLimitHeaders['x-request-id'] = requestId
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value)
+      })
 
-    return response
+      return response
+    } catch (error) {
+      // Log error with request correlation
+      logError('API route error', error, {
+        requestId,
+        traceId: requestId,
+        endpoint,
+        method: req.method,
+      })
+
+      // Re-throw to let Next.js handle it
+      throw error
+    }
   }) as T
 }

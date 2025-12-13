@@ -5,17 +5,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { applyRateLimitCheck, addRateLimitHeadersToResponse } from '@/core/api/middleware/applyRateLimit'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(
+export const GET = withRateLimit(async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimitCheck(req, 'api')
-  if (rateLimitResponse) return rateLimitResponse
   try {
     const prescriptionId = params.id
 
@@ -122,14 +119,12 @@ export async function GET(
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'))
     
-    const response = new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="prescription-${prescriptionId}.pdf"`,
       },
     })
-    addRateLimitHeadersToResponse(response, req, 'api')
-    return response
   } catch (error) {
     const { logError } = await import('@/shared/utils/logger')
     logError('Failed to generate prescription PDF', error, { prescriptionId: params.id, endpoint: '/api/doctor/prescriptions/[id]/download' })
@@ -139,4 +134,4 @@ export async function GET(
       { status: 500 }
     )
   }
-}
+}, 'api')

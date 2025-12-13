@@ -4,6 +4,8 @@ import Modal from '@/components/Modal'
 import { CheckCircle, Eye, Plus, Printer, Search, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { logError } from '@/shared/utils/logger'
+import { toastError } from '@/shared/utils/toast'
 
 interface Invoice {
   id: string
@@ -88,7 +90,9 @@ export default function BillingPage() {
         setSelectedPatient('')
         setInvoiceItems([{ description: '', quantity: 1, price: 0 }])
       } else {
-        alert('فشل إنشاء الفاتورة: ' + data.error)
+        const errorMessage = data.error || 'خطأ غير معروف'
+        logError('Failed to create invoice', new Error(errorMessage), { endpoint: '/api/billing/invoices' })
+        toastError('فشل إنشاء الفاتورة: ' + errorMessage)
       }
     } catch (error) {
       const { logError } = await import('@/shared/utils/logger')

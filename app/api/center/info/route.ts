@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { centerInfoRepository } from '@/infrastructure/supabase/repositories'
+import { withRateLimit } from '@/core/api/middleware/withRateLimit'
 
 /**
  * GET /api/center/info
  * Get center information
  */
-export async function GET() {
+export const GET = withRateLimit(async function GET() {
   try {
     const centerInfo = await centerInfoRepository.getCenterInfo()
 
@@ -41,7 +42,7 @@ export async function GET() {
       { status: 500 }
     )
   }
-}
+}, 'api')
 
 
 
