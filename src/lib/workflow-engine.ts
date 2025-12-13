@@ -77,15 +77,16 @@ export async function executeWorkflow(execution: WorkflowExecution) {
           })
           .eq('id', execRecord.id)
 
-      } catch (stepError: any) {
-        stepResults.push({ step: i, error: stepError.message })
+      } catch (stepError: unknown) {
+        const errorMessage = stepError instanceof Error ? stepError.message : String(stepError)
+        stepResults.push({ step: i, error: errorMessage })
         
         // Mark execution as failed
         await supabaseAdmin
           .from('workflow_executions')
           .update({
             status: 'failed',
-            error_message: stepError.message,
+            error_message: errorMessage,
             step_results: stepResults
           })
           .eq('id', execRecord.id)
@@ -118,7 +119,7 @@ async function executeStep(
   step: WorkflowStep,
   execution: WorkflowExecution,
   aiModel: string
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   switch (step.type) {
     case 'ai_response':
       return await executeAIStep(step, execution, aiModel)
@@ -147,7 +148,7 @@ async function executeAIStep(
   step: WorkflowStep,
   execution: WorkflowExecution,
   aiModel: string
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const { askAI } = await import('./ai')
   
   const prompt = step.config.prompt || ''
@@ -167,7 +168,7 @@ async function executeAIStep(
 async function executeNotificationStep(
   step: WorkflowStep,
   execution: WorkflowExecution
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const { createNotification, NotificationTemplates } = await import('./notifications')
   
   const { userId, title, message } = step.config
@@ -187,7 +188,7 @@ async function executeNotificationStep(
 async function executeCreateRecordStep(
   step: WorkflowStep,
   execution: WorkflowExecution
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const { table, data } = step.config
 
   const recordData = replacePlaceholders(data, {
@@ -210,7 +211,7 @@ async function executeCreateRecordStep(
 async function executeUpdateStatusStep(
   step: WorkflowStep,
   execution: WorkflowExecution
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const { table, status_field, status_value } = step.config
 
   const { error } = await supabaseAdmin
@@ -226,7 +227,7 @@ async function executeUpdateStatusStep(
 async function executeWhatsAppStep(
   step: WorkflowStep,
   execution: WorkflowExecution
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const { sendTextMessage } = await import('./whatsapp')
   
   const { phone, message } = step.config
@@ -244,7 +245,7 @@ async function executeWhatsAppStep(
 async function executeTriggerWorkflowStep(
   step: WorkflowStep,
   execution: WorkflowExecution
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const { workflow_id } = step.config
 
   // Recursively execute another workflow

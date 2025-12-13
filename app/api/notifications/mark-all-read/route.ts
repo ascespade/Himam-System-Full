@@ -44,7 +44,7 @@ export async function PUT(req: NextRequest) {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء تحديث الإشعارات'
     const { logError } = await import('@/shared/utils/logger')
-    logError('Error marking all notifications as read', error, { endpoint: '/api/notifications/mark-all-read', userId: user.id })
+    logError('Error marking all notifications as read', error, { endpoint: '/api/notifications/mark-all-read' })
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }

@@ -172,7 +172,11 @@ export async function POST(req: NextRequest) {
         } else if (message.type === 'audio') {
           shouldReplyWithVoice = true
           await sendTextMessage(from || '', '✨ جاري الاستماع إلى رسالتك الصوتية...')
-          text = await transcribeAudio((message as any).audio?.id)
+          const audio = (message as Record<string, unknown>).audio as Record<string, unknown> | undefined
+          const audioId = audio?.id as string | undefined
+          if (audioId) {
+            text = await transcribeAudio(audioId)
+          }
           if (!text) text = '[صوت غير واضح]'
         } else if (message.type === 'interactive' && message.interactive) {
           // Handle button/list responses
@@ -354,10 +358,11 @@ export async function POST(req: NextRequest) {
         // Format history for AI
         const formattedHistory = messages
           ? messages.reverse().map((m: Record<string, unknown>) => {
+              const content = typeof m.content === 'string' ? m.content : String(m.content || '')
               if (m.direction === 'inbound') {
-                return { role: 'user' as const, content: m.content }
+                return { role: 'user' as const, content }
               } else {
-                return { role: 'assistant' as const, content: m.content }
+                return { role: 'assistant' as const, content }
               }
             })
           : []
@@ -404,7 +409,7 @@ export async function POST(req: NextRequest) {
 
         // CRITICAL: Save inbound message to whatsapp_messages table FIRST (before any other processing)
         // This ensures we always have a record even if something fails later
-        let savedMessage: any = null
+        let savedMessage: Record<string, unknown> | null = null
         try {
           logDebug('Saving inbound message to database', {
             messageId,
@@ -681,7 +686,7 @@ export async function POST(req: NextRequest) {
             const textResponse = await sendTextMessage(from, cleanResponse)
             outboundMessageId = textResponse?.messageId || null
             logInfo('WhatsApp message sent', { messageId: outboundMessageId, success: textResponse.success })
-          } catch (sendError: any) {
+          } catch (sendError: unknown) {
             console.error('❌ Error sending WhatsApp message:', sendError)
             logError('Failed to send WhatsApp message', sendError)
             // Don't block the response - webhook should return success to avoid retries

@@ -32,10 +32,10 @@ export async function GET() {
       date: conv.last_message_at || conv.created_at,
       unread: conv.unread_count || 0,
       status: conv.status,
-      patient: conv.patients ? {
-        id: conv.patients.id,
-        name: conv.patients.name,
-        phone: conv.patients.phone
+      patient: conv.patients && typeof conv.patients === 'object' ? {
+        id: (conv.patients as Record<string, unknown>).id as string,
+        name: (conv.patients as Record<string, unknown>).name as string,
+        phone: (conv.patients as Record<string, unknown>).phone as string
       } : null
     }))
 

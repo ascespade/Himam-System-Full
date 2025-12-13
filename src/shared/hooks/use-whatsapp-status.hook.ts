@@ -82,12 +82,13 @@ export function useWhatsAppStatus(options: UseWhatsAppStatusOptions = {}) {
           throw new Error(data.error || 'Failed to fetch status')
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch status'
       console.error('Error fetching WhatsApp status:', err)
-      setError(err.message || 'Failed to fetch status')
+      setError(errorMessage)
       setStatus({
         status: 'disconnected',
-        message: err.message || 'Failed to fetch status',
+        message: errorMessage,
       })
     } finally {
       setLoading(false)

@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     // Step 3: Vector Similarity Check - Find similar rejected claims (before validation)
-    let vectorAnalysis: any = null
+    let vectorAnalysis: Record<string, unknown> | null = null
     try {
       const similarityRes = await fetch(`${req.nextUrl.origin}/api/doctor/insurance/ai-agent/embeddings/check-similarity`, {
         method: 'POST',
@@ -201,19 +201,25 @@ ${pattern ? `
 - أسباب الرفض السابقة: ${pattern.rejection_reasons?.join(', ') || 'لا توجد'}
 ` : ''}
 
-${vectorAnalysis?.data?.warnings?.length > 0 ? `
-⚠️ تحذيرات من نظام الفيكتورز:
-${vectorAnalysis.data.warnings.map((w: string) => `- ${w}`).join('\n')}
-` : ''}
-
-${vectorAnalysis?.data?.recommendations?.length > 0 ? `
-💡 توصيات من نظام الفيكتورز:
-${vectorAnalysis.data.recommendations.map((r: string) => `- ${r}`).join('\n')}
-` : ''}
-
-${vectorAnalysis?.data?.similar_rejected_count > 0 ? `
-تم العثور على ${vectorAnalysis.data.similar_rejected_count} مطالبات مرفوضة مشابهة.
-` : ''}
+${(() => {
+  if (!vectorAnalysis?.data || typeof vectorAnalysis.data !== 'object') return ''
+  const data = vectorAnalysis.data as Record<string, unknown>
+  const warnings = Array.isArray(data.warnings) ? data.warnings as string[] : []
+  const recommendations = Array.isArray(data.recommendations) ? data.recommendations as string[] : []
+  const similarRejectedCount = typeof data.similar_rejected_count === 'number' ? data.similar_rejected_count : 0
+  
+  let result = ''
+  if (warnings.length > 0) {
+    result += `\n⚠️ تحذيرات من نظام الفيكتورز:\n${warnings.map((w: string) => `- ${w}`).join('\n')}\n`
+  }
+  if (recommendations.length > 0) {
+    result += `\n💡 توصيات من نظام الفيكتورز:\n${recommendations.map((r: string) => `- ${r}`).join('\n')}\n`
+  }
+  if (similarRejectedCount > 0) {
+    result += `\nتم العثور على ${similarRejectedCount} مطالبات مرفوضة مشابهة.\n`
+  }
+  return result
+})()}
 
 قم بتحليل المطالبة وأخبرني:
 1. هل جميع البيانات مكتملة؟
@@ -246,20 +252,25 @@ ${vectorAnalysis?.data?.similar_rejected_count > 0 ? `
     }
 
     // Merge vector analysis with AI validation
-    if (vectorAnalysis?.data) {
-      if (vectorAnalysis.data.warnings && vectorAnalysis.data.warnings.length > 0) {
+    if (vectorAnalysis?.data && typeof vectorAnalysis.data === 'object') {
+      const data = vectorAnalysis.data as Record<string, unknown>
+      const warnings = Array.isArray(data.warnings) ? data.warnings as string[] : []
+      const recommendations = Array.isArray(data.recommendations) ? data.recommendations as string[] : []
+      
+      if (warnings.length > 0) {
         validationResult.potentialErrors = [
           ...validationResult.potentialErrors,
-          ...vectorAnalysis.data.warnings
+          ...warnings
         ]
       }
-      if (vectorAnalysis.data.recommendations && vectorAnalysis.data.recommendations.length > 0) {
+      if (recommendations.length > 0) {
         validationResult.recommendations = [
           ...validationResult.recommendations,
-          ...vectorAnalysis.data.recommendations
+          ...recommendations
         ]
       }
-      if (vectorAnalysis.data.requiresHumanReview) {
+      const requiresHumanReview = typeof data.requiresHumanReview === 'boolean' ? data.requiresHumanReview : false
+      if (requiresHumanReview) {
         validationResult.requiresHumanReview = true
         validationResult.confidence = Math.min(validationResult.confidence || 100, 70)
       }

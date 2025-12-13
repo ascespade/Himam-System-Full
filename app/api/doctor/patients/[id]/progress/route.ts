@@ -51,7 +51,7 @@ export async function GET(
       .limit(50)
 
     // Get progress entries if table exists
-    let progressEntries: any[] = []
+    let progressEntries: Array<Record<string, unknown>> = []
     try {
       const { data: progress } = await supabaseAdmin
         .from('progress_tracking')

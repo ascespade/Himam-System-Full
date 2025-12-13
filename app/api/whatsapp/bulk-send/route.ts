@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
       total: phoneNumbers.length,
       sent: 0,
       failed: 0,
-      errors: [] as any[],
+      errors: [] as Array<Record<string, unknown>>,
     }
 
     // Process in batches of 10 to avoid rate limits

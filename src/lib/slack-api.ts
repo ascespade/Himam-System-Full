@@ -42,7 +42,7 @@ async function slackApiRequest(
   endpoint: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
   body?: any
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const token = await getSlackToken()
   if (!token) {
     throw new Error('Slack Bot Token not configured')
@@ -79,10 +79,11 @@ export async function createSlackChannel(
     is_private: isPrivate,
   })
 
+  const channel = data.channel as Record<string, unknown>
   return {
-    id: data.channel.id,
-    name: data.channel.name,
-    created: data.channel.created,
+    id: channel.id as string,
+    name: channel.name as string,
+    created: channel.created as number,
   }
 }
 
@@ -165,7 +166,7 @@ export async function sendSlackMessage(
     blocks,
   })
 
-  return data.ts // Message timestamp
+  return (data.ts as string) || '' // Message timestamp
 }
 
 /**
@@ -180,7 +181,7 @@ export async function getSlackChannelMessages(
     limit,
   })
 
-  return data.messages || []
+  return (Array.isArray(data.messages) ? data.messages : []) as Array<Record<string, unknown>>
 }
 
 /**
@@ -229,7 +230,8 @@ export async function uploadFileToSlack(
     title: title || filename,
   })
 
-  return data.file.id
+  const file = data.file as Record<string, unknown>
+  return file.id as string
 }
 
 /**

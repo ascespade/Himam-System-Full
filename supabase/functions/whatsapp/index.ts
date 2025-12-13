@@ -103,7 +103,7 @@ serve(async (req) => {
         .order('created_at', { ascending: false })
         .limit(10)
 
-      const history = messages?.reverse().map((m: any) => ({
+      const history = messages?.reverse().map((m: Record<string, unknown>) => ({
         user_message: m.direction === 'inbound' ? m.content : '',
         ai_response: m.direction === 'outbound' ? m.content : '',
       })) || []
@@ -124,7 +124,7 @@ serve(async (req) => {
 - التكامل الحسي
 - التدخل المبكر
 
-${history && history.length > 0 ? `تاريخ المحادثة:\n${history.map((h: any) => `المريض: ${h.user_message}\nالمساعد: ${h.ai_response}`).join('\n\n')}\n\n` : ''}الرسالة الجديدة من المريض: ${text}
+${history && history.length > 0 ? `تاريخ المحادثة:\n${history.map((h: Record<string, unknown>) => `المريض: ${h.user_message}\nالمساعد: ${h.ai_response}`).join('\n\n')}\n\n` : ''}الرسالة الجديدة من المريض: ${text}
 
 رد بشكل مهذب ومهني ومفيد.`
 

@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
 
       // Enrich with additional data
       const enrichedResults = await Promise.all(
-        filteredResults.map(async (patient: any) => {
+        filteredResults.map(async (patient: Record<string, unknown>) => {
           const [lastSession, activePlans, nextAppointment] = await Promise.all([
             supabaseAdmin
               .from('sessions')

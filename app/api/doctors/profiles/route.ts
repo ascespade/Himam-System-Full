@@ -34,17 +34,18 @@ export async function GET(req: NextRequest) {
 
     // Get patient counts for each doctor
     const profilesWithCounts = await Promise.all(
-      (data || []).map(async (profile: any) => {
+      (data || []).map(async (profile: Record<string, unknown>) => {
         const { count } = await supabaseAdmin
           .from('doctor_patient_relationships')
           .select('*', { count: 'exact', head: true })
           .eq('doctor_id', profile.user_id)
           .is('end_date', null)
 
+        const users = profile.users as Record<string, unknown> | undefined
         return {
           ...profile,
-          user_name: profile.users?.name || 'غير معروف',
-          user_email: profile.users?.email || '',
+          user_name: (users?.name as string) || 'غير معروف',
+          user_email: (users?.email as string) || '',
           patient_count: count || 0
         }
       })

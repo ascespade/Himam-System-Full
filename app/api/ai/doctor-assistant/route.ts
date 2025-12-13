@@ -91,7 +91,6 @@ export async function POST(req: NextRequest) {
     }, { status: 400 })
 
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في المساعد الطبي'
     const { logError } = await import('@/shared/utils/logger')
     logError('Error in AI assistant', error, { endpoint: '/api/ai/doctor-assistant' })
@@ -149,18 +148,24 @@ async function generateInitialAnalysis(patientId: string, doctorId: string, aiAp
 السجلات الطبية: ${patientRecords.length}
 
 آخر 3 جلسات:
-${patientSessions.slice(0, 3).map((s: Record<string, unknown>) => `
-- ${new Date(s.date).toLocaleDateString('ar-SA')}: ${s.session_type}
+${patientSessions.slice(0, 3).map((s: Record<string, unknown>) => {
+  const date = s.date && (typeof s.date === 'string' || s.date instanceof Date) ? new Date(s.date) : new Date()
+  return `
+- ${date.toLocaleDateString('ar-SA')}: ${s.session_type || 'جلسة'}
   الهدف: ${s.chief_complaint || 'غير محدد'}
   التقييم: ${s.assessment || 'غير محدد'}
-`).join('\n')}
+`
+}).join('\n')}
 
 الخطط العلاجية النشطة:
-${patientPlans.map((p: Record<string, unknown>) => `
-- ${p.title}
-  الأهداف: ${p.goals?.length || 0}
-  التقدم: ${p.progress_percentage || 0}%
-`).join('\n')}
+${patientPlans.map((p: Record<string, unknown>) => {
+  const goals = Array.isArray(p.goals) ? p.goals : []
+  return `
+- ${p.title || 'خطة علاج'}
+  الأهداف: ${goals.length}
+  التقدم: ${typeof p.progress_percentage === 'number' ? p.progress_percentage : 0}%
+`
+}).join('\n')}
 `
 
   // Call AI API (using OpenAI format as example)
@@ -211,7 +216,7 @@ ${context}
 
 async function generateChatResponse(
   message: string,
-  history: any[],
+  history: Array<Record<string, unknown>>,
   patientId: string | null,
   doctorId: string,
   aiApiKey: string

@@ -142,7 +142,7 @@ ${message}
           const extractedData = stepResults[`step_${currentStep - 1}`]?.result || {}
           
           // Parse extracted data (simplified - in production, use proper JSON parsing)
-          let appointmentData: any = {}
+          let appointmentData: Record<string, unknown> = {}
           try {
             // Try to parse as JSON
             const jsonMatch = extractedData.match(/\{[\s\S]*\}/)
@@ -159,7 +159,7 @@ ${message}
           // Execute appointment action
           if (appointmentData.action === 'create' && actions.includes('create')) {
             // Create appointment logic
-            const appointmentDate = appointmentData.date 
+            const appointmentDate = appointmentData.date && (typeof appointmentData.date === 'string' || appointmentData.date instanceof Date)
               ? new Date(appointmentData.date)
               : new Date()
 
@@ -254,13 +254,13 @@ ${message}
           step_results: stepResults,
         },
       })
-    } catch (execError: any) {
+    } catch (execError: unknown) {
       // Mark execution as failed
       await supabaseAdmin
         .from('whatsapp_flow_executions')
         .update({
           status: 'failed',
-          error_message: execError.message,
+          error_message: execError instanceof Error ? execError.message : String(execError),
           completed_at: new Date().toISOString(),
         })
         .eq('id', execution.id)

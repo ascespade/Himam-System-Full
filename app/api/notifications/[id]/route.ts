@@ -42,7 +42,7 @@ export async function PUT(
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء معالجة الإشعار'
     const { logError } = await import('@/shared/utils/logger')
-    logError('Error processing notification', error, { endpoint: '/api/notifications/[id]', notificationId: params.id, userId: user.id })
+    logError('Error processing notification', error, { endpoint: '/api/notifications/[id]', notificationId: params.id })
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }
@@ -83,7 +83,7 @@ export async function DELETE(
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء معالجة الإشعار'
     const { logError } = await import('@/shared/utils/logger')
-    logError('Error processing notification', error, { endpoint: '/api/notifications/[id]', notificationId: params.id, userId: user.id })
+    logError('Error processing notification', error, { endpoint: '/api/notifications/[id]', notificationId: params.id })
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }

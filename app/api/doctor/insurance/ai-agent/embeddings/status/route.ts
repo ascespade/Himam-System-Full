@@ -50,9 +50,11 @@ export async function GET(req: NextRequest) {
       claimEmbeddings = claimCount || 0
       patternEmbeddings = patternCount || 0
       totalEmbeddings = claimEmbeddings + patternEmbeddings
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Table doesn't exist or pgvector not enabled
-      if (e.code === '42P01' || e.message?.includes('does not exist')) {
+      const errorCode = e && typeof e === 'object' && 'code' in e ? e.code : null
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      if (errorCode === '42P01' || errorMessage.includes('does not exist')) {
         vectorEnabled = false
       } else {
         console.warn('Error checking vector status:', e)

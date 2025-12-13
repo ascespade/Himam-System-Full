@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب إحصائيات التقارير'
     const { logError } = await import('@/shared/utils/logger')
-    logError('Error fetching report stats', error, { endpoint: '/api/reports/stats', userId: user.id })
+    logError('Error fetching report stats', error, { endpoint: '/api/reports/stats' })
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }

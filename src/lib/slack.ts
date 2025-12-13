@@ -38,7 +38,7 @@ export async function sendSlackNotification(payload: SlackPayload): Promise<bool
   }
 }
 
-export async function notifyNewAppointment(appointment: any) {
+export async function notifyNewAppointment(appointment: Record<string, unknown>) {
   const message = {
     blocks: [
       {
@@ -67,11 +67,21 @@ export async function notifyNewAppointment(appointment: any) {
         fields: [
           {
             type: "mrkdwn",
-            text: `*Date:*\n${new Date(appointment.date).toLocaleDateString()}`
+            text: `*Date:*\n${(() => {
+              const date = appointment.date && (typeof appointment.date === 'string' || appointment.date instanceof Date)
+                ? new Date(appointment.date)
+                : new Date()
+              return date.toLocaleDateString()
+            })()}`
           },
           {
             type: "mrkdwn",
-            text: `*Time:*\n${new Date(appointment.date).toLocaleTimeString()}`
+            text: `*Time:*\n${(() => {
+              const date = appointment.date && (typeof appointment.date === 'string' || appointment.date instanceof Date)
+                ? new Date(appointment.date)
+                : new Date()
+              return date.toLocaleTimeString()
+            })()}`
           }
         ]
       }

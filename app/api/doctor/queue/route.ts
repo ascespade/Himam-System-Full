@@ -30,8 +30,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Try patient_visits first, fallback to reception_queue
-    let queueData: any[] = []
-    let error: any = null
+    let queueData: Array<Record<string, unknown>> = []
+    let error: Record<string, unknown> | null = null
 
     try {
       const visitsResult = await supabaseAdmin
@@ -48,9 +48,9 @@ export async function GET(req: NextRequest) {
       if (!visitsResult.error && visitsResult.data) {
         queueData = visitsResult.data
       } else {
-        error = visitsResult.error
+        error = visitsResult.error ? (visitsResult.error as unknown as Record<string, unknown>) : null as Record<string, unknown> | null
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Table doesn't exist, try reception_queue
       try {
         const queueResult = await supabaseAdmin
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
         if (!queueResult.error && queueResult.data) {
           queueData = queueResult.data
         }
-      } catch (queueErr: any) {
+      } catch (queueErr: unknown) {
         // Both tables don't exist
         return NextResponse.json({
           success: true,

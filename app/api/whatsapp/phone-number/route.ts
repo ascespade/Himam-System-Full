@@ -90,9 +90,10 @@ export async function GET(req: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq('phone_number_id', phoneNumberId)
-      } catch (dbError: any) {
+      } catch (dbError: unknown) {
         // Table might not exist, continue anyway
-        console.warn('Could not update business profile:', dbError.message)
+        const errorMessage = dbError instanceof Error ? dbError.message : String(dbError)
+        console.warn('Could not update business profile:', errorMessage)
       }
 
       return NextResponse.json({
@@ -106,10 +107,12 @@ export async function GET(req: NextRequest) {
           certificate: metaData.certificate,
         },
       })
-    } catch (metaError: any) {
-      console.error('Error fetching from Meta API:', metaError)
+    } catch (metaError: unknown) {
+      const errorMessage = metaError instanceof Error ? metaError.message : 'Failed to fetch phone number details'
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching from Meta API', metaError, { phoneNumberId })
       return NextResponse.json(
-        { success: false, error: metaError.message || 'Failed to fetch phone number details' },
+        { success: false, error: errorMessage },
         { status: 500 }
       )
     }

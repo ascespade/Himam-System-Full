@@ -30,8 +30,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Get doctor profile
-    let profile: any = null
-    let profileError: any = null
+    let profile: Record<string, unknown> | null = null
+    let profileError: Record<string, unknown> | null = null
 
     try {
       const result = await supabaseAdmin
@@ -47,15 +47,17 @@ export async function GET(req: NextRequest) {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      profile = result.data
-      profileError = result.error
-    } catch (err: any) {
-      profileError = err
+      profile = result.data as Record<string, unknown> | null
+      profileError = result.error as Record<string, unknown> | null
+    } catch (err: unknown) {
+      profileError = err as Record<string, unknown>
     }
 
     // Handle table not existing or other errors
     if (profileError) {
-      if (profileError.code === '42P01' || profileError.message?.includes('does not exist')) {
+      const errorCode = profileError && typeof profileError === 'object' && 'code' in profileError ? profileError.code : null
+      const errorMessage = profileError instanceof Error ? profileError.message : String(profileError)
+      if (errorCode === '42P01' || (typeof errorMessage === 'string' && errorMessage.includes('does not exist'))) {
         // Table doesn't exist, return basic user info
         try {
           const { data: userData, error: userError } = await supabaseAdmin
@@ -88,7 +90,7 @@ export async function GET(req: NextRequest) {
               years_of_experience: 0
             }
           })
-        } catch (userErr: any) {
+        } catch (userErr: unknown) {
           // Fallback to minimal data
           return NextResponse.json({
             success: true,
@@ -121,7 +123,7 @@ export async function GET(req: NextRequest) {
             years_of_experience: 0
           }
         })
-      } catch (fallbackErr: any) {
+      } catch (fallbackErr: unknown) {
         // Last resort: return minimal data
         return NextResponse.json({
           success: true,
@@ -176,7 +178,7 @@ export async function GET(req: NextRequest) {
           })
         }
         return NextResponse.json({ success: true, data: newProfile })
-      } catch (createErr: any) {
+      } catch (createErr: unknown) {
         // Fallback to basic user info
         const { data: userData } = await supabaseAdmin
           .from('users')

@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get current patient visit
-    let visit: any = null
+    let visit: Record<string, unknown> | null = null
     let patientId: string | null = null
 
     try {
@@ -46,9 +46,11 @@ export async function GET(req: NextRequest) {
 
       if (visitResult.data) {
         visit = visitResult.data
-        patientId = visit.patient_id || visit.patients?.id
+        const visitData = visit as Record<string, unknown>
+        const patients = visitData.patients as Record<string, unknown> | undefined
+        patientId = (visitData.patient_id || patients?.id) as string | null
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Table might not exist, try reception_queue
       try {
         const queueResult = await supabaseAdmin
@@ -62,7 +64,9 @@ export async function GET(req: NextRequest) {
 
         if (queueResult.data) {
           visit = queueResult.data
-          patientId = visit.patient_id || visit.patients?.id
+          const visitData = visit as Record<string, unknown>
+          const patients = visitData.patients as Record<string, unknown> | undefined
+          patientId = (visitData.patient_id || patients?.id) as string | null
         }
       } catch (e2) {
         // No current patient

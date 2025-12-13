@@ -50,12 +50,14 @@ export async function GET(req: NextRequest) {
     if (error) throw error
 
     // Transform to key-value format
-    const config: Record<string, any> = {}
-    data?.forEach((item: any) => {
-      if (!config[item.category]) {
-        config[item.category] = {}
+    const config: Record<string, Record<string, unknown>> = {}
+    data?.forEach((item: Record<string, unknown>) => {
+      const category = item.category as string
+      const key = item.key as string
+      if (!config[category]) {
+        config[category] = {}
       }
-      config[item.category][item.key] = {
+      config[category][key] = {
         value: item.value,
         description: item.description,
         is_editable: item.is_editable
@@ -64,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: key && category ? config[category]?.[key]?.value : config
+      data: key && category ? (config[category]?.[key] as Record<string, unknown>)?.value : config
     })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'

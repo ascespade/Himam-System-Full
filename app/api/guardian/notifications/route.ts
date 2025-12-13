@@ -80,13 +80,15 @@ export async function GET(req: NextRequest) {
     let filteredNotifications = notifications || []
     if (type === 'approval') {
       // Filter for approval-related notifications
-      filteredNotifications = filteredNotifications.filter((n: Record<string, unknown>) => 
-        n.type === 'approval_request' || 
-        n.type === 'procedure_approval' ||
-        n.type === 'approval' ||
-        n.title?.includes('موافقة') ||
-        n.message?.includes('موافقة')
-      )
+      filteredNotifications = filteredNotifications.filter((n: Record<string, unknown>) => {
+        const title = typeof n.title === 'string' ? n.title : ''
+        const message = typeof n.message === 'string' ? n.message : ''
+        return n.type === 'approval_request' || 
+          n.type === 'procedure_approval' ||
+          n.type === 'approval' ||
+          title.includes('موافقة') ||
+          message.includes('موافقة')
+      })
     }
 
     // Return array directly for type=approval, otherwise return object with metadata

@@ -44,19 +44,25 @@ export async function GET(request: NextRequest) {
 
     // Transform messages to match the expected format (conversation_history style)
     // Group messages by pairing inbound (user) with next outbound (AI) message
-    const transformedMessages: any[] = []
-    let pendingUserMessage: any = null
+    const transformedMessages: Array<{
+      id: string
+      user_phone: string
+      user_message: string
+      ai_response: string
+      created_at: string
+    }> = []
+    let pendingUserMessage: Record<string, unknown> | null = null
 
-    messages.forEach((msg: any) => {
+    messages.forEach((msg: Record<string, unknown>) => {
       if (msg.direction === 'inbound') {
         // If there's a pending user message without AI response, add it
         if (pendingUserMessage) {
           transformedMessages.push({
-            id: pendingUserMessage.id,
+            id: pendingUserMessage.id as string,
             user_phone: phone,
-            user_message: pendingUserMessage.content || '',
+            user_message: (pendingUserMessage.content as string) || '',
             ai_response: '',
-            created_at: pendingUserMessage.created_at
+            created_at: pendingUserMessage.created_at as string
           })
         }
         // Store this as pending user message
@@ -66,34 +72,35 @@ export async function GET(request: NextRequest) {
         if (pendingUserMessage) {
           // Pair with pending user message
           transformedMessages.push({
-            id: pendingUserMessage.id,
+            id: pendingUserMessage.id as string,
             user_phone: phone,
-            user_message: pendingUserMessage.content || '',
-            ai_response: msg.content || '',
-            created_at: msg.created_at // Use AI response timestamp
+            user_message: (pendingUserMessage.content as string) || '',
+            ai_response: (msg.content as string) || '',
+            created_at: msg.created_at as string // Use AI response timestamp
           })
           pendingUserMessage = null
         } else {
           // AI response without user message (standalone)
           transformedMessages.push({
-            id: msg.id,
+            id: msg.id as string,
             user_phone: phone,
             user_message: '',
-            ai_response: msg.content || '',
-            created_at: msg.created_at
+            ai_response: (msg.content as string) || '',
+            created_at: msg.created_at as string
           })
         }
       }
     })
 
     // Add last pending user message if exists
-    if (pendingUserMessage) {
+    if (pendingUserMessage !== null) {
+      const msg = pendingUserMessage as Record<string, unknown>
       transformedMessages.push({
-        id: pendingUserMessage.id,
+        id: msg.id as string,
         user_phone: phone,
-        user_message: pendingUserMessage.content || '',
+        user_message: (msg.content as string) || '',
         ai_response: '',
-        created_at: pendingUserMessage.created_at
+        created_at: msg.created_at as string
       })
     }
 

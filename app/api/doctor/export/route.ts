@@ -132,31 +132,46 @@ export async function POST(req: NextRequest) {
     // Format based on requested format
     if (format === 'pdf') {
       // Generate simple PDF as text/plain for now (can be enhanced with pdfkit later)
+      const patient = exportData.patient as Record<string, unknown>
+      const sessions = Array.isArray(exportData.sessions) ? exportData.sessions as Array<Record<string, unknown>> : null
+      const medicalRecords = Array.isArray(exportData.medical_records) ? exportData.medical_records as Array<Record<string, unknown>> : null
+      const treatmentPlans = Array.isArray(exportData.treatment_plans) ? exportData.treatment_plans as Array<Record<string, unknown>> : null
+      const progressTracking = Array.isArray(exportData.progress_tracking) ? exportData.progress_tracking as Array<Record<string, unknown>> : null
+      const exportedAt = exportData.exported_at && (typeof exportData.exported_at === 'string' || exportData.exported_at instanceof Date) 
+        ? new Date(exportData.exported_at) 
+        : new Date()
+
       const pdfContent = `
 تقرير ملف طبي
 ${'='.repeat(50)}
-المريض: ${exportData.patient.name}
-الهاتف: ${exportData.patient.phone}
-تاريخ الميلاد: ${exportData.patient.date_of_birth || 'غير متوفر'}
-الجنس: ${exportData.patient.gender || 'غير متوفر'}
+المريض: ${patient.name || 'غير متوفر'}
+الهاتف: ${patient.phone || 'غير متوفر'}
+تاريخ الميلاد: ${patient.date_of_birth || 'غير متوفر'}
+الجنس: ${patient.gender || 'غير متوفر'}
 ${'='.repeat(50)}
 
-${exportData.sessions ? `\nالجلسات (${exportData.sessions.length}):\n${exportData.sessions.map((s: any, i: number) => `${i + 1}. ${new Date(s.date).toLocaleDateString('ar-SA')} - ${s.session_type || 'جلسة'}`).join('\n')}` : ''}
+${sessions ? `\nالجلسات (${sessions.length}):\n${sessions.map((s, i) => {
+  const date = s.date && (typeof s.date === 'string' || s.date instanceof Date) ? new Date(s.date) : new Date()
+  return `${i + 1}. ${date.toLocaleDateString('ar-SA')} - ${s.session_type || 'جلسة'}`
+}).join('\n')}` : ''}
 
-${exportData.medical_records ? `\nالسجلات الطبية (${exportData.medical_records.length}):\n${exportData.medical_records.map((r: any, i: number) => `${i + 1}. ${r.record_type || 'سجل'} - ${new Date(r.created_at).toLocaleDateString('ar-SA')}`).join('\n')}` : ''}
+${medicalRecords ? `\nالسجلات الطبية (${medicalRecords.length}):\n${medicalRecords.map((r, i) => {
+  const date = r.created_at && (typeof r.created_at === 'string' || r.created_at instanceof Date) ? new Date(r.created_at) : new Date()
+  return `${i + 1}. ${r.record_type || 'سجل'} - ${date.toLocaleDateString('ar-SA')}`
+}).join('\n')}` : ''}
 
-${exportData.treatment_plans ? `\nخطط العلاج (${exportData.treatment_plans.length}):\n${exportData.treatment_plans.map((p: any, i: number) => `${i + 1}. ${p.title || 'خطة علاج'}`).join('\n')}` : ''}
+${treatmentPlans ? `\nخطط العلاج (${treatmentPlans.length}):\n${treatmentPlans.map((p, i) => `${i + 1}. ${p.title || 'خطة علاج'}`).join('\n')}` : ''}
 
-${exportData.progress_tracking ? `\nتتبع التقدم (${exportData.progress_tracking.length}):\n${exportData.progress_tracking.map((p: any, i: number) => `${i + 1}. ${p.title || 'تقدم'}`).join('\n')}` : ''}
+${progressTracking ? `\nتتبع التقدم (${progressTracking.length}):\n${progressTracking.map((p, i) => `${i + 1}. ${p.title || 'تقدم'}`).join('\n')}` : ''}
 
 ${'='.repeat(50)}
-تاريخ التصدير: ${new Date(exportData.exported_at).toLocaleString('ar-SA')}
+تاريخ التصدير: ${exportedAt.toLocaleString('ar-SA')}
       `.trim()
 
       return new NextResponse(pdfContent, {
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
-          'Content-Disposition': `attachment; filename="patient-${exportData.patient.id}-report.txt"`,
+          'Content-Disposition': `attachment; filename="patient-${(exportData.patient as Record<string, unknown>).id || 'unknown'}-report.txt"`,
         },
       })
     } else if (format === 'csv') {
@@ -167,23 +182,32 @@ ${'='.repeat(50)}
       csvRows.push('النوع,التاريخ,الوصف')
       
       // Sessions
-      if (exportData.sessions) {
-        exportData.sessions.forEach((s: any) => {
-          csvRows.push(`جلسة,"${new Date(s.date).toLocaleDateString('ar-SA')}","${(s.session_type || 'جلسة').replace(/"/g, '""')}"`)
+      const sessions = Array.isArray(exportData.sessions) ? exportData.sessions as Array<Record<string, unknown>> : null
+      if (sessions) {
+        sessions.forEach((s) => {
+          const date = s.date && (typeof s.date === 'string' || s.date instanceof Date) ? new Date(s.date) : new Date()
+          const sessionType = typeof s.session_type === 'string' ? s.session_type : 'جلسة'
+          csvRows.push(`جلسة,"${date.toLocaleDateString('ar-SA')}","${sessionType.replace(/"/g, '""')}"`)
         })
       }
       
       // Medical Records
-      if (exportData.medical_records) {
-        exportData.medical_records.forEach((r: any) => {
-          csvRows.push(`سجل طبي,"${new Date(r.created_at).toLocaleDateString('ar-SA')}","${(r.record_type || 'سجل').replace(/"/g, '""')}"`)
+      const medicalRecords = Array.isArray(exportData.medical_records) ? exportData.medical_records as Array<Record<string, unknown>> : null
+      if (medicalRecords) {
+        medicalRecords.forEach((r) => {
+          const date = r.created_at && (typeof r.created_at === 'string' || r.created_at instanceof Date) ? new Date(r.created_at) : new Date()
+          const recordType = typeof r.record_type === 'string' ? r.record_type : 'سجل'
+          csvRows.push(`سجل طبي,"${date.toLocaleDateString('ar-SA')}","${recordType.replace(/"/g, '""')}"`)
         })
       }
       
       // Treatment Plans
-      if (exportData.treatment_plans) {
-        exportData.treatment_plans.forEach((p: any) => {
-          csvRows.push(`خطة علاج,"${new Date(p.created_at).toLocaleDateString('ar-SA')}","${(p.title || 'خطة').replace(/"/g, '""')}"`)
+      const treatmentPlans = Array.isArray(exportData.treatment_plans) ? exportData.treatment_plans as Array<Record<string, unknown>> : null
+      if (treatmentPlans) {
+        treatmentPlans.forEach((p) => {
+          const date = p.created_at && (typeof p.created_at === 'string' || p.created_at instanceof Date) ? new Date(p.created_at) : new Date()
+          const title = typeof p.title === 'string' ? p.title : 'خطة'
+          csvRows.push(`خطة علاج,"${date.toLocaleDateString('ar-SA')}","${title.replace(/"/g, '""')}"`)
         })
       }
       
@@ -192,7 +216,7 @@ ${'='.repeat(50)}
       return new NextResponse(csvContent, {
         headers: {
           'Content-Type': 'text/csv; charset=utf-8',
-          'Content-Disposition': `attachment; filename="patient-${exportData.patient.id}-export.csv"`,
+          'Content-Disposition': `attachment; filename="patient-${(exportData.patient as Record<string, unknown>).id || 'unknown'}-export.csv"`,
         },
       })
     } else {

@@ -58,11 +58,14 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    const transformed = (data || []).map((item: Record<string, unknown>) => ({
-      ...item,
-      title: item.chief_complaint || item.record_type, // Fallback title
-      patient_name: item.patients?.name || 'غير معروف'
-    }))
+    const transformed = (data || []).map((item: Record<string, unknown>) => {
+      const patients = item.patients as Record<string, unknown> | undefined
+      return {
+        ...item,
+        title: item.chief_complaint || item.record_type, // Fallback title
+        patient_name: patients?.name || 'غير معروف'
+      }
+    })
 
     return NextResponse.json({
       success: true,

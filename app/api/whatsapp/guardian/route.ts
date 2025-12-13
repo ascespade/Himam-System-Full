@@ -82,10 +82,11 @@ export async function POST(req: NextRequest) {
 
         const formattedHistory = messages
           ? messages.reverse().map((m: Record<string, unknown>) => {
+              const content = typeof m.content === 'string' ? m.content : String(m.content || '')
               if (m.direction === 'inbound') {
-                return { role: 'user' as const, content: m.content }
+                return { role: 'user' as const, content }
               } else {
-                return { role: 'assistant' as const, content: m.content }
+                return { role: 'assistant' as const, content }
               }
             })
           : []

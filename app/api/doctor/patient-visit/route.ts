@@ -33,8 +33,8 @@ export async function GET(req: NextRequest) {
     // Try to get pending visit from patient_visits table
     // If table doesn't exist, try reception_queue as fallback
     let visits: any[] | null = null
-    let visit: any = null
-    let error: any = null
+    let visit: Record<string, unknown> | null = null
+    let error: Record<string, unknown> | null = null
 
     try {
       const result = await supabaseAdmin
@@ -50,10 +50,12 @@ export async function GET(req: NextRequest) {
         .limit(1)
 
       visits = result.data
-      error = result.error
-    } catch (tableError: any) {
+      error = result.error as Record<string, unknown> | null
+    } catch (tableError: unknown) {
       // Table doesn't exist, try reception_queue as fallback
-      if (tableError.code === '42P01' || tableError.message?.includes('does not exist')) {
+      const errorCode = tableError && typeof tableError === 'object' && 'code' in tableError ? tableError.code : null
+      const errorMessage = tableError instanceof Error ? tableError.message : String(tableError)
+      if (errorCode === '42P01' || errorMessage.includes('does not exist')) {
         try {
           const queueResult = await supabaseAdmin
             .from('reception_queue')
@@ -68,8 +70,8 @@ export async function GET(req: NextRequest) {
             .limit(1)
 
           visits = queueResult.data
-          error = queueResult.error
-        } catch (queueError: any) {
+          error = queueResult.error as Record<string, unknown> | null
+        } catch (queueError: unknown) {
           // Both tables don't exist, return empty
           return NextResponse.json({
             success: true,
@@ -85,7 +87,9 @@ export async function GET(req: NextRequest) {
     if (error) {
       console.error('Error fetching patient visits:', error)
       // If it's a table not found error, return empty
-      if (error.code === '42P01' || error.message?.includes('does not exist')) {
+      const errorCode = error && typeof error === 'object' && 'code' in error ? error.code : null
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorCode === '42P01' || (typeof errorMessage === 'string' && errorMessage.includes('does not exist'))) {
         return NextResponse.json({
           success: true,
           data: null,
@@ -119,9 +123,10 @@ export async function GET(req: NextRequest) {
           doctor_seen_time: new Date().toISOString()
         })
         .eq('id', visit.id)
-    } catch (updateError: any) {
+    } catch (updateError: unknown) {
       // Ignore update errors (table might not exist or field might not exist)
-      console.warn('Could not update visit status:', updateError.message)
+      const errorMessage = updateError instanceof Error ? updateError.message : String(updateError)
+      console.warn('Could not update visit status:', errorMessage)
     }
 
     return NextResponse.json({

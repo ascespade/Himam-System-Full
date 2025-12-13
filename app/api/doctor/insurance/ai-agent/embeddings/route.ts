@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
     const embeddingVector = `[${embedding.join(',')}]`
 
     // Find similar rejected claims using vector similarity
-    let similarRejected: any[] = []
-    let similarSuccessful: any[] = []
+    let similarRejected: Array<Record<string, unknown>> = []
+    let similarSuccessful: Array<Record<string, unknown>> = []
 
     try {
       const similarRejectedResult = await supabaseAdmin.rpc(
@@ -98,8 +98,9 @@ export async function POST(req: NextRequest) {
       } else if (similarRejectedResult.error) {
         console.warn('Error finding similar claims (might be first time or pgvector not enabled):', similarRejectedResult.error)
       }
-    } catch (e: any) {
-      console.warn('Vector search not available (pgvector extension might not be enabled):', e.message)
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      console.warn('Vector search not available (pgvector extension might not be enabled):', errorMessage)
     }
 
     // Find similar successful patterns
@@ -120,8 +121,9 @@ export async function POST(req: NextRequest) {
       } else if (similarSuccessfulResult.error) {
         console.warn('Error finding similar patterns:', similarSuccessfulResult.error)
       }
-    } catch (e: any) {
-      console.warn('Vector search for patterns not available:', e.message)
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      console.warn('Vector search for patterns not available:', errorMessage)
     }
 
     // Analyze results
@@ -130,14 +132,15 @@ export async function POST(req: NextRequest) {
     const requiresHumanReview = false
 
     if (similarRejected && similarRejected.length > 0) {
-      const highestSimilarity = similarRejected[0].similarity
+      const firstRejected = similarRejected[0] as Record<string, unknown>
+      const highestSimilarity = typeof firstRejected.similarity === 'number' ? firstRejected.similarity : 0
       
       if (highestSimilarity > 0.9) {
         warnings.push(`تحذير: مطالبة مشابهة جداً لمطالبة مرفوضة سابقاً (${(highestSimilarity * 100).toFixed(1)}% تشابه)`)
         
         // Extract common error patterns
         const allErrorPatterns = new Set<string>()
-        similarRejected.forEach((claim: any) => {
+        similarRejected.forEach((claim: Record<string, unknown>) => {
           if (claim.error_patterns && Array.isArray(claim.error_patterns)) {
             claim.error_patterns.forEach((pattern: string) => allErrorPatterns.add(pattern))
           }
@@ -148,8 +151,9 @@ export async function POST(req: NextRequest) {
         }
 
         // Use rejection reason from most similar claim
-        if (similarRejected[0].rejection_reason) {
-          recommendations.push(`سبب الرفض السابق: ${similarRejected[0].rejection_reason}`)
+        const rejectionReason = typeof firstRejected.rejection_reason === 'string' ? firstRejected.rejection_reason : null
+        if (rejectionReason) {
+          recommendations.push(`سبب الرفض السابق: ${rejectionReason}`)
         }
       } else if (highestSimilarity > 0.8) {
         warnings.push(`تنبيه: مطالبة مشابهة لمطالبة مرفوضة سابقاً (${(highestSimilarity * 100).toFixed(1)}% تشابه)`)
@@ -157,7 +161,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (similarSuccessful && similarSuccessful.length > 0) {
-      const highestSimilarity = similarSuccessful[0].similarity
+      const firstSuccessful = similarSuccessful[0] as Record<string, unknown>
+      const highestSimilarity = typeof firstSuccessful.similarity === 'number' ? firstSuccessful.similarity : 0
       if (highestSimilarity > 0.8) {
         recommendations.push(`استخدم نفس النمط الناجح من مطالبة سابقة (${(highestSimilarity * 100).toFixed(1)}% تشابه)`)
       }
@@ -172,13 +177,18 @@ export async function POST(req: NextRequest) {
         similar_successful_count: similarSuccessful.length,
         warnings,
         recommendations,
-        requiresHumanReview: warnings.length > 0 && similarRejected.length > 0 && similarRejected[0].similarity > 0.9,
+        requiresHumanReview: warnings.length > 0 && similarRejected.length > 0 && (() => {
+          const first = similarRejected[0] as Record<string, unknown>
+          return typeof first.similarity === 'number' && first.similarity > 0.9
+        })(),
         similar_claims: similarRejected,
         similar_patterns: similarSuccessful
       }
     })
   } catch (error: unknown) {
-    
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+    const { logError } = await import('@/shared/utils/logger')
+    logError('Error in embeddings route', error, { endpoint: '/api/doctor/insurance/ai-agent/embeddings' })
     return NextResponse.json(
       { success: false, error: errorMessage },
       { status: 500 }
@@ -247,7 +257,7 @@ export async function PUT(req: NextRequest) {
     const rejectionVector = rejectionEmbedding ? `[${rejectionEmbedding.join(',')}]` : null
 
     // Store claim embedding
-    let claimEmbedding: any = null
+    let claimEmbedding: Record<string, unknown> | null = null
     try {
       const { data, error: claimError } = await supabaseAdmin
         .from('insurance_claim_embeddings')
@@ -273,8 +283,9 @@ export async function PUT(req: NextRequest) {
       } else {
         console.warn('Error storing claim embedding (pgvector might not be enabled):', claimError)
       }
-    } catch (e: any) {
-      console.warn('Could not store embedding (pgvector extension might not be enabled):', e.message)
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      console.warn('Could not store embedding (pgvector extension might not be enabled):', errorMessage)
       // Continue even if embedding storage fails
     }
 
@@ -308,8 +319,9 @@ export async function PUT(req: NextRequest) {
             .from('insurance_pattern_embeddings')
             .insert(validEmbeddings)
         }
-      } catch (e: any) {
-        console.warn('Error storing pattern embeddings (pgvector might not be enabled):', e.message)
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e)
+        console.warn('Error storing pattern embeddings (pgvector might not be enabled):', errorMessage)
       }
     }
 
@@ -328,8 +340,9 @@ export async function PUT(req: NextRequest) {
             pattern_text: claim_description,
             metadata: { claim_id, outcome }
           })
-      } catch (e: any) {
-        console.warn('Error storing success pattern (pgvector might not be enabled):', e.message)
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e)
+        console.warn('Error storing success pattern (pgvector might not be enabled):', errorMessage)
       }
     }
 

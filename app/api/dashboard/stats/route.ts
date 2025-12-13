@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
     const todayRevenue = todayInvoices?.reduce((sum, inv) => sum + (Number(inv.paid_amount) || 0), 0) || 0
 
     // Role-specific stats
-    let roleStats: any = {}
+    let roleStats: Record<string, unknown> = {}
 
     if (requestedRole === 'admin') {
       roleStats = {

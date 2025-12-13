@@ -33,10 +33,13 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    const transformed = (data || []).map((msg: Record<string, unknown>) => ({
-      ...msg,
-      sender_name: msg.users?.name || 'غير معروف'
-    }))
+    const transformed = (data || []).map((msg: Record<string, unknown>) => {
+      const users = msg.users as Record<string, unknown> | undefined
+      return {
+        ...msg,
+        sender_name: users?.name || 'غير معروف'
+      }
+    })
 
     return NextResponse.json({
       success: true,

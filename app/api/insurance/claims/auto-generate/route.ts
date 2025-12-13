@@ -168,7 +168,7 @@ async function generateAIClaimSuggestions(
   treatmentPlan: any,
   doctorNotes: string | null,
   medicalJustification: string | null
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   // Get learning data for this insurance company
   if (insuranceCompanyId) {
     const { data: learningData } = await supabaseAdmin
@@ -185,14 +185,14 @@ async function generateAIClaimSuggestions(
     const requiredFields: string[] = []
     const commonIssues: string[] = []
 
-    learningData?.forEach((log: any) => {
+    learningData?.forEach((log: Record<string, unknown>) => {
       if (log.learning_type === 'claim_rejection') {
-        const pattern = log.pattern_detected
-        if (pattern?.rejection_reason) {
+        const pattern = log.pattern_detected as Record<string, unknown> | undefined
+        if (pattern && typeof pattern.rejection_reason === 'string') {
           rejectionPatterns.push(pattern.rejection_reason)
         }
-        if (pattern?.missing_fields) {
-          requiredFields.push(...(pattern.missing_fields || []))
+        if (pattern && Array.isArray(pattern.missing_fields)) {
+          requiredFields.push(...(pattern.missing_fields as string[]))
         }
       }
     })

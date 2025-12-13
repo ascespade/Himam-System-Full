@@ -42,11 +42,15 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    const transformed = (data || []).map((conv: Record<string, unknown>) => ({
-      ...conv,
-      patient_name: conv.patients?.name || 'غير معروف',
-      doctor_name: conv.users?.name || 'غير معروف'
-    }))
+    const transformed = (data || []).map((conv: Record<string, unknown>) => {
+      const patients = conv.patients as Record<string, unknown> | undefined
+      const users = conv.users as Record<string, unknown> | undefined
+      return {
+        ...conv,
+        patient_name: patients?.name || 'غير معروف',
+        doctor_name: users?.name || 'غير معروف'
+      }
+    })
 
     return NextResponse.json({
       success: true,

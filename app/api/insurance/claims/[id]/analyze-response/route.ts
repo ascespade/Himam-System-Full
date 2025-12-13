@@ -95,9 +95,9 @@ export async function POST(
  */
 async function analyzeInsuranceResponse(
   responseText: string,
-  claim: any,
-  insuranceCompany: any
-): Promise<any> {
+  claim: Record<string, unknown>,
+  insuranceCompany: Record<string, unknown>
+): Promise<Record<string, unknown>> {
   // Get AI API key
   const aiApiKey = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY
   if (!aiApiKey) {
@@ -188,8 +188,9 @@ ${learningContext}
       ...analysis,
       analyzed_at: new Date().toISOString()
     }
-  } catch (error) {
-    console.error('AI analysis error:', error)
+  } catch (error: unknown) {
+    const { logError } = await import('@/shared/utils/logger')
+    logError('AI analysis error', error, { claim: claim.id })
     // Fallback: simple keyword-based analysis
     return analyzeByKeywords(responseText)
   }
@@ -198,7 +199,7 @@ ${learningContext}
 /**
  * Fallback: Analyze by keywords
  */
-function analyzeByKeywords(responseText: string): any {
+function analyzeByKeywords(responseText: string): Record<string, unknown> {
   const text = responseText.toLowerCase()
   
   if (text.includes('موافق') || text.includes('approved') || text.includes('مقبول')) {

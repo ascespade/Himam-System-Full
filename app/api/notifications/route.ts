@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب الإشعارات'
     const { logError } = await import('@/shared/utils/logger')
-    logError('Error fetching notifications', error, { endpoint: '/api/notifications', userId: user.id })
+    logError('Error fetching notifications', error, { endpoint: '/api/notifications' })
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }
@@ -67,9 +67,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, data })
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء جلب الإشعارات'
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء إنشاء الإشعار'
     const { logError } = await import('@/shared/utils/logger')
-    logError('Error fetching notifications', error, { endpoint: '/api/notifications', userId: user.id })
+    logError('Error creating notification', error, { endpoint: '/api/notifications' })
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }

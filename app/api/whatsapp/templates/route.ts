@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
     const accessToken = settings.WHATSAPP_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN
     const phoneNumberId = settings.WHATSAPP_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID
 
-    let metaTemplates: any[] = []
+    let metaTemplates: Array<Record<string, unknown>> = []
     if (accessToken && phoneNumberId) {
       try {
         const metaResponse = await fetch(

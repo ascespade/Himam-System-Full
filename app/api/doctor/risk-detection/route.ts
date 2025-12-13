@@ -180,7 +180,10 @@ async function detectPatientRisks(patientId: string, doctorId: string) {
       // Check for overdue goals
       const overdueGoals = plan.goals?.filter((g: Record<string, unknown>) => {
         if (!g.target_date || g.status === 'completed') return false
-        return new Date(g.target_date) < now
+        const targetDate = g.target_date && (typeof g.target_date === 'string' || g.target_date instanceof Date) 
+          ? new Date(g.target_date) 
+          : null
+        return targetDate && targetDate < now
       })
 
       if (overdueGoals && overdueGoals.length > 0) {

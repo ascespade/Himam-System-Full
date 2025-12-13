@@ -75,9 +75,12 @@ export async function GET(req: NextRequest) {
       if (data) {
         profile = data
       }
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error creating/updating business profile', dbError, { phoneNumberId })
       // Table might not exist, continue to fetch from Meta API
-      console.warn('whatsapp_business_profiles table not found, will fetch from Meta API:', dbError.message)
+      console.warn('whatsapp_business_profiles table not found, will fetch from Meta API:', errorMessage)
     }
 
     if (profile) {
@@ -96,8 +99,8 @@ export async function GET(req: NextRequest) {
     const wabaId = whatsappSettings?.waba_id
 
     try {
-      let metaData: any = {}
-      let profileData: any = {}
+      let metaData: Record<string, unknown> = {}
+      let profileData: Record<string, unknown> = {}
 
       // Step 1: Fetch phone number details (always available)
       const phoneResponse = await fetch(
@@ -134,8 +137,9 @@ export async function GET(req: NextRequest) {
           } else {
             console.warn('Failed to fetch business profile from WABA endpoint, using phone number data only')
           }
-        } catch (profileError: any) {
-          console.warn('Error fetching business profile from WABA endpoint:', profileError.message)
+        } catch (profileError: unknown) {
+          const errorMessage = profileError instanceof Error ? profileError.message : String(profileError)
+          console.warn('Error fetching business profile from WABA endpoint:', errorMessage)
           // Continue with phone number data only
         }
       }
@@ -145,8 +149,14 @@ export async function GET(req: NextRequest) {
         business_name: metaData.verified_name || 'مركز الهمم',
         business_description: profileData.description || profileData.about || null,
         business_email: profileData.email || null,
-        business_website: profileData.websites?.[0] || null,
-        business_address: profileData.addresses?.[0]?.street || profileData.addresses?.[0] || null,
+        business_website: (() => {
+          const websites = Array.isArray(profileData.websites) ? profileData.websites as string[] : null
+          return websites?.[0] || null
+        })(),
+        business_address: (() => {
+          const addresses = Array.isArray(profileData.addresses) ? profileData.addresses as Array<Record<string, unknown>> : null
+          return addresses?.[0]?.street || addresses?.[0] || null
+        })(),
         business_category: profileData.vertical || null,
         profile_picture_url: profileData.profile_picture_url || null,
         cover_photo_url: profileData.cover_photo_url || null,
@@ -165,17 +175,21 @@ export async function GET(req: NextRequest) {
           .single()
 
         return NextResponse.json({ success: true, data: savedProfile })
-      } catch (dbError: any) {
+      } catch (dbError: unknown) {
+        const errorMessage = dbError instanceof Error ? dbError.message : String(dbError)
+        const { logError } = await import('@/shared/utils/logger')
+        logError('Error creating/updating business profile', dbError, { phoneNumberId })
         // Table doesn't exist, return data from Meta API
-        console.warn('Could not save to database, returning Meta API data:', dbError.message)
+        console.warn('Could not save to database, returning Meta API data:', errorMessage)
         return NextResponse.json({
           success: true,
           data: mergedData,
         })
       }
-    } catch (metaError: any) {
-      console.error('Error fetching from Meta API:', metaError)
-      const errorMessage = metaError.message || 'Failed to fetch profile from Meta API'
+    } catch (metaError: unknown) {
+      const errorMessage = metaError instanceof Error ? metaError.message : 'Failed to fetch profile from Meta API'
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error fetching from Meta API', metaError, { phoneNumberId })
       return NextResponse.json(
         { success: false, error: errorMessage },
         { status: 500 }
@@ -302,10 +316,13 @@ export async function PUT(req: NextRequest) {
         .single()
 
       return NextResponse.json({ success: true, data: newProfile })
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError)
+      const { logError } = await import('@/shared/utils/logger')
+      logError('Error creating/updating business profile', dbError, { phoneNumberId })
       // Table might not exist or other DB error
       // Return success anyway since we're just storing locally
-      console.warn('Database operation failed, but continuing:', dbError.message)
+      console.warn('Database operation failed, but continuing:', errorMessage)
       return NextResponse.json({
         success: true,
         data: {

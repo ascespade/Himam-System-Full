@@ -3,7 +3,14 @@
  * Provides caching with graceful degradation
  */
 
-let redisClient: any = null
+let redisClient: {
+  ping: () => Promise<string>
+  get: (key: string) => Promise<string | null>
+  setex: (key: string, seconds: number, value: string) => Promise<string>
+  del: (key: string | string[]) => Promise<number>
+  keys: (pattern: string) => Promise<string[]>
+  flushdb: () => Promise<string>
+} | null = null
 let isRedisAvailable = false
 
 /**
@@ -28,8 +35,10 @@ async function initializeRedis(): Promise<void> {
     })
 
     // Test connection
-    await redisClient.ping()
-    isRedisAvailable = true
+    if (redisClient) {
+      await redisClient.ping()
+      isRedisAvailable = true
+    }
     // Redis connected successfully (logged via logger if needed)
   } catch (error) {
     console.warn('Redis not available, using in-memory fallback:', error)
@@ -125,7 +134,7 @@ export async function clearCache(pattern?: string): Promise<boolean> {
       if (pattern) {
         const keys = await redisClient.keys(pattern)
         if (keys.length > 0) {
-          await redisClient.del(...keys)
+          await redisClient.del(keys)
         }
       } else {
         await redisClient.flushdb()

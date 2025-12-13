@@ -23,12 +23,12 @@ export function initSentry(): void {
 
     // Dynamic import to avoid errors if Sentry is not installed
     // @ts-expect-error - Optional dependency, may not be installed
-    import('@sentry/nextjs').then((Sentry: any) => {
-      Sentry.init({
+    import('@sentry/nextjs').then((SentryModule: { init: (config: Record<string, unknown>) => void }) => {
+      SentryModule.init({
         dsn,
         environment: process.env.NODE_ENV || 'development',
         tracesSampleRate: 1.0,
-        beforeSend(event: any) {
+        beforeSend(event: Record<string, unknown>) {
           // Don't send events in development
           if (process.env.NODE_ENV === 'development') {
             return null
@@ -58,8 +58,8 @@ export function captureException(error: Error, context?: Record<string, unknown>
 
   try {
     // @ts-expect-error - Optional dependency, may not be installed
-    import('@sentry/nextjs').then((Sentry: any) => {
-      Sentry.captureException(error, {
+    import('@sentry/nextjs').then((SentryModule: { captureException: (error: unknown, options?: Record<string, unknown>) => void }) => {
+      SentryModule.captureException(error, {
         extra: context
       })
     }).catch(() => {
@@ -86,8 +86,8 @@ export function captureMessage(message: string, level: 'info' | 'warning' | 'err
 
   try {
     // @ts-expect-error - Optional dependency, may not be installed
-    import('@sentry/nextjs').then((Sentry: any) => {
-      Sentry.captureMessage(message, {
+    import('@sentry/nextjs').then((SentryModule: { captureMessage: (message: string, options?: Record<string, unknown>) => void }) => {
+      SentryModule.captureMessage(message, {
         level: level as 'info' | 'warning' | 'error' | 'fatal' | 'debug'
       })
     }).catch(() => {

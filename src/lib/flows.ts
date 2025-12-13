@@ -79,21 +79,23 @@ export async function executeFlowsForContext(
 /**
  * Check if a flow's trigger matches the context
  */
-function matchesTrigger(flow: any, context: FlowExecutionContext): boolean {
+function matchesTrigger(flow: Record<string, unknown>, context: FlowExecutionContext): boolean {
   const triggerType = flow.trigger_type
-  const triggerConfig = flow.trigger_config || {}
+  const triggerConfig = (flow.trigger_config as Record<string, unknown>) || {}
 
   switch (triggerType) {
     case 'event':
       // Check if event matches
-      const events = triggerConfig.events || []
-      return events.includes(context.triggered_by_type || 'system')
+      const events = Array.isArray(triggerConfig.events) ? triggerConfig.events as string[] : []
+      const triggeredBy = (context.triggered_by_type as string) || 'system'
+      return events.includes(triggeredBy)
 
     case 'condition':
       // Evaluate condition against input_data
-      const condition = triggerConfig.condition || ''
+      const condition = (triggerConfig.condition as string) || ''
       if (!condition) return true
-      return evaluateCondition(condition, context.input_data || {})
+      const conditionInputData = (context.input_data as Record<string, unknown>) || {}
+      return evaluateCondition(condition, conditionInputData)
 
     case 'webhook':
       // Webhook flows are triggered explicitly
@@ -113,8 +115,9 @@ function matchesTrigger(flow: any, context: FlowExecutionContext): boolean {
 
     case 'ai_detection':
       // AI detection flows check for specific patterns in input
-      const patterns = triggerConfig.patterns || []
-      const inputText = JSON.stringify(context.input_data || {})
+      const patterns = Array.isArray(triggerConfig.patterns) ? triggerConfig.patterns as string[] : []
+      const aiInputData = context.input_data || {}
+      const inputText = JSON.stringify(aiInputData)
       return patterns.some((pattern: string) => 
         inputText.toLowerCase().includes(pattern.toLowerCase())
       )
@@ -128,7 +131,7 @@ function matchesTrigger(flow: any, context: FlowExecutionContext): boolean {
  * Simple condition evaluator
  * Supports: {{variable}} == value, {{variable}} != value, etc.
  */
-function evaluateCondition(condition: string, data: Record<string, any>): boolean {
+function evaluateCondition(condition: string, data: Record<string, unknown>): boolean {
   try {
     // Replace {{variable}} with actual values
     let resolved = condition
@@ -203,7 +206,7 @@ export async function executeFlowById(
 /**
  * Get flow execution status
  */
-export async function getFlowExecutionStatus(executionId: string): Promise<any> {
+export async function getFlowExecutionStatus(executionId: string): Promise<Record<string, unknown>> {
   try {
     const { data, error } = await supabaseAdmin
       .from('flow_executions')
@@ -212,9 +215,9 @@ export async function getFlowExecutionStatus(executionId: string): Promise<any> 
       .single()
 
     if (error) throw error
-    return data
+    return data as Record<string, unknown>
   } catch (error) {
     console.error('Error fetching flow execution:', error)
-    return null
+    return {} as Record<string, unknown>
   }
 }

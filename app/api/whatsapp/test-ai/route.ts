@@ -99,14 +99,16 @@ export async function POST(req: NextRequest) {
           },
         },
       })
-    } catch (aiError: any) {
+    } catch (aiError: unknown) {
       const duration = Date.now() - startTime
+      const errorMessage = aiError instanceof Error ? aiError.message : String(aiError)
+      const errorStack = aiError instanceof Error ? aiError.stack : undefined
       return NextResponse.json({
         success: false,
         error: 'AI generation failed',
         details: {
-          message: aiError.message,
-          stack: aiError.stack,
+          message: errorMessage,
+          stack: errorStack,
           duration: `${duration}ms`,
           settings: {
             hasGeminiKey,

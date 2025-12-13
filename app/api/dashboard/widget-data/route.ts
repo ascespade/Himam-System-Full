@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Generate data based on widget type
-    let data: any = null
+    let data: Record<string, unknown> | null = null
 
     if (widget.widget_type === 'chart') {
       data = await generateChartData(widget.widget_config, user.id)
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-async function generateChartData(config: any, userId: string): Promise<any> {
+async function generateChartData(config: any, userId: string): Promise<Record<string, unknown>> {
   // This would generate chart data based on config
   // For now, return sample data
   return {
@@ -93,7 +93,7 @@ async function generateChartData(config: any, userId: string): Promise<any> {
   }
 }
 
-async function generateTableData(config: any, userId: string): Promise<any> {
+async function generateTableData(config: any, userId: string): Promise<Record<string, unknown>> {
   const entity = config.entity || 'appointments'
   const limit = config.limit || 10
 
@@ -115,10 +115,10 @@ async function generateTableData(config: any, userId: string): Promise<any> {
 
   if (error) throw error
 
-  return data || []
+  return { data: data || [] }
 }
 
-async function generateListData(config: any, userId: string): Promise<any> {
+async function generateListData(config: any, userId: string): Promise<Record<string, unknown>> {
   // Similar to table data
   return generateTableData(config, userId)
 }

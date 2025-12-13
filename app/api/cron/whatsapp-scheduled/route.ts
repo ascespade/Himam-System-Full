@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       processed: 0,
       sent: 0,
       failed: 0,
-      errors: [] as any[],
+      errors: [] as Array<Record<string, unknown>>,
     }
 
     // Process each scheduled message
@@ -81,14 +81,14 @@ export async function GET(req: NextRequest) {
         results.sent++
         results.processed++
       } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
+        const errorMessage = error instanceof Error ? error.message : 'Failed to send message'
 
         // Update status to failed
         await supabaseAdmin
           .from('whatsapp_scheduled_messages')
           .update({
             status: 'failed',
-            error_message: error instanceof Error ? error.message : 'Failed to send message',
+            error_message: errorMessage,
             updated_at: new Date().toISOString(),
           })
           .eq('id', message.id)
@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
         results.processed++
         results.errors.push({
           message_id: message.id,
-          error: error.message,
+          error: errorMessage,
         })
       }
     }

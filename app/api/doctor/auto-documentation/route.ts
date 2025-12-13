@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch entity data based on type
-    let entityData: any = null
-    let patientData: any = null
+    let entityData: Record<string, unknown> | null = null
+    let patientData: Record<string, unknown> | null = null
 
     if (entity_type === 'session') {
       const { data: session } = await supabaseAdmin
@@ -113,31 +113,42 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    if (!entityData) {
+      return NextResponse.json({ success: false, error: 'Entity data not found' }, { status: 404 })
+    }
+
     // Get prompt template from database
+    const entityDate = entityData.date && (typeof entityData.date === 'string' || entityData.date instanceof Date) 
+      ? new Date(entityData.date) 
+      : new Date()
     const promptTemplate = await getAIPromptTemplate('auto_documentation', {
-      patient_name: patientData?.name || 'المريض',
-      session_type: entityData.session_type || 'غير محدد',
-      date: new Date(entityData.date).toLocaleDateString('ar-SA'),
+      patient_name: (patientData?.name as string) || 'المريض',
+      session_type: (entityData.session_type as string) || 'غير محدد',
+      date: entityDate.toLocaleDateString('ar-SA'),
       duration: String(entityData.duration || 'غير محدد'),
     })
 
     // Build AI prompt based on documentation type
     let prompt = ''
-    const patientName = patientData?.name || 'المريض'
+    const patientName = (patientData?.name as string) || 'المريض'
 
     if (documentation_type === 'session_summary') {
+      const entityDate = entityData.date && (typeof entityData.date === 'string' || entityData.date instanceof Date) 
+        ? new Date(entityData.date) 
+        : new Date()
+      const medicalRecords = Array.isArray(entityData.medical_records) ? entityData.medical_records as Array<Record<string, unknown>> : null
       prompt = `${promptTemplate}
 
 المريض: ${patientName}
-نوع الجلسة: ${entityData.session_type || 'غير محدد'}
-التاريخ: ${new Date(entityData.date).toLocaleDateString('ar-SA')}
+نوع الجلسة: ${(entityData.session_type as string) || 'غير محدد'}
+التاريخ: ${entityDate.toLocaleDateString('ar-SA')}
 المدة: ${entityData.duration || 'غير محدد'} دقيقة
 
 السياق الإضافي:
 ${context || 'لا يوجد سياق إضافي'}
 
 السجلات الطبية المرتبطة:
-${entityData.medical_records?.map((r: Record<string, unknown>) => `- ${r.notes || r.description}`).join('\n') || 'لا توجد سجلات'}
+${medicalRecords ? medicalRecords.map((r: Record<string, unknown>) => `- ${(r.notes || r.description) as string}`).join('\n') : 'لا توجد سجلات'}
 
 قم بإنشاء ملخص احترافي يتضمن:
 1. ملخص الجلسة
@@ -149,14 +160,19 @@ ${entityData.medical_records?.map((r: Record<string, unknown>) => `- ${r.notes |
 استخدم لهجة جدة الخفيفة والاحترافية.
       `
     } else if (documentation_type === 'progress_report') {
+      const sessions = Array.isArray(entityData.sessions) ? entityData.sessions as Array<Record<string, unknown>> : null
       prompt = `${promptTemplate}
 
 المريض: ${patientName}
-خطة العلاج: ${entityData.title || 'غير محدد'}
-الحالة: ${entityData.status || 'غير محدد'}
+خطة العلاج: ${(entityData.title as string) || 'غير محدد'}
+الحالة: ${(entityData.status as string) || 'غير محدد'}
 
 الجلسات المكتملة:
-${entityData.sessions?.map((s: Record<string, unknown>) => `- ${new Date(s.date).toLocaleDateString('ar-SA')}: ${s.session_type}`).join('\n') || 'لا توجد جلسات'}
+${sessions ? sessions.map((s: Record<string, unknown>) => {
+  const date = s.date && (typeof s.date === 'string' || s.date instanceof Date) ? new Date(s.date) : new Date()
+  const sessionType = typeof s.session_type === 'string' ? s.session_type : 'جلسة'
+  return `- ${date.toLocaleDateString('ar-SA')}: ${sessionType}`
+}).join('\n') : 'لا توجد جلسات'}
 
 السياق الإضافي:
 ${context || 'لا يوجد سياق إضافي'}
@@ -174,8 +190,8 @@ ${context || 'لا يوجد سياق إضافي'}
       prompt = `${promptTemplate}
 
 المريض: ${patientName}
-الخطة الحالية: ${entityData.title || 'غير محدد'}
-الحالة: ${entityData.status || 'غير محدد'}
+الخطة الحالية: ${(entityData.title as string) || 'غير محدد'}
+الحالة: ${(entityData.status as string) || 'غير محدد'}
 
 السياق الإضافي:
 ${context || 'لا يوجد سياق إضافي'}
@@ -192,11 +208,16 @@ ${context || 'لا يوجد سياق إضافي'}
       prompt = `${promptTemplate}
 
 المريض: ${patientName}
-نوع التقييم: ${entityData.record_type || 'غير محدد'}
-التاريخ: ${new Date(entityData.created_at).toLocaleDateString('ar-SA')}
+نوع التقييم: ${(entityData.record_type as string) || 'غير محدد'}
+التاريخ: ${(() => {
+  const createdDate = entityData.created_at && (typeof entityData.created_at === 'string' || entityData.created_at instanceof Date)
+    ? new Date(entityData.created_at)
+    : new Date()
+  return createdDate.toLocaleDateString('ar-SA')
+})()}
 
 الملاحظات:
-${entityData.notes || entityData.description || 'لا توجد ملاحظات'}
+${(entityData.notes || entityData.description) as string || 'لا توجد ملاحظات'}
 
 السياق الإضافي:
 ${context || 'لا يوجد سياق إضافي'}

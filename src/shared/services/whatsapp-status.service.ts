@@ -197,11 +197,11 @@ class WhatsAppStatusService {
       let responseCount = 0
 
       if (messages && messages.length > 0) {
-        const inboundByPhone = new Map<string, any[]>()
+        const inboundByPhone = new Map<string, Array<Record<string, unknown>>>()
         messages
           .filter((m) => m.direction === 'inbound')
-          .forEach((m: any) => {
-            const phone = m.from_phone || m.to_phone
+          .forEach((m: Record<string, unknown>) => {
+            const phone = (m.from_phone || m.to_phone) as string
             if (!inboundByPhone.has(phone)) {
               inboundByPhone.set(phone, [])
             }
@@ -210,8 +210,8 @@ class WhatsAppStatusService {
 
         messages
           .filter((m) => m.direction === 'outbound')
-          .forEach((outbound: any) => {
-            const phone = outbound.to_phone || outbound.from_phone
+          .forEach((outbound: Record<string, unknown>) => {
+            const phone = (outbound.to_phone || outbound.from_phone) as string
             const inboundMessages = inboundByPhone.get(phone) || []
             const lastInbound = inboundMessages
               .filter((inbound: Record<string, unknown>) => {
@@ -230,9 +230,17 @@ class WhatsAppStatusService {
               })[0]
 
             if (lastInbound) {
-              const responseTime = new Date(outbound.created_at).getTime() - new Date(lastInbound.created_at).getTime()
-              totalResponseTime += responseTime
-              responseCount++
+              const outboundDate = outbound.created_at && (typeof outbound.created_at === 'string' || outbound.created_at instanceof Date)
+                ? new Date(outbound.created_at).getTime()
+                : 0
+              const inboundDate = lastInbound.created_at && (typeof lastInbound.created_at === 'string' || lastInbound.created_at instanceof Date)
+                ? new Date(lastInbound.created_at).getTime()
+                : 0
+              const responseTime = outboundDate - inboundDate
+              if (responseTime > 0) {
+                totalResponseTime += responseTime
+                responseCount++
+              }
             }
           })
       }

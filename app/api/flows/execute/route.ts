@@ -92,21 +92,21 @@ export async function POST(req: NextRequest) {
  * Execute flow asynchronously
  */
 async function executeFlowAsync(
-  flow: any,
+  flow: Record<string, unknown>,
   executionId: string,
   contextType: string,
   contextId: string | null,
   inputData: Record<string, any>
 ) {
   try {
-    const nodes = flow.nodes || []
-    const edges = flow.edges || []
-    const nodeResults: Record<string, any> = {}
+    const nodes = Array.isArray(flow.nodes) ? flow.nodes as Array<Record<string, unknown>> : []
+    const edges = Array.isArray(flow.edges) ? flow.edges as Array<Record<string, unknown>> : []
+    const nodeResults: Record<string, Record<string, unknown>> = {}
     let currentNodeId: string | null = null
 
     // Find start node (node with no incoming edges)
-    const startNode = nodes.find((node: any) => {
-      const hasIncoming = edges.some((edge: any) => edge.target === node.id)
+    const startNode = nodes.find((node: Record<string, unknown>) => {
+      const hasIncoming = edges.some((edge: Record<string, unknown>) => edge.target === node.id)
       return !hasIncoming
     }) || nodes[0]
 
@@ -114,11 +114,11 @@ async function executeFlowAsync(
       throw new Error('No start node found')
     }
 
-    currentNodeId = startNode.id
+    currentNodeId = (startNode.id as string) || null
 
     // Execute nodes in order
     while (currentNodeId) {
-      const currentNode = nodes.find((n: any) => n.id === currentNodeId)
+      const currentNode = nodes.find((n: Record<string, unknown>) => n.id === currentNodeId) as Record<string, unknown> | undefined
       if (!currentNode || !currentNodeId) break
 
       const nodeId = currentNodeId // Store in const to ensure it's not null
@@ -133,7 +133,7 @@ async function executeFlowAsync(
       })
 
       // Execute node based on type
-      let nodeResult: any = null
+      let nodeResult: Record<string, unknown> | null = null
 
       try {
         switch (currentNode.type) {
@@ -193,37 +193,49 @@ async function executeFlowAsync(
           .eq('id', executionId)
 
         // Find next node
-        const nextEdge = edges.find((e: any) => {
+        const nextEdge = edges.find((e: Record<string, unknown>) => {
           if (e.source !== nodeId) return false
           
           // Check condition if edge has condition
-          if (e.condition) {
-            return evaluateCondition(e.condition, nodeResult)
+          const edgeCondition = e.condition
+          if (edgeCondition) {
+            return evaluateCondition(edgeCondition as string, nodeResult as Record<string, unknown>)
           }
           return true
         })
 
-        currentNodeId = nextEdge?.target || null
-      } catch (nodeError: any) {
+        const target = nextEdge && typeof nextEdge === 'object' && 'target' in nextEdge 
+          ? (nextEdge.target as string) 
+          : null
+        currentNodeId = target
+      } catch (nodeError: unknown) {
         // Node execution failed
         if (nodeId) {
+          const errorMessage = nodeError instanceof Error ? nodeError.message : String(nodeError)
+          const errorStack = nodeError instanceof Error ? nodeError.stack : undefined
           nodeResults[nodeId] = {
             success: false,
-            error: nodeError.message,
+            error: errorMessage,
           }
 
           await supabaseAdmin.from('flow_logs').insert({
             execution_id: executionId,
             node_id: nodeId,
             log_level: 'error',
-            message: `Node execution failed: ${nodeError.message}`,
-            data: { error: nodeError.stack },
+            message: `Node execution failed: ${errorMessage}`,
+            data: { error: errorStack },
           })
 
           // Check if flow should continue on error
-          if (currentNode.continueOnError) {
-            const nextEdge = edges.find((e: any) => e.source === nodeId)
-            currentNodeId = nextEdge?.target || null
+          const continueOnError = currentNode && typeof currentNode === 'object' && 'continueOnError' in currentNode
+            ? (currentNode.continueOnError as boolean)
+            : false
+          if (continueOnError) {
+            const nextEdge = edges.find((e: Record<string, unknown>) => e.source === nodeId)
+            const target = nextEdge && typeof nextEdge === 'object' && 'target' in nextEdge
+              ? (nextEdge.target as string)
+              : null
+            currentNodeId = target
           } else {
             throw nodeError
           }
@@ -256,8 +268,6 @@ async function executeFlowAsync(
       .eq('id', executionId)
 
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ'
-
     // Mark execution as failed
     const errorMessage = error instanceof Error ? error.message : 'Flow execution failed'
     const errorStack = error instanceof Error ? error.stack : undefined
@@ -282,24 +292,27 @@ async function executeFlowAsync(
 }
 
 // Node execution functions
-async function executeConditionNode(node: any, nodeResults: Record<string, any>, inputData: Record<string, any>): Promise<any> {
-  const condition = node.config?.condition || ''
+async function executeConditionNode(node: Record<string, unknown>, nodeResults: Record<string, Record<string, unknown>>, inputData: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const config = node.config as Record<string, unknown> | undefined
+  const condition = (config?.condition as string) || ''
   const result = evaluateCondition(condition, { ...nodeResults, input: inputData })
   return { success: true, result, data: { condition, result } }
 }
 
-async function executeAIAnalysisNode(node: any, inputData: Record<string, any>, flow: any): Promise<any> {
-  const prompt = node.config?.prompt || flow.ai_prompt || 'Analyze the following data'
+async function executeAIAnalysisNode(node: Record<string, unknown>, inputData: Record<string, unknown>, flow: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const config = node.config as Record<string, unknown> | undefined
+  const prompt = (config?.prompt as string) || (flow.ai_prompt as string) || 'Analyze the following data'
   const message = typeof inputData === 'string' ? inputData : JSON.stringify(inputData)
   
   const response = await generateWhatsAppResponse('', prompt + '\n\n' + message, [], undefined)
   return { success: true, result: response.text, model: response.model }
 }
 
-async function executeDatabaseNode(node: any, contextType: string, contextId: string | null, inputData: Record<string, any>): Promise<any> {
-  const table = node.config?.table
-  const query = node.config?.query
-  const filters = node.config?.filters || {}
+async function executeDatabaseNode(node: Record<string, unknown>, contextType: string, contextId: string | null, inputData: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const config = node.config as Record<string, unknown> | undefined
+  const table = config?.table as string | undefined
+  const query = config?.query as string | undefined
+  const filters = (config?.filters as Record<string, unknown>) || {}
 
   if (!table) {
     throw new Error('Table name is required for database_query node')
@@ -315,7 +328,8 @@ async function executeDatabaseNode(node: any, contextType: string, contextId: st
   }
 
   // Apply context filter if context_id provided
-  if (contextId && node.config?.use_context) {
+  const useContext = config?.use_context as boolean | undefined
+  if (contextId && useContext) {
     dbQuery = dbQuery.eq('id', contextId)
   }
 
@@ -327,27 +341,30 @@ async function executeDatabaseNode(node: any, contextType: string, contextId: st
 }
 
 async function executeDatabaseUpdateNode(
-  node: any,
+  node: Record<string, unknown>,
   contextType: string,
   contextId: string | null,
-  inputData: Record<string, any>,
-  nodeResults: Record<string, any>
-): Promise<any> {
-  const table = node.config?.table
-  const updates = node.config?.updates || {}
+  inputData: Record<string, unknown>,
+  nodeResults: Record<string, Record<string, unknown>>
+): Promise<Record<string, unknown>> {
+  const config = node.config as Record<string, unknown> | undefined
+  const table = config?.table as string | undefined
+  const updates = (config?.updates as Record<string, unknown>) || {}
 
   if (!table) {
     throw new Error('Table name is required for database_update node')
   }
 
   // Resolve update values (can reference previous node results)
-  const resolvedUpdates: Record<string, any> = {}
+  const resolvedUpdates: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(updates)) {
     resolvedUpdates[key] = resolveValue(value, { input: inputData, ...nodeResults })
   }
 
   // Determine update target
-  const updateId = contextId || node.config?.id || inputData.id
+  const configId = config?.id as string | undefined
+  const inputId = inputData.id as string | undefined
+  const updateId = contextId || configId || inputId
 
   if (!updateId) {
     throw new Error('Update target ID is required')
@@ -365,11 +382,12 @@ async function executeDatabaseUpdateNode(
   return { success: true, data }
 }
 
-async function executeAPICallNode(node: any, inputData: Record<string, any>, nodeResults: Record<string, any>): Promise<any> {
-  const url = node.config?.url
-  const method = node.config?.method || 'GET'
-  const headers = node.config?.headers || {}
-  const body = node.config?.body
+async function executeAPICallNode(node: Record<string, unknown>, inputData: Record<string, unknown>, nodeResults: Record<string, Record<string, unknown>>): Promise<Record<string, unknown>> {
+  const config = node.config as Record<string, unknown> | undefined
+  const url = config?.url as string | undefined
+  const method = (config?.method as string) || 'GET'
+  const headers = (config?.headers as Record<string, string>) || {}
+  const body = config?.body
 
   if (!url) {
     throw new Error('URL is required for api_call node')
@@ -391,15 +409,16 @@ async function executeAPICallNode(node: any, inputData: Record<string, any>, nod
   return { success: response.ok, data, status: response.status }
 }
 
-async function executeNotificationNode(node: any, inputData: Record<string, any>, nodeResults: Record<string, any>): Promise<any> {
-  const type = node.config?.type || 'email'
-  const recipient = node.config?.recipient
-  const subject = node.config?.subject
-  const message = node.config?.message
+async function executeNotificationNode(node: Record<string, unknown>, inputData: Record<string, unknown>, nodeResults: Record<string, Record<string, unknown>>): Promise<Record<string, unknown>> {
+  const config = node.config as Record<string, unknown> | undefined
+  const type = (config?.type as string) || 'email'
+  const recipient = config?.recipient as string | undefined
+  const subject = config?.subject as string | undefined
+  const message = config?.message as string | undefined
 
   // Resolve template variables
-  const resolvedMessage = resolveValue(message, { input: inputData, ...nodeResults })
-  const resolvedSubject = resolveValue(subject, { input: inputData, ...nodeResults })
+  const resolvedMessage = message ? resolveValue(message, { input: inputData, ...nodeResults }) : ''
+  const resolvedSubject = subject ? resolveValue(subject, { input: inputData, ...nodeResults }) : ''
 
   // In production, integrate with notification service
   // For now, just log
@@ -409,15 +428,17 @@ async function executeNotificationNode(node: any, inputData: Record<string, any>
   return { success: true, sent: true }
 }
 
-async function executeDelayNode(node: any): Promise<any> {
-  const delay = node.config?.delay || 1000
+async function executeDelayNode(node: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const config = node.config as Record<string, unknown> | undefined
+  const delay = typeof config?.delay === 'number' ? config.delay : 1000
   await new Promise(resolve => setTimeout(resolve, delay))
   return { success: true, delayed: delay }
 }
 
-async function executeTransformNode(node: any, inputData: Record<string, any>, nodeResults: Record<string, any>): Promise<any> {
-  const transform = node.config?.transform || {}
-  const result: Record<string, any> = {}
+async function executeTransformNode(node: Record<string, unknown>, inputData: Record<string, unknown>, nodeResults: Record<string, Record<string, unknown>>): Promise<Record<string, unknown>> {
+  const config = node.config as Record<string, unknown> | undefined
+  const transform = (config?.transform as Record<string, unknown>) || {}
+  const result: Record<string, unknown> = {}
 
   for (const [key, value] of Object.entries(transform)) {
     result[key] = resolveValue(value, { input: inputData, ...nodeResults })
@@ -426,10 +447,11 @@ async function executeTransformNode(node: any, inputData: Record<string, any>, n
   return { success: true, data: result }
 }
 
-async function executeWebhookNode(node: any, inputData: Record<string, any>, nodeResults: Record<string, any>): Promise<any> {
-  const url = node.config?.url
-  const method = node.config?.method || 'POST'
-  const body = node.config?.body || { ...inputData, ...nodeResults }
+async function executeWebhookNode(node: Record<string, unknown>, inputData: Record<string, unknown>, nodeResults: Record<string, Record<string, unknown>>): Promise<Record<string, unknown>> {
+  const config = node.config as Record<string, unknown> | undefined
+  const url = config?.url as string | undefined
+  const method = (config?.method as string) || 'POST'
+  const body = (config?.body as Record<string, unknown>) || { ...inputData, ...nodeResults }
 
   if (!url) {
     throw new Error('URL is required for webhook node')
@@ -445,7 +467,7 @@ async function executeWebhookNode(node: any, inputData: Record<string, any>, nod
 }
 
 // Helper functions
-function evaluateCondition(condition: string, context: Record<string, any>): boolean {
+function evaluateCondition(condition: string, context: Record<string, unknown>): boolean {
   try {
     // Simple condition evaluation (in production, use a proper expression evaluator)
     // Supports: {{variable}} == value, {{variable}} != value, etc.
@@ -456,24 +478,28 @@ function evaluateCondition(condition: string, context: Record<string, any>): boo
   }
 }
 
-function resolveValue(value: any, context: Record<string, any>): any {
+function resolveValue(value: unknown, context: Record<string, unknown>): unknown {
   if (typeof value === 'string') {
     // Replace {{variable}} with context values
-    return value.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, path) => {
+    const result = (value as string).replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, path) => {
       const keys = path.split('.')
-      let result: any = context
+      let resolved: unknown = context
       for (const key of keys) {
-        result = result?.[key]
-        if (result === undefined) return match
+        if (resolved && typeof resolved === 'object' && key in resolved) {
+          resolved = (resolved as Record<string, unknown>)[key]
+        } else {
+          return match
+        }
       }
-      return result
+      return String(resolved ?? match)
     })
+    return result
   }
   if (typeof value === 'object' && value !== null) {
     if (Array.isArray(value)) {
       return value.map(v => resolveValue(v, context))
     }
-    const resolved: Record<string, any> = {}
+    const resolved: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(value)) {
       resolved[k] = resolveValue(v, context)
     }
