@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import Footer from '../../../components/Footer'
 import Modal from '../../../components/Modal'
+import { logError } from '@/shared/utils/logger'
+import { toastError } from '@/shared/utils/toast'
 
 // --- Types ---
 interface Patient { 
@@ -51,6 +53,7 @@ interface ChatMessage {
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'patients' | 'cms'>('overview')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
   // Data
   const [patients, setPatients] = useState<Patient[]>([])
@@ -75,22 +78,35 @@ export default function AdminDashboard() {
       
       try {
         const pData = await pRes.json(); setPatients(pData.success ? pData.data : [])
-      } catch(e) { /* ignore */ }
+      } catch(e) { 
+        logError('Error loading patients', e, { endpoint: '/api/patients' })
+        setError('فشل تحميل بيانات المرضى')
+      }
       
       try {
         const sData = await sRes.json(); setSpecialists(sData.success ? sData.data : [])
-      } catch(e) { /* ignore */ }
+      } catch(e) { 
+        logError('Error loading specialists', e, { endpoint: '/api/specialists' })
+        setError('فشل تحميل بيانات الأطباء')
+      }
 
       try {
         const aData = await aRes.json(); setAppointments(aData.success ? aData.data : [])
-      } catch(e) { /* ignore */ }
+      } catch(e) { 
+        logError('Error loading appointments', e, { endpoint: '/api/appointments' })
+        setError('فشل تحميل بيانات المواعيد')
+      }
 
       try {
         const cData = await cRes.json(); setContentItems(cData.success ? cData.data : [])
-      } catch(e) { /* ignore */ }
+      } catch(e) { 
+        logError('Error loading content items', e, { endpoint: '/api/cms' })
+        setError('فشل تحميل بيانات المحتوى')
+      }
 
     } catch (e) { 
-       console.error(e) 
+       logError('Error loading dashboard data', e)
+       setError('حدث خطأ أثناء تحميل البيانات')
     } finally { 
        setLoading(false) 
     }
@@ -110,9 +126,14 @@ export default function AdminDashboard() {
           // Update local state
           setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a))
        } else {
-          alert('خطأ بيحث: ' + (data.error || 'Unknown error'))
+          const errorMessage = data.error || 'خطأ غير معروف'
+          logError('Failed to update appointment status', new Error(errorMessage), { appointmentId: id, status })
+          toastError('خطأ: ' + errorMessage)
        }
-    } catch (e) { alert('خطأ في الاتصال') } 
+    } catch (e) { 
+      logError('Error updating appointment status', e, { appointmentId: id, status })
+      toastError('خطأ في الاتصال')
+    } 
     finally { setProcessingId(null) }
   }
 
@@ -125,11 +146,18 @@ export default function AdminDashboard() {
        const res = await fetch(`/api/chat-history?phone=${patient.phone}`)
        const data = await res.json()
        if (data.success) setChatHistory(data.data)
-    } catch (e) { console.error(e) }
+       else {
+         logError('Failed to load chat history', new Error(data.error || 'Unknown error'), { patientPhone: patient.phone })
+         toastError('فشل تحميل سجل المحادثة')
+       }
+    } catch (e) { 
+      logError('Error loading chat history', e, { patientPhone: patient.phone })
+      toastError('خطأ في تحميل سجل المحادثة')
+    }
   }
 
   // --- Components ---
-  const BentoCard = ({ title, value, icon, sub, className }: any) => (
+  const BentoCard = ({ title, value, icon, sub, className }: { title: string; value: string | number; icon: React.ReactNode; sub?: string; className?: string }) => (
      <div className={`bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 ${className}`}>
         <div className="flex justify-between items-start mb-4">
            <div className={`p-3 rounded-2xl ${sub ? 'bg-primary/10 text-primary' : 'bg-gray-50 text-gray-500'}`}>{icon}</div>
@@ -141,6 +169,24 @@ export default function AdminDashboard() {
   )
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div></div>
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-red-100 max-w-md text-center">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold mb-2">خطأ في تحميل البيانات</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => { setError(null); loadData() }}
+            className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-primary/90"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-[#1A1A1A] font-sans selection:bg-primary/20">
@@ -154,7 +200,7 @@ export default function AdminDashboard() {
                {['overview', 'appointments', 'patients', 'cms'].map(tab => (
                   <button 
                     key={tab}
-                    onClick={() => setActiveTab(tab as any)}
+                    onClick={() => setActiveTab(tab as 'overview' | 'appointments' | 'patients' | 'cms')}
                     className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap ${
                        activeTab === tab 
                        ? 'bg-primary text-white shadow-lg shadow-primary/30' 
